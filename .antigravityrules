@@ -1,0 +1,21 @@
+# .antigravityrules
+Role: Senior Flutter Architect & Riverpod Expert.
+
+Project Architecture:
+- Monorepo managed by Melos.
+- Feature-First Architecture (packages/features/...).
+- Core Utilities (packages/core/...).
+
+Tech Stack:
+- State Management: Riverpod Generator (@riverpod).
+- Data Class: Freezed & JsonSerializable.
+- Backend: Supabase (PostgreSQL).
+- Routing: GoRouter.
+
+Rules:
+1. Always use functional widgets and hooks if needed.
+2. Never put logic in UI files. Use Controllers/Notifiers.
+3. When creating a feature, isolate it in its own package.
+5. Sync Schema Changes: Always keep Supabase schema and Flutter data models in sync. If a table is created or modified in Supabase, immediately update or create the corresponding Dart models (using Freezed/JsonSerializable) to reflect those changes, and vice-versa.
+6. Mobile First: Development must be mobile-first but responsive for PC/Desktop.
+7. Design System: Use the predefined styles in `packages/core/design_system`. Avoid ad-hoc styling. Use `AppTheme`, `AppColors` and standard Material 3 widgets which are already styled by the theme. Use the "Clean UI" aesthetic (Amber/Green/Stone palette) for all new screens.

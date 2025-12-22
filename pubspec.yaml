@@ -1,0 +1,9 @@
+name: app_gilbert_workspace
+description: A new Flutter monorepo project for appGilbert.
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dev_dependencies:
+  melos: ^6.0.0

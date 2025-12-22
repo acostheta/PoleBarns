@@ -1,0 +1,10 @@
+name: app_gilbert_workspace
+repository: https://github.com/progresecapital/app_gilbert
+
+packages:
+  - apps/*
+  - packages/**
+
+command:
+  bootstrap:
+    usePubspecOverrides: true

@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "cliente_app (Chrome)",
+            "request": "launch",
+            "type": "dart",
+            "program": "apps/cliente_app/lib/main.dart",
+            "args": [
+                "-d",
+                "chrome"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+# melos_managed_dependency_overrides: auth,design_system,users
+dependency_overrides:
+  auth:
+    path: ..\\..\\packages\\features\\auth
+  design_system:
+    path: ..\\..\\packages\\core\\design_system
+  users:
+    path: ..\\..\\packages\\features\\users
