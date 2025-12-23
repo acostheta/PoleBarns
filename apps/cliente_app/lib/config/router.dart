@@ -31,8 +31,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onRegisterPage = state.uri.toString() == '/register';
 
       if (session == null && !onLoginPage && !onRegisterPage) return '/login';
-      if (session != null && (onLoginPage || onRegisterPage))
+      if (session != null && (onLoginPage || onRegisterPage)) {
         return '/dashboard';
+      }
       return null;
     },
   );

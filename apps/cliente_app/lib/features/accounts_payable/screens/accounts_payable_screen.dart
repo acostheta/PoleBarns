@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/accounts_payable_provider.dart';
 import '../models/account_payable_model.dart';
-import 'widgets/add_account_dialog.dart';
-import 'widgets/register_payment_dialog.dart';
+import '../widgets/add_account_dialog.dart';
+import '../widgets/register_payment_dialog.dart';
 
 class AccountsPayableScreen extends ConsumerWidget {
   const AccountsPayableScreen({super.key});
@@ -99,9 +99,9 @@ class AccountsPayableScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -154,8 +154,8 @@ class _AccountListItem extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isPaid
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -183,6 +183,15 @@ class _AccountListItem extends StatelessWidget {
                       const Text('Total',
                           style: TextStyle(fontSize: 12, color: Colors.grey)),
                       Text(currencyFormat.format(account.totalAmount)),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Abonado',
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(currencyFormat.format(account.totalPaid),
+                          style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Column(

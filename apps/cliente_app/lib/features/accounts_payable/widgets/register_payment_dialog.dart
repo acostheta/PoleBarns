@@ -63,7 +63,11 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
         // Refresh the main list to update balances
         ref.read(accountsPayableListProvider.notifier).loadAccounts();
       } catch (e) {
-        // Handle error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al abonar: $e')),
+          );
+        }
       }
     }
   }
@@ -130,8 +134,9 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
                   if (val == null || val.isEmpty) return 'Requerido';
                   final n = double.tryParse(val);
                   if (n == null || n <= 0) return 'Inválido';
-                  if (n > widget.account.currentBalance)
+                  if (n > widget.account.currentBalance) {
                     return 'Excede el saldo';
+                  }
                   return null;
                 },
               ),

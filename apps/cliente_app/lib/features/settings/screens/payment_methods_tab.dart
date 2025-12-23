@@ -98,20 +98,37 @@ class PaymentMethodsTab extends ConsumerWidget {
               child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              if (method != null) {
-                final updated = method.copyWith(
-                  name: nameController.text,
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nombre es requerido')),
                 );
-                await ref
-                    .read(settingsRepositoryProvider)
-                    .updatePaymentMethod(updated);
-              } else {
-                await ref.read(settingsRepositoryProvider).createPaymentMethod(
-                      nameController.text,
-                    );
+                return;
               }
-              ref.invalidate(paymentMethodsListProvider);
-              if (context.mounted) Navigator.pop(ctx);
+
+              try {
+                if (method != null) {
+                  final updated = method.copyWith(
+                    name: nameController.text,
+                  );
+                  await ref
+                      .read(settingsRepositoryProvider)
+                      .updatePaymentMethod(updated);
+                } else {
+                  await ref
+                      .read(settingsRepositoryProvider)
+                      .createPaymentMethod(
+                        nameController.text,
+                      );
+                }
+                ref.invalidate(paymentMethodsListProvider);
+                if (context.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al guardar: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Guardar'),
           ),

@@ -28,9 +28,9 @@ class ProvidersTab extends ConsumerWidget {
               return Card(
                 child: ListTile(
                   leading: CircleAvatar(
-                      child: Text(provider.ref.substring(0, 1).toUpperCase())),
+                      child: Text(provider.name.substring(0, 1).toUpperCase())),
                   title: Text(provider.name),
-                  subtitle: Text('${provider.ref} - ${provider.address}'),
+                  subtitle: Text(provider.address),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -81,7 +81,6 @@ class ProvidersTab extends ConsumerWidget {
 
   void _showProviderDialog(BuildContext context, WidgetRef ref,
       {ProviderModel? provider}) {
-    final refController = TextEditingController(text: provider?.ref ?? '');
     final nameController = TextEditingController(text: provider?.name ?? '');
     final addressController =
         TextEditingController(text: provider?.address ?? '');
@@ -94,9 +93,6 @@ class ProvidersTab extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-                controller: refController,
-                decoration: const InputDecoration(labelText: 'Ref (ID)')),
             TextField(
                 controller: nameController,
                 decoration: const InputDecoration(labelText: 'Nombre')),
@@ -111,24 +107,37 @@ class ProvidersTab extends ConsumerWidget {
               child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              if (provider != null) {
-                final updated = provider.copyWith(
-                  ref: refController.text,
-                  name: nameController.text,
-                  address: addressController.text,
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nombre es requerido')),
                 );
-                await ref
-                    .read(settingsRepositoryProvider)
-                    .updateProvider(updated);
-              } else {
-                await ref.read(settingsRepositoryProvider).createProvider(
-                      refController.text,
-                      nameController.text,
-                      addressController.text,
-                    );
+                return;
               }
-              ref.invalidate(providersListProvider);
-              if (context.mounted) Navigator.pop(ctx);
+
+              try {
+                if (provider != null) {
+                  final updated = provider.copyWith(
+                    name: nameController.text,
+                    address: addressController.text,
+                  );
+                  await ref
+                      .read(settingsRepositoryProvider)
+                      .updateProvider(updated);
+                } else {
+                  await ref.read(settingsRepositoryProvider).createProvider(
+                        nameController.text,
+                        addressController.text,
+                      );
+                }
+                ref.invalidate(providersListProvider);
+                if (context.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al guardar: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Guardar'),
           ),

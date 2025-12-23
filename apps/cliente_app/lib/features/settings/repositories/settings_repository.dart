@@ -14,9 +14,8 @@ class SettingsRepository {
     return (data as List).map((e) => ProviderModel.fromJson(e)).toList();
   }
 
-  Future<void> createProvider(String ref, String name, String address) async {
+  Future<void> createProvider(String name, String address) async {
     await _client.from('providers').insert({
-      'ref': ref,
       'name': name,
       'address': address,
     });
@@ -24,7 +23,6 @@ class SettingsRepository {
 
   Future<void> updateProvider(ProviderModel provider) async {
     await _client.from('providers').update({
-      'ref': provider.ref,
       'name': provider.name,
       'address': provider.address,
     }).eq('id', provider.id);
