@@ -7,6 +7,7 @@ import 'package:clients/clients.dart';
 import 'package:measures/measures.dart';
 
 import '../features/settings/screens/settings_screen.dart';
+import '../features/accounts_payable/screens/accounts_payable_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -27,6 +28,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   static const int _clientsIndex = 4;
   static const int _measuresIndex = 5;
   static const int _settingsIndex = 6;
+  static const int _accountsPayableIndex = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +70,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } else if (_selectedIndex == _settingsIndex) {
       title = 'Configuración';
       bodyContent = const SettingsScreen();
+    } else if (_selectedIndex == _accountsPayableIndex) {
+      title = 'Cuentas por Pagar';
+      bodyContent = const AccountsPayableScreen();
     } else {
       // Home
       title = 'App Gilbert';
@@ -201,6 +206,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 icon: Icons.settings,
                                 title: 'Configuración',
                                 index: _settingsIndex,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.attach_money,
+                                title: 'Cuentas por Pagar',
+                                index: _accountsPayableIndex,
                               ),
                             ],
                             const Divider(),
