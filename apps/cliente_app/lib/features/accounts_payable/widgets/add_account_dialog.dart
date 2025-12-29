@@ -128,6 +128,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 controller: _refController,
                 decoration: const InputDecoration(
                     labelText: 'Referencia Interna (Opcional)'),
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
 
@@ -140,6 +141,8 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Requerido';
                   final n = double.tryParse(val);

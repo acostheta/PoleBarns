@@ -1,0 +1,295 @@
+class ProjectModel {
+  final String id;
+  final String refCliente;
+  final String? responsable;
+  final String? estatus;
+  final DateTime? fechaInicio;
+  final DateTime? fechaFinalizacion;
+  final String? grupoAsignado;
+  final String? address;
+  final double ventaTotal;
+  final double costosTotales;
+  final double profit;
+  final String? comments;
+  final DateTime createdAt;
+
+  ProjectModel({
+    required this.id,
+    required this.refCliente,
+    this.responsable,
+    this.estatus,
+    this.fechaInicio,
+    this.fechaFinalizacion,
+    this.grupoAsignado,
+    this.address,
+    this.ventaTotal = 0.0,
+    this.costosTotales = 0.0,
+    this.profit = 0.0,
+    this.comments,
+    required this.createdAt,
+  });
+
+  factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    return ProjectModel(
+      id: json['id'],
+      refCliente: json['ref_cliente'],
+      responsable: json['responsable'],
+      estatus: json['estatus'],
+      fechaInicio: json['fecha_inicio'] != null
+          ? DateTime.parse(json['fecha_inicio'])
+          : null,
+      fechaFinalizacion: json['fecha_finalizacion'] != null
+          ? DateTime.parse(json['fecha_finalizacion'])
+          : null,
+      grupoAsignado: json['grupo_asignado'],
+      address: json['address'],
+      ventaTotal: (json['venta_total'] as num?)?.toDouble() ?? 0.0,
+      costosTotales: (json['costos_totales'] as num?)?.toDouble() ?? 0.0,
+      profit: (json['profit'] as num?)?.toDouble() ?? 0.0,
+      comments: json['comments'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  ProjectModel copyWith({
+    String? id,
+    String? refCliente,
+    String? responsable,
+    String? estatus,
+    DateTime? fechaInicio,
+    DateTime? fechaFinalizacion,
+    String? grupoAsignado,
+    String? address,
+    double? ventaTotal,
+    double? costosTotales,
+    double? profit,
+    String? comments,
+    DateTime? createdAt,
+  }) {
+    return ProjectModel(
+      id: id ?? this.id,
+      refCliente: refCliente ?? this.refCliente,
+      responsable: responsable ?? this.responsable,
+      estatus: estatus ?? this.estatus,
+      fechaInicio: fechaInicio ?? this.fechaInicio,
+      fechaFinalizacion: fechaFinalizacion ?? this.fechaFinalizacion,
+      grupoAsignado: grupoAsignado ?? this.grupoAsignado,
+      address: address ?? this.address,
+      ventaTotal: ventaTotal ?? this.ventaTotal,
+      costosTotales: costosTotales ?? this.costosTotales,
+      profit: profit ?? this.profit,
+      comments: comments ?? this.comments,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id.isNotEmpty)
+        'id': id, // Only include ID if present (for updates), inserts may omit
+      'ref_cliente': refCliente,
+      'responsable': responsable,
+      'estatus': estatus,
+      'fecha_inicio': fechaInicio?.toIso8601String(),
+      'fecha_finalizacion': fechaFinalizacion?.toIso8601String(),
+      'grupo_asignado': grupoAsignado,
+      'address': address,
+      'venta_total': ventaTotal,
+      'costos_totales': costosTotales,
+      'comments': comments,
+      // profit excluded as it's computed
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}
+
+class ProjectCostModel {
+  final String id;
+  final String projectRef;
+  final String concepto;
+  final double monto;
+  final String? notas;
+  final DateTime createdAt;
+
+  ProjectCostModel({
+    required this.id,
+    required this.projectRef,
+    required this.concepto,
+    required this.monto,
+    this.notas,
+    required this.createdAt,
+  });
+
+  factory ProjectCostModel.fromJson(Map<String, dynamic> json) {
+    return ProjectCostModel(
+      id: json['id'],
+      projectRef: json['project_ref'],
+      concepto: json['concepto'],
+      monto: (json['monto'] as num?)?.toDouble() ?? 0.0,
+      notas: json['notas'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'project_ref': projectRef,
+      'concepto': concepto,
+      'monto': monto,
+      'notas': notas,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}
+
+class ProjectMediaModel {
+  final String id;
+  final String projectRef;
+  final String urlMedia;
+  final String tipo; // 'foto', 'video'
+  final String etiqueta; // 'Antes', 'Durante', 'Después'
+  final String usuarioCargaRef;
+  final DateTime createdAt;
+
+  final int orderIndex;
+
+  ProjectMediaModel({
+    required this.id,
+    required this.projectRef,
+    required this.urlMedia,
+    required this.tipo,
+    required this.etiqueta,
+    required this.usuarioCargaRef,
+    required this.createdAt,
+    this.orderIndex = 0,
+  });
+
+  factory ProjectMediaModel.fromJson(Map<String, dynamic> json) {
+    return ProjectMediaModel(
+      id: json['id'],
+      projectRef: json['project_ref'],
+      urlMedia: json['url_media'],
+      tipo: json['tipo'],
+      etiqueta: json['etiqueta'],
+      usuarioCargaRef: json['usuario_carga_ref'],
+      createdAt: DateTime.parse(json['created_at']),
+      orderIndex: json['order_index'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'project_ref': projectRef,
+      'url_media': urlMedia,
+      'tipo': tipo,
+      'etiqueta': etiqueta,
+      'usuario_carga_ref': usuarioCargaRef,
+      'created_at': createdAt.toIso8601String(),
+      'order_index': orderIndex,
+    };
+  }
+}
+
+class ProjectChatModel {
+  final String id;
+  final String projectRef;
+  final String usuarioRef;
+  final String? nombreDesnormalizado;
+  final String? photoDesnormalizado;
+  final String mensaje;
+  final DateTime createdAt;
+
+  ProjectChatModel({
+    required this.id,
+    required this.projectRef,
+    required this.usuarioRef,
+    this.nombreDesnormalizado,
+    this.photoDesnormalizado,
+    required this.mensaje,
+    required this.createdAt,
+  });
+
+  factory ProjectChatModel.fromJson(Map<String, dynamic> json) {
+    return ProjectChatModel(
+      id: json['id'],
+      projectRef: json['project_ref'],
+      usuarioRef: json['usuario_ref'],
+      nombreDesnormalizado: json['nombre_desnormalizado'],
+      photoDesnormalizado: json['photo_desnormalizado'],
+      mensaje: json['mensaje'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'project_ref': projectRef,
+      'usuario_ref': usuarioRef,
+      'nombre_desnormalizado': nombreDesnormalizado,
+      'photo_desnormalizado': photoDesnormalizado,
+      'mensaje': mensaje,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}
+
+class ClientSimpleModel {
+  final String id;
+  final String firstName;
+  final String lastName;
+
+  ClientSimpleModel(
+      {required this.id, required this.firstName, required this.lastName});
+
+  String get fullName => '$firstName $lastName';
+
+  factory ClientSimpleModel.fromJson(Map<String, dynamic> json) {
+    return ClientSimpleModel(
+      id: json['id'] as String,
+      firstName: json['first_name'] as String? ?? '',
+      lastName: json['last_name'] as String? ?? '',
+    );
+  }
+}
+
+class ProjectPoleBarnModel {
+  final String id;
+  final String projectId;
+  final int poleBarnId;
+  final double salePrice;
+  final DateTime createdAt;
+  // Join fields
+  final String? poleBarnName;
+
+  ProjectPoleBarnModel({
+    required this.id,
+    required this.projectId,
+    required this.poleBarnId,
+    required this.salePrice,
+    required this.createdAt,
+    this.poleBarnName,
+  });
+
+  factory ProjectPoleBarnModel.fromJson(Map<String, dynamic> json) {
+    return ProjectPoleBarnModel(
+      id: json['id'],
+      projectId: json['project_id'],
+      poleBarnId: json['pole_barn_id'],
+      salePrice: (json['sale_price'] as num?)?.toDouble() ?? 0.0,
+      createdAt: DateTime.parse(json['created_at']),
+      poleBarnName: json['PoleBarns']?['name'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'project_id': projectId,
+      'pole_barn_id': poleBarnId,
+      'sale_price': salePrice,
+    };
+  }
+}

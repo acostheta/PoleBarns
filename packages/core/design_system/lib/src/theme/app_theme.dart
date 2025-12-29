@@ -19,6 +19,7 @@ class AppTheme {
         onSurface: AppColors.textLight,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
+      cardColor: AppColors.surfaceLight,
       textTheme: GoogleFonts.robotoTextTheme().apply(
         bodyColor: AppColors.textLight,
         displayColor: AppColors.textLight,
@@ -94,8 +95,20 @@ class AppTheme {
         foregroundColor: AppColors.textLight,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         iconTheme: IconThemeData(color: AppColors.textLight),
+      ),
+      dividerTheme: const DividerThemeData(
+        thickness: 1,
+        color: AppColors.stone200,
+        space: 1,
+      ),
+      tabBarTheme: const TabBarTheme(
+        dividerColor: Colors.transparent,
+        indicatorColor: AppColors.primary,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.stone500,
       ),
     );
   }

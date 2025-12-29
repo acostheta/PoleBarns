@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:auth/auth.dart';
 import '../screens/dashboard_screen.dart';
+import '../features/project_tracking/screens/project_dashboard_screen.dart';
+import '../features/project_tracking/screens/project_detail_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // ref.watch(authStateProvider);
@@ -23,6 +25,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: '/projects',
+        builder: (context, state) => const ProjectDashboardScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) =>
+                ProjectDetailScreen(projectId: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
     redirect: (context, state) {

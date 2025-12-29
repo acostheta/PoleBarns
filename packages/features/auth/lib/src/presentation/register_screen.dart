@@ -110,6 +110,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               labelText: 'Nombre Completo',
                               prefixIcon: Icon(Icons.person_outline),
                             ),
+                            textInputAction: TextInputAction.next,
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Ingrese su nombre'
                                 : null,
@@ -121,6 +122,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               labelText: 'Correo',
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
+                            textInputAction: TextInputAction.next,
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Ingrese su correo'
                                 : null,
@@ -140,6 +142,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                             obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.next,
                             validator: (value) =>
                                 value == null || value.length < 6
                                     ? 'La contraseña debe tener 6 caracteres'
@@ -161,6 +164,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                             obscureText: _obscureConfirmPassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _signUp(),
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Confirme su contraseña'
                                 : null,

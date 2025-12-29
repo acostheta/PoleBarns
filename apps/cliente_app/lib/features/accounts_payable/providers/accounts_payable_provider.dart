@@ -13,7 +13,33 @@ final accountsPayableRepositoryProvider =
 // List of Accounts Provider (AsyncNotifier to handle loading/error states and refresh)
 final accountsPayableListProvider = StateNotifierProvider<
     AccountsPayableNotifier, AsyncValue<List<AccountPayableModel>>>((ref) {
-  return AccountsPayableNotifier(ref.watch(accountsPayableRepositoryProvider));
+  final repository = ref.watch(accountsPayableRepositoryProvider);
+  final notifier = AccountsPayableNotifier(repository);
+
+  // Realtime Subscription
+  final channel =
+      Supabase.instance.client.channel('public:accounts_payable_realtime');
+
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'accounts_payable',
+        callback: (payload) => notifier.loadAccounts(),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'ap_payments',
+        callback: (payload) => notifier.loadAccounts(),
+      )
+      .subscribe();
+
+  ref.onDispose(() {
+    Supabase.instance.client.removeChannel(channel);
+  });
+
+  return notifier;
 });
 
 class AccountsPayableNotifier
@@ -27,7 +53,18 @@ class AccountsPayableNotifier
 
   Future<void> loadAccounts() async {
     try {
-      state = const AsyncValue.loading();
+      // Keep previous data while loading if available to avoid flicker,
+      // or just update silently?
+      // For "Realtime", usually we want to just fetch and swap.
+      // If we set loading, the UI might flash a spinner.
+      // Let's modify to only set loading if we don't have data yet?
+      // Or just strictly follow existing pattern for now but realize it triggers on every update.
+      // The user wants "sin recargar", flashing spinner is "recargando" visually.
+      // Better:
+      if (!state.hasValue) {
+        state = const AsyncValue.loading();
+      }
+
       final accounts = await _repository.getAccounts();
       state = AsyncValue.data(accounts);
     } catch (e, st) {
@@ -47,8 +84,7 @@ class AccountsPayableNotifier
       totalAmount: totalAmount,
       invoiceInternRef: invoiceInternRef,
     );
-    // Refresh list
-    await loadAccounts();
+    // Explicit refresh removed to rely on Realtime
   }
 }
 

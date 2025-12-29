@@ -60,8 +60,7 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
           notes: _notesController.text,
         );
 
-        // Refresh the main list to update balances
-        ref.read(accountsPayableListProvider.notifier).loadAccounts();
+        // Refresh handled by Realtime subscription
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -114,12 +113,14 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
 
               // Date
               InputDatePickerFormField(
+                fieldLabelText: 'Fecha del pago',
                 firstDate: DateTime(2020),
                 lastDate: DateTime(2030),
                 initialDate: _paymentDate,
                 onDateSubmitted: (date) => _paymentDate = date,
                 onDateSaved: (date) => _paymentDate = date,
               ),
+              const SizedBox(height: 16),
 
               // Amount
               TextFormField(
@@ -130,6 +131,8 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _submit(),
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Requerido';
                   final n = double.tryParse(val);
@@ -148,6 +151,8 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
                 decoration:
                     const InputDecoration(labelText: 'Notas (Opcional)'),
                 maxLines: 2,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
               ),
             ],
           ),

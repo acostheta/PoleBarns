@@ -88,6 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               labelText: 'Correo o Usuario', // Match example
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
+                            textInputAction: TextInputAction.next,
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Ingrese su correo'
                                 : null,
@@ -110,6 +111,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                             obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _signIn(),
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Ingrese su contraseña'
                                 : null,

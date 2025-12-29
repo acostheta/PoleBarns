@@ -8,6 +8,9 @@ import 'package:measures/measures.dart';
 
 import '../features/settings/screens/settings_screen.dart';
 import '../features/accounts_payable/screens/accounts_payable_screen.dart';
+import '../features/project_tracking/screens/project_dashboard_screen.dart';
+import '../features/pole_barns/screens/pole_barns_list_screen.dart';
+import '../features/invoices/screens/invoices_list_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -29,6 +32,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   static const int _measuresIndex = 5;
   static const int _settingsIndex = 6;
   static const int _accountsPayableIndex = 7;
+  static const int _projectTrackingIndex = 8;
+  static const int _poleBarnsIndex = 9;
+  static const int _invoicesIndex = 10;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +79,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } else if (_selectedIndex == _accountsPayableIndex) {
       title = 'Cuentas por Pagar';
       bodyContent = const AccountsPayableScreen();
+    } else if (_selectedIndex == _projectTrackingIndex) {
+      title = 'Seguimiento de Obra';
+      bodyContent = const ProjectDashboardScreen();
+    } else if (_selectedIndex == _poleBarnsIndex) {
+      title = 'Cotizador de Caballerizas (Pole Barns)';
+      bodyContent = const PoleBarnsListScreen();
+    } else if (_selectedIndex == _invoicesIndex) {
+      title = 'Gestión de Facturas (Invoices)';
+      bodyContent = const InvoicesListScreen();
     } else {
       // Home
       title = 'App Gilbert';
@@ -211,6 +226,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 icon: Icons.attach_money,
                                 title: 'Cuentas por Pagar',
                                 index: _accountsPayableIndex,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.construction,
+                                title: 'Seguimiento de Obra',
+                                index: _projectTrackingIndex,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.architecture,
+                                title: 'Pole Barns',
+                                index: _poleBarnsIndex,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.receipt_long,
+                                title: 'Invoices',
+                                index: _invoicesIndex,
                               ),
                             ],
                             const Divider(),
