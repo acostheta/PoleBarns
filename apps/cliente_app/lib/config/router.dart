@@ -6,6 +6,13 @@ import 'package:auth/auth.dart';
 import '../screens/dashboard_screen.dart';
 import '../features/project_tracking/screens/project_dashboard_screen.dart';
 import '../features/project_tracking/screens/project_detail_screen.dart';
+import '../features/clients/screens/clients_list_screen.dart';
+import '../features/clients/screens/client_detail_screen.dart';
+import '../features/payroll/screens/payroll_dashboard_screen.dart';
+import '../features/payroll/screens/pagos_diarios_screen.dart';
+import '../features/payroll/screens/destajo_soldadores_screen.dart';
+import '../features/payroll/screens/nomina_instalacion_screen.dart';
+import '../features/payroll/screens/nomina_chofer_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // ref.watch(authStateProvider);
@@ -34,6 +41,44 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: ':id',
             builder: (context, state) =>
                 ProjectDetailScreen(projectId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/clients',
+        builder: (context, state) => const ClientsListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) =>
+                const ClientDetailScreen(clientId: 'new'),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) =>
+                ClientDetailScreen(clientId: state.pathParameters['id']),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/payroll',
+        builder: (context, state) => const PayrollDashboardScreen(),
+        routes: [
+          GoRoute(
+            path: 'daily',
+            builder: (context, state) => const PagosDiariosScreen(),
+          ),
+          GoRoute(
+            path: 'welders',
+            builder: (context, state) => const DestajoSoldadoresScreen(),
+          ),
+          GoRoute(
+            path: 'installation',
+            builder: (context, state) => const NominaInstalacionScreen(),
+          ),
+          GoRoute(
+            path: 'drivers',
+            builder: (context, state) => const NominaChoferScreen(),
           ),
         ],
       ),

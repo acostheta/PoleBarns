@@ -11,6 +11,7 @@ import '../features/accounts_payable/screens/accounts_payable_screen.dart';
 import '../features/project_tracking/screens/project_dashboard_screen.dart';
 import '../features/pole_barns/screens/pole_barns_list_screen.dart';
 import '../features/invoices/screens/invoices_list_screen.dart';
+import '../features/payroll/screens/payroll_dashboard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -35,6 +36,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   static const int _projectTrackingIndex = 8;
   static const int _poleBarnsIndex = 9;
   static const int _invoicesIndex = 10;
+  static const int _payrollIndex = 11;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +90,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } else if (_selectedIndex == _invoicesIndex) {
       title = 'Gestión de Facturas (Invoices)';
       bodyContent = const InvoicesListScreen();
+    } else if (_selectedIndex == _payrollIndex) {
+      title = 'Gestión de Nómina';
+      bodyContent = const PayrollDashboardScreen();
     } else {
       // Home
       title = 'App Gilbert';
@@ -241,6 +246,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 icon: Icons.receipt_long,
                                 title: 'Invoices',
                                 index: _invoicesIndex,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.payments,
+                                title: 'Nómina',
+                                index: _payrollIndex,
                               ),
                             ],
                             const Divider(),

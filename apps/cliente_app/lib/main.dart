@@ -9,8 +9,7 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://sclcfqcjcjpthodutpyc.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbGNmcWNqY2pwdGhvZHV0cHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjA3MzksImV4cCI6MjA4MTYzNjczOX0.HV6KT56OE9GIOTRWwVIfst1QAg-jIqX8loBleldBWb0',
+    anonKey: 'sb_publishable_5YopQ4kW5LbFX8wwMdmm8w_Sq-pGohW',
   );
 
   runApp(const ProviderScope(child: MyApp()));

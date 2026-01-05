@@ -92,6 +92,16 @@ class ShellLayout extends ConsumerWidget {
                 title: const Text('Usuarios'),
                 onTap: () => context.go('/users'),
               ),
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: const Text('Clientes'),
+              onTap: () => context.go('/clients'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_money),
+              title: const Text('Nómina'),
+              onTap: () => context.go('/payroll'),
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
