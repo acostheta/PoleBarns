@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/project_providers.dart';
 import '../models/project_models.dart';
+import 'project_create_dialog.dart';
 
 class ProjectListSidebar extends ConsumerStatefulWidget {
   const ProjectListSidebar({super.key});
@@ -26,24 +27,45 @@ class _ProjectListSidebarState extends ConsumerState<ProjectListSidebar> {
           // Header
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Projects',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF111827), // Gray-900
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Proyectos',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827), // Gray-900
+                      ),
+                    ),
+                    projectsAsync.when(
+                      data: (list) => Text(
+                        '${list.length} Activos',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                      ),
+                      loading: () => const SizedBox(),
+                      error: (_, __) => const SizedBox(),
+                    ),
+                  ],
                 ),
-                projectsAsync.when(
-                  data: (list) => Text(
-                    '${list.length} Active',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showCreateDialog(context, ref),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Nuevo Proyecto'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD97706),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
                   ),
-                  loading: () => const SizedBox(),
-                  error: (_, __) => const SizedBox(),
                 ),
               ],
             ),
@@ -116,6 +138,13 @@ class _ProjectListSidebarState extends ConsumerState<ProjectListSidebar> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => const ProjectCreateDialog(),
     );
   }
 }

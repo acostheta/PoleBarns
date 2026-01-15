@@ -109,6 +109,15 @@ class PayrollRepository {
   }
 
   // --- Payment Destajo ---
+  Stream<List<PaymentDestajo>> getPaymentsDestajoStream() {
+    return _client
+        .from('payment_destajo')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((data) =>
+            data.map((json) => PaymentDestajo.fromJson(json)).toList());
+  }
+
   Future<void> createPaymentDestajo(PaymentDestajo item) async {
     await _client.from('payment_destajo').insert(item.toJson());
   }
@@ -141,7 +150,7 @@ class PayrollRepository {
   Stream<List<Map<String, dynamic>>> getProjectsStream() {
     return _client
         .from('projects')
-        .stream(primaryKey: ['id']).order('name', ascending: true);
+        .stream(primaryKey: ['id']).order('address', ascending: true);
   }
 
   Stream<List<Map<String, dynamic>>> getPoleBarnsStream() {

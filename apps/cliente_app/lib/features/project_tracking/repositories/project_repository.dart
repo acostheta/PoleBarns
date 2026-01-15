@@ -66,7 +66,7 @@ class ProjectRepository {
             data.map((json) => ProjectMediaModel.fromJson(json)).toList());
   }
 
-  Future<void> addMedia({
+  Future<ProjectMediaModel> addMedia({
     required String projectId,
     required String url,
     required String tipo,
@@ -74,26 +74,34 @@ class ProjectRepository {
     int orderIndex = 0,
   }) async {
     final userId = _supabase.auth.currentUser!.id;
-    await _supabase.from('project_media').insert({
-      'project_ref': projectId,
-      'url_media': url,
-      'tipo': tipo,
-      'etiqueta': etiqueta,
-      'usuario_carga_ref': userId,
-      'order_index': orderIndex,
-    });
+    final response = await _supabase
+        .from('project_media')
+        .insert({
+          'project_ref': projectId,
+          'url_media': url,
+          'tipo': tipo,
+          'etiqueta': etiqueta,
+          'usuario_carga_ref': userId,
+          'order_index': orderIndex,
+        })
+        .select()
+        .single();
+
+    return ProjectMediaModel.fromJson(response);
   }
 
   Future<void> deleteMedia(String mediaId) async {
     await _supabase.from('project_media').delete().eq('id', mediaId);
   }
 
+  Future<void> deleteMediaBatch(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _supabase.from('project_media').delete().inFilter('id', ids);
+  }
+
   Future<void> updateMediaOrder(List<ProjectMediaModel> sortedMedia) async {
     final updates = sortedMedia.asMap().entries.map((entry) {
-      return {
-        'id': entry.value.id,
-        'order_index': entry.key,
-      };
+      return entry.value.copyWith(orderIndex: entry.key).toJson();
     }).toList();
 
     // Use upsert to update multiple rows.
@@ -120,9 +128,16 @@ class ProjectRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    // In a real app, user metadata might be fetched from a 'profiles' table or auth metadata
-    final userName = user.userMetadata?['full_name'] ?? user.email ?? 'Usuario';
-    final userPhoto = user.userMetadata?['avatar_url'];
+    // Fetch user profile to get desnormalizado name and photo
+    final profile = await _supabase
+        .from('profiles')
+        .select('full_name, picture')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    final userName =
+        profile?['full_name'] ?? user.userMetadata?['full_name'] ?? 'Usuario';
+    final userPhoto = profile?['picture'] ?? user.userMetadata?['avatar_url'];
 
     await _supabase.from('project_chat').insert({
       'project_ref': projectId,
@@ -145,6 +160,17 @@ class ProjectRepository {
     return (response as List)
         .map((json) => ProjectPoleBarnModel.fromJson(json))
         .toList();
+  }
+
+  Stream<List<ProjectPoleBarnModel>> getProjectPoleBarnsStream(
+      String projectId) {
+    return _supabase
+        .from('project_pole_barns')
+        .stream(primaryKey: ['id'])
+        .eq('project_id', projectId)
+        .order('created_at', ascending: true)
+        .map((data) =>
+            data.map((json) => ProjectPoleBarnModel.fromJson(json)).toList());
   }
 
   Future<void> addProjectPoleBarn(
@@ -172,5 +198,32 @@ class ProjectRepository {
         .select('id, name, precio_venta')
         .order('name');
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  // --- Financial Summaries ---
+
+  Future<double> getProjectInvoiceBalance(String projectId) async {
+    final response = await _supabase
+        .from('Invoices')
+        .select('Saldo')
+        .eq('IdProyecto', projectId)
+        .maybeSingle();
+
+    if (response == null) return 0.0;
+    return (response['Saldo'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  Future<double> getProjectTotalAccountsPayable(String projectId) async {
+    final response = await _supabase
+        .from('accounts_payable')
+        .select('total_amount')
+        .eq('project_id', projectId);
+
+    final List<dynamic> data = response as List<dynamic>;
+    double total = 0.0;
+    for (var item in data) {
+      total += (item['total_amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
   }
 }

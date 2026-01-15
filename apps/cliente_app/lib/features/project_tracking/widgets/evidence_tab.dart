@@ -271,7 +271,8 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
             value: _selectedTag,
             decoration: const InputDecoration(labelText: 'Etiqueta'),
             items: ['Antes', 'Durante', 'Después']
-                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                .map<DropdownMenuItem<String>>(
+                    (t) => DropdownMenuItem<String>(value: t, child: Text(t)))
                 .toList(),
             onChanged: (val) {
               if (val != null) setState(() => _selectedTag = val);

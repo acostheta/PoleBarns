@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/project_providers.dart';
 import '../../models/project_models.dart';
 
@@ -82,12 +83,9 @@ class _ProjectChatSectionState extends ConsumerState<ProjectChatSection> {
                   itemCount: reversed.length,
                   itemBuilder: (context, index) {
                     final msg = reversed[index];
-                    // TODO: Replace with real ID check
-                    // For demo purposes, let's alternate based on message content length is even/odd?
-                    // Or just default to "Others" for now, as Supabase Auth ID check needed.
-                    // Assuming repo sendMessage uses authenticated user.
-                    // Ideally we pass currentUserId to widget.
-                    final isMe = false; // Placeholder
+                    final currentUserId =
+                        Supabase.instance.client.auth.currentUser?.id;
+                    final isMe = msg.usuarioRef == currentUserId;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 24),
@@ -169,8 +167,11 @@ class _ChatBubble extends StatelessWidget {
     final avatarColor = isMe ? Colors.green[200] : Colors.amber[200];
     final avatarText = isMe ? Colors.green[800] : Colors.amber[800];
     final initials = isMe
-        ? 'ME'
-        : (message.nombreDesnormalizado?.substring(0, 2).toUpperCase() ?? 'MJ');
+        ? 'YO'
+        : (message.nombreDesnormalizado != null &&
+                message.nombreDesnormalizado!.isNotEmpty
+            ? message.nombreDesnormalizado![0].toUpperCase()
+            : '?');
 
     return Row(
       mainAxisAlignment: rowMainAlign,
@@ -180,9 +181,14 @@ class _ChatBubble extends StatelessWidget {
           CircleAvatar(
             backgroundColor: avatarColor,
             foregroundColor: avatarText,
-            child: Text(initials,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            backgroundImage: message.photoDesnormalizado != null
+                ? NetworkImage(message.photoDesnormalizado!)
+                : null,
+            child: message.photoDesnormalizado == null
+                ? Text(initials,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13))
+                : null,
           ),
           const SizedBox(width: 12),
         ],
@@ -234,9 +240,14 @@ class _ChatBubble extends StatelessWidget {
           CircleAvatar(
             backgroundColor: avatarColor,
             foregroundColor: avatarText,
-            child: Text(initials,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            backgroundImage: message.photoDesnormalizado != null
+                ? NetworkImage(message.photoDesnormalizado!)
+                : null,
+            child: message.photoDesnormalizado == null
+                ? Text(initials,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13))
+                : null,
           ),
         ],
       ],

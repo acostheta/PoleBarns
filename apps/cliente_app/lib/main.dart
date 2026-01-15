@@ -27,6 +27,7 @@ class MyApp extends ConsumerWidget {
       title: 'Cliente App',
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

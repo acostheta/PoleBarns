@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../config/app_styles.dart';
 import '../models/pole_barn_model.dart';
 import '../models/related_material_model.dart';
 import '../providers/pole_barn_provider.dart';
-import 'package:intl/intl.dart';
 
 class PoleBarnDetailScreen extends ConsumerStatefulWidget {
   final PoleBarn? initialPoleBarn;
@@ -56,8 +57,6 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   }
 
   void _updatePoleBarnLocal() {
-    // Solo actualizamos y guardamos si los campos básicos son válidos semánticamente
-    // (aunque el Form lo valida visualmente, aquí prevenimos el guardado de basura)
     final largo = double.tryParse(_largoController.text);
     final ancho = double.tryParse(_anchoController.text);
     final alto = double.tryParse(_altoController.text);
@@ -88,17 +87,13 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     final notifier =
         ref.read(poleBarnFormProvider(widget.initialPoleBarn).notifier);
 
-    // HU-01: Los campos Total deben venir del stream del Trigger
     final parentStream = state.poleBarn.id != null
         ? ref.watch(poleBarnStreamProvider(state.poleBarn.id!)).value
         : null;
 
-    // For immediate "automatic" feedback while editing materials, we use local calculations.
-    // The stream is still used for server-side fields like alertStatus.
     final displayTotalMaterials = state.localTotalMaterials;
     final displayTotalSConcreto = state.localTotalSConcreto;
 
-    // Alert status: If local total exceeds budget, show alert even if stream hasn't updated.
     String displayAlertStatus =
         parentStream?.alertStatus ?? state.poleBarn.alertStatus;
     if (displayTotalMaterials > state.poleBarn.budgetLimit &&
@@ -107,16 +102,22 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           "ALERTA LOCAL: Presupuesto excedido ($displayTotalMaterials > ${state.poleBarn.budgetLimit})";
     }
 
-    // Sincronizar controlador de precio venta si no ha sido editado manualmente
     if (!state.isPriceManuallyEdited && state.poleBarn.id == null) {
       _precioVentaController.text = state.poleBarn.precioVenta.toString();
     }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(state.poleBarn.id == null
-            ? 'Catálogo: Nueva Caballeriza'
-            : 'Catálogo: Editar Caballeriza'),
+        title: Text(
+            state.poleBarn.id == null
+                ? 'Catálogo: Nueva Caballeriza'
+                : 'Catálogo: Editar Caballeriza',
+            style: const TextStyle(
+                color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           if (state.isSaving || state.isLoading)
             const Padding(
@@ -127,7 +128,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppStyles.primaryOrange,
                   ),
                 ),
               ),
@@ -135,12 +136,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           else
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Icon(Icons.cloud_done, color: Colors.white70),
+              child: Icon(Icons.cloud_done, color: Colors.green),
             ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(32.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -149,26 +150,36 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
               if (state.error != null) _buildErrorBanner(state.error!),
               if (displayAlertStatus != 'OK')
                 _buildAlertBanner(displayAlertStatus),
-              _buildMainForm(displayTotalMaterials, displayTotalSConcreto),
+              const Text('Especificaciones Generales',
+                  style: AppStyles.dialogTitleStyle),
               const SizedBox(height: 32),
-              const Text(
-                'Materiales (HU-02 - Realtime)',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const Divider(),
-              _buildMaterialsList(state, notifier),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () => _showMaterialDialog(context, null),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Agregar Material al Catálogo'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+              _buildMainForm(displayTotalMaterials, displayTotalSConcreto),
+              const SizedBox(height: 48),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Materiales (Realtime)',
+                    style: AppStyles.dialogTitleStyle,
                   ),
-                ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showMaterialDialog(context, null),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Agregar Material'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo.shade50,
+                      foregroundColor: Colors.indigo.shade700,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 24),
+              _buildMaterialsList(state, notifier),
               const SizedBox(height: 80),
             ],
           ),
@@ -180,21 +191,23 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   Widget _buildAlertBanner(String msg) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.shade300),
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade100),
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning, color: Colors.red),
-          const SizedBox(width: 12),
+          Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(msg,
-                style: const TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: Colors.red.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
           ),
         ],
       ),
@@ -202,62 +215,84 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   }
 
   Widget _buildMainForm(double totalMaterials, double totalSConcreto) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return Column(
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                    child: _buildNumericField(
-                        _largoController, 'Largo (ft)', Icons.straighten)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildNumericField(
-                        _anchoController, 'Ancho (ft)', Icons.straighten)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                    child: _buildNumericField(
-                        _altoController, 'Alto (ft)', Icons.height)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildNumericField(
-                        _spacingController, 'Spacing', Icons.space_bar)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                    child: _buildNumericField(
-                        _sheetController, 'Sheet', Icons.layers)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildNumericField(_budgetController,
-                        'Presupuesto Máximo', Icons.money_off)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            _buildReadOnlyField('Total Materiales (Admin Only)',
-                _currencyFormat.format(totalMaterials), Colors.blueGrey),
-            const SizedBox(height: 8),
-            _buildReadOnlyField('Total Sin Concreto',
-                _currencyFormat.format(totalSConcreto), Colors.green),
-            const SizedBox(height: 16),
-            _buildNumericField(_precioVentaController,
-                'Precio de Venta Sugerido', Icons.attach_money,
-                isCurrency: true),
+            Expanded(
+                child: _buildNumericField(
+                    _largoController, 'Largo (ft)', Icons.straighten)),
+            const SizedBox(width: 24),
+            Expanded(
+                child: _buildNumericField(
+                    _anchoController, 'Ancho (ft)', Icons.straighten)),
+            const SizedBox(width: 24),
+            Expanded(
+                child: _buildNumericField(
+                    _altoController, 'Alto (ft)', Icons.height)),
           ],
         ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+                child: _buildNumericField(
+                    _spacingController, 'Spacing', Icons.space_bar)),
+            const SizedBox(width: 24),
+            Expanded(
+                child: _buildNumericField(
+                    _sheetController, 'Sheet', Icons.layers)),
+            const SizedBox(width: 24),
+            Expanded(
+                child: _buildNumericField(
+                    _budgetController,
+                    'Presupuesto Máximo',
+                    Icons.account_balance_wallet_outlined)),
+          ],
+        ),
+        const SizedBox(height: 32),
+        const Divider(),
+        const SizedBox(height: 32),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard('Total Materiales',
+                  _currencyFormat.format(totalMaterials), Colors.blueGrey),
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: _buildSummaryCard('Total Sin Concreto',
+                  _currencyFormat.format(totalSConcreto), Colors.green),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNumericField(_precioVentaController, 'Precio de Venta Sugerido',
+            Icons.sell_outlined,
+            isCurrency: true),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+          const SizedBox(height: 8),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.bold, fontSize: 22)),
+        ],
       ),
     );
   }
@@ -265,40 +300,26 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   Widget _buildNumericField(
       TextEditingController controller, String label, IconData icon,
       {bool isCurrency = false}) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      validator: (val) {
-        if (val == null || val.isEmpty) return 'Requerido';
-        final n = double.tryParse(val);
-        if (n == null) return 'Número inválido';
-        if (n < 0) return 'No puede ser negativo';
-        return null;
-      },
-      onChanged: (_) => _updatePoleBarnLocal(),
-    );
-  }
-
-  Widget _buildReadOnlyField(String label, String value, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.5)),
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          decoration: AppStyles.inputDecoration().copyWith(
+            prefixIcon: Icon(icon, size: 20, color: Colors.grey),
           ),
-          child: Text(value,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, color: color, fontSize: 16)),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (val) {
+            if (val == null || val.isEmpty) return 'Requerido';
+            final n = double.tryParse(val);
+            if (n == null) return 'Inválido';
+            if (n < 0) return 'No negativo';
+            return null;
+          },
+          onChanged: (_) => _updatePoleBarnLocal(),
         ),
       ],
     );
@@ -306,38 +327,54 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
 
   Widget _buildMaterialsList(
       PoleBarnFormState state, PoleBarnFormNotifier notifier) {
-    // We prioritize local state to ensure the UI is snappy and reflects changes
-    // immediately when adding/editing before saving.
-    return _buildMaterialsTable(state.relatedMaterials, notifier);
-  }
-
-  Widget _buildMaterialsTable(
-      List<RelatedMaterial> materials, PoleBarnFormNotifier notifier) {
+    final materials = state.relatedMaterials;
     if (materials.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 32.0),
-        child: Center(
-            child: Text('Sin materiales asociados',
-                style: TextStyle(color: Colors.grey))),
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            Icon(Icons.inventory_2_outlined,
+                size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            const Text('Sin materiales asociados',
+                style: TextStyle(color: Colors.grey)),
+          ],
+        ),
       );
     }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: materials.length,
-      itemBuilder: (context, index) {
-        final m = materials[index];
-        return ListTile(
-          title: Text(m.materialName ?? 'Cargando...',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(
-              'Qty: ${m.qty} | Medida: ${m.medida} | Price: ${_currencyFormat.format(m.pricePorUnidad)}'),
-          trailing: Text(_currencyFormat.format(m.calculatedTotal),
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.indigo)),
-          onTap: () => _showMaterialDialog(context, index),
+    return Column(
+      children: materials.asMap().entries.map((entry) {
+        final index = entry.key;
+        final m = entry.value;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            title: Text(m.materialName ?? 'Cargando...',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                  'Cantidad: ${m.qty} | Medida: ${m.medida} | Precio: ${_currencyFormat.format(m.pricePorUnidad)}',
+                  style: const TextStyle(fontSize: 12)),
+            ),
+            trailing: Text(_currencyFormat.format(m.calculatedTotal),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                    fontSize: 16)),
+            onTap: () => _showMaterialDialog(context, index),
+          ),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -358,31 +395,34 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     );
 
     if (result != null) {
-      if (index == null)
+      if (index == null) {
         notifier.addMaterial(result);
-      else
+      } else {
         notifier.updateMaterial(index, result);
+      }
     }
   }
 
   Widget _buildErrorBanner(String msg) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.shade300),
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade100),
       ),
       child: Row(
         children: [
           const Icon(Icons.error_outline, color: Colors.orange),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(msg,
                 style: const TextStyle(
-                    color: Colors.orange, fontWeight: FontWeight.bold)),
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
           ),
         ],
       ),
@@ -432,114 +472,173 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
     double waste = double.tryParse(_wasteController.text) ?? 0;
     double rowTotal = (qty * price) * (1 + (waste / 100));
 
-    return AlertDialog(
-      title: const Text('Configurar Material (HU-02)'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              DropdownButtonFormField<String>(
-                value: _selectedId,
-                isExpanded: true,
-                validator: (v) => v == null ? 'Seleccione material' : null,
-                decoration:
-                    const InputDecoration(labelText: 'Material de Catálogo'),
-                items: widget.rawMaterials
-                    .map((m) => DropdownMenuItem<String>(
-                        value: m['id'] as String, child: Text(m['name'])))
-                    .toList(),
-                onChanged: (val) {
-                  final m =
-                      widget.rawMaterials.firstWhere((e) => e['id'] == val);
-                  setState(() {
-                    _selectedId = val;
-                    _materialName = m['name'];
-                    _priceController.text = m['price'].toString();
-                    _medidaController.text =
-                        m['measures']?['name']?.toString() ?? '';
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                  controller: _qtyController,
-                  decoration: const InputDecoration(labelText: 'Cantidad'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || double.tryParse(v) == null)
-                      ? 'Numérico requerido'
-                      : null,
-                  onChanged: (_) => setState(() {})),
-              const SizedBox(height: 16),
-              TextFormField(
-                  controller: _medidaController,
-                  decoration: const InputDecoration(labelText: 'Medida (Auto)'),
-                  readOnly: true),
-              const SizedBox(height: 16),
-              TextFormField(
-                  controller: _priceController,
-                  decoration:
-                      const InputDecoration(labelText: 'Precio Unitario'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || double.tryParse(v) == null)
-                      ? 'Numérico requerido'
-                      : null,
-                  onChanged: (_) => setState(() {})),
-              const SizedBox(height: 16),
-              TextFormField(
-                  controller: _wasteController,
-                  decoration:
-                      const InputDecoration(labelText: 'Desperdicio (%)'),
-                  validator: (v) => (v == null || double.tryParse(v) == null)
-                      ? 'Numérico requerido'
-                      : null,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true)),
-              const SizedBox(height: 24),
-              _buildRow('Total Fila (con Desperdicio):',
-                  NumberFormat.currency(symbol: r'$').format(rowTotal)),
-            ],
+    return Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Configurar Material',
+                        style: AppStyles.dialogTitleStyle),
+                    IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                const Text('Material de Catálogo', style: AppStyles.labelStyle),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedId,
+                  isExpanded: true,
+                  validator: (v) => v == null ? 'Seleccione material' : null,
+                  decoration: AppStyles.inputDecoration(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: widget.rawMaterials
+                      .map<DropdownMenuItem<String>>((m) =>
+                          DropdownMenuItem<String>(
+                              value: m['id'] as String,
+                              child: Text(m['name'],
+                                  style: const TextStyle(fontSize: 14))))
+                      .toList(),
+                  onChanged: (val) {
+                    final m =
+                        widget.rawMaterials.firstWhere((e) => e['id'] == val);
+                    setState(() {
+                      _selectedId = val;
+                      _materialName = m['name'];
+                      _priceController.text = m['price'].toString();
+                      _medidaController.text =
+                          m['measures']?['name']?.toString() ?? '';
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                        child: _buildTextField('Cantidad', _qtyController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true))),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildTextField(
+                            'Medida (Auto)', _medidaController,
+                            readOnly: true)),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                        child: _buildTextField(
+                            'Precio Unitario', _priceController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            prefixText: '\$ ')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildTextField(
+                            'Desperdicio (%)', _wasteController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true))),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total Fila:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text(NumberFormat.currency(symbol: r'$').format(rowTotal),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.indigo)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        Navigator.pop(
+                            context,
+                            RelatedMaterial(
+                              id: widget.initialMaterial.id,
+                              materialId: _selectedId,
+                              materialName: _materialName,
+                              medida: _medidaController.text,
+                              qty: double.tryParse(_qtyController.text) ?? 0,
+                              wastePercent:
+                                  double.tryParse(_wasteController.text) ?? 0,
+                              pricePorUnidad:
+                                  double.tryParse(_priceController.text) ?? 0,
+                            ));
+                      }
+                    },
+                    style: AppStyles.primaryButtonStyle,
+                    child: const Text('Agregar Material'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar')),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.pop(
-                  context,
-                  RelatedMaterial(
-                    id: widget.initialMaterial.id,
-                    materialId: _selectedId,
-                    materialName: _materialName,
-                    medida: _medidaController.text,
-                    qty: double.tryParse(_qtyController.text) ?? 0,
-                    wastePercent: double.tryParse(_wasteController.text) ?? 0,
-                    pricePorUnidad: double.tryParse(_priceController.text) ?? 0,
-                  ));
-            }
-          },
-          child: const Text('Agregar'),
-        ),
-      ],
     );
   }
 
-  Widget _buildRow(String label, String val) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool required = true,
+      TextInputType? keyboardType,
+      String? prefixText,
+      bool readOnly = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(val,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.indigo)),
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          readOnly: readOnly,
+          style: TextStyle(
+              fontSize: 14, color: readOnly ? Colors.grey : Colors.black87),
+          keyboardType: keyboardType,
+          validator: required
+              ? (v) => (v == null ||
+                      (keyboardType?.decimal == true &&
+                          double.tryParse(v) == null))
+                  ? 'Inválido'
+                  : null
+              : null,
+          decoration: AppStyles.inputDecoration().copyWith(
+            prefixText: prefixText,
+            fillColor:
+                readOnly ? const Color(0xFFF3F4F6) : const Color(0xFFF9FAFB),
+          ),
+          onChanged: (_) => setState(() {}),
+        )
       ],
     );
   }

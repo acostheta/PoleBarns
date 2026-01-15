@@ -164,7 +164,10 @@ class _ChatMessageBubble extends StatelessWidget {
                 ? NetworkImage(message.photoDesnormalizado!)
                 : null,
             child: message.photoDesnormalizado == null
-                ? Text(message.nombreDesnormalizado?[0].toUpperCase() ?? '?')
+                ? Text(message.nombreDesnormalizado != null &&
+                        message.nombreDesnormalizado!.isNotEmpty
+                    ? message.nombreDesnormalizado![0].toUpperCase()
+                    : '?')
                 : null,
           ),
           const SizedBox(width: 8),

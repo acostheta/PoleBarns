@@ -1,0 +1,14 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final dashboardIndexProvider = StateProvider<int>((ref) => 0);
+
+class DashboardIndices {
+  static const int home = 0;
+  static const int profile = 1;
+  static const int settings = 2;
+  static const int accountsPayable = 3;
+  static const int projectTracking = 4;
+  static const int poleBarns = 5;
+  static const int invoices = 6;
+  static const int payroll = 7;
+}

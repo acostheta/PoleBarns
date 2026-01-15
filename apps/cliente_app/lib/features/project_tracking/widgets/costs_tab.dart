@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/project_providers.dart';
+import '../../accounts_payable/widgets/add_account_dialog.dart';
+import '../../invoices/providers/invoice_providers.dart';
+import '../../invoices/widgets/add_payment_dialog.dart';
 
 class CostsTab extends ConsumerWidget {
   final String projectId;
@@ -10,170 +13,251 @@ class CostsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final costsAsync = ref.watch(projectCostsProvider(projectId));
+    final apListAsync =
+        ref.watch(projectAccountsPayableListProvider(projectId));
+    final balanceAsync = ref.watch(projectInvoiceBalanceProvider(projectId));
+    final apTotalAsync =
+        ref.watch(projectAccountsPayableTotalProvider(projectId));
+    final incomesAsync = ref.watch(projectIncomesProvider(projectId));
+    final clientBalanceAsync =
+        ref.watch(projectClientBalanceProvider(projectId));
+    final invoiceAsync = ref.watch(invoiceByProjectProvider(projectId));
+
     final currency = NumberFormat.simpleCurrency();
 
     return Scaffold(
-      body: costsAsync.when(
-        data: (costs) {
-          if (costs.isEmpty) {
-            return const Center(child: Text('No hay costos registrados.'));
-          }
-          return ListView.builder(
-            itemCount: costs.length,
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final cost = costs[index];
-              return Card(
-                key: ValueKey(cost.id),
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.orangeAccent,
-                    child: Icon(Icons.attach_money, color: Colors.white),
-                  ),
-                  title: Text(cost.concepto),
-                  subtitle: cost.notas != null && cost.notas!.isNotEmpty
-                      ? Text(cost.notas!)
-                      : null,
-                  trailing: Text(
-                    currency.format(cost.monto),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
+      body: Column(
+        children: [
+          // Financial Summary Header
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Panel Financiero',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: invoiceAsync.when(
+                            data: (invoice) => invoice == null
+                                ? null
+                                : () => _showAddPaymentDialog(
+                                    context, invoice.id, ref),
+                            loading: () => null,
+                            error: (_, __) => null,
+                          ),
+                          icon:
+                              const Icon(Icons.account_balance_wallet_outlined),
+                          tooltip: 'Añadir Ingreso',
+                          color: Colors.blue[700],
+                        ),
+                        IconButton(
+                          onPressed: () => _showAddAccountDialog(context),
+                          icon: const Icon(Icons.add_circle_outline),
+                          tooltip: 'Añadir Costo',
+                          color: Colors.orange[800],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16), // Spacing between header and stats
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildStatItem(
+                        'Balance',
+                        balanceAsync.when(
+                          data: (v) => currency.format(v),
+                          loading: () => '...',
+                          error: (_, __) => 'Error',
+                        ),
+                        Colors.green,
+                        tooltip:
+                            'Venta Total - Costo total (cuánto se ha gastado vs. lo estimado)',
+                      ),
+                      _buildDivider(),
+                      _buildStatItem(
+                        'Ingresos',
+                        incomesAsync.when(
+                          data: (v) => currency.format(v),
+                          loading: () => '...',
+                          error: (_, __) => 'Error',
+                        ),
+                        Colors.blue,
+                      ),
+                      _buildDivider(),
+                      _buildStatItem(
+                        'Saldo',
+                        clientBalanceAsync.when(
+                          data: (v) => currency.format(v),
+                          loading: () => '...',
+                          error: (_, __) => 'Error',
+                        ),
+                        Colors.yellow.shade900,
+                        tooltip:
+                            'Venta Total - Ingresos (cuánto le falta al cliente por pagar)',
+                      ),
+                      _buildDivider(),
+                      _buildStatItem(
+                        'Costo Total',
+                        apTotalAsync.when(
+                          data: (v) => currency.format(v),
+                          loading: () => '...',
+                          error: (_, __) => 'Error',
+                        ),
+                        Colors.orange,
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Error: $e')),
+              ],
+            ),
+          ),
+
+          // List
+          Expanded(
+            child: apListAsync.when(
+              data: (accounts) {
+                if (accounts.isEmpty) {
+                  return const Center(
+                      child: Text('No hay costos registrados.'));
+                }
+                return ListView.builder(
+                  itemCount: accounts.length,
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (context, index) {
+                    final account = accounts[index];
+                    return Card(
+                      key: ValueKey(account.id),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.orange.shade100,
+                          child: Icon(Icons.receipt_outlined,
+                              color: Colors.orange.shade800),
+                        ),
+                        title: Text(account.provider?.name ?? 'S/N'),
+                        subtitle: Text(
+                            'Ref: ${account.invoiceInternRef ?? 'Sin ref.'} | ${DateFormat('MM/dd/yyyy').format(account.invoiceDate)}'),
+                        trailing: Text(
+                          currency.format(account.totalAmount),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Center(child: Text('Error: $e')),
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCostDialog(context, ref),
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddAccountDialog(context),
+        label: const Text('Añadir Costo'),
+        icon: const Icon(Icons.add),
+        backgroundColor: Colors.orange[800],
       ),
     );
   }
 
-  void _showAddCostDialog(BuildContext context, WidgetRef ref) {
+  Widget _buildDivider() {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Colors.grey[200],
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color,
+      {String? tooltip}) {
+    Widget content = Container(
+      constraints: const BoxConstraints(minWidth: 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (tooltip != null) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.info_outline, size: 12, color: Colors.grey[400]),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (tooltip != null) {
+      return Tooltip(
+        message: tooltip,
+        preferBelow: false,
+        child: content,
+      );
+    }
+
+    return content;
+  }
+
+  void _showAddPaymentDialog(
+      BuildContext context, int invoiceId, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => _AddCostDialog(projectId: projectId),
+      builder: (context) => AddPaymentDialog(
+        invoiceId: invoiceId,
+        onAdded: () {
+          ref.invalidate(invoicesStreamProvider);
+        },
+      ),
     );
   }
-}
 
-class _AddCostDialog extends ConsumerStatefulWidget {
-  final String projectId;
-
-  const _AddCostDialog({required this.projectId});
-
-  @override
-  ConsumerState<_AddCostDialog> createState() => _AddCostDialogState();
-}
-
-class _AddCostDialogState extends ConsumerState<_AddCostDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _conceptController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _notesController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _conceptController.dispose();
-    _amountController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final amount = double.tryParse(_amountController.text);
-    if (amount == null || amount <= 0) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final repo = ref.read(projectRepositoryProvider);
-      await repo.addCost(
-        widget.projectId,
-        _conceptController.text,
-        amount,
-        _notesController.text,
-      );
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Costo agregado exitosamente')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Agregar Costo'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _conceptController,
-              decoration: const InputDecoration(labelText: 'Concepto'),
-              validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
-              textInputAction: TextInputAction.next,
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Monto',
-                prefixText: '\$ ',
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Requerido';
-                if (double.tryParse(v) == null) return 'Inválido';
-                return null;
-              },
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(labelText: 'Notas (Opcional)'),
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _submit,
-          child: _isLoading
-              ? const SizedBox(
-                  height: 16, width: 16, child: CircularProgressIndicator())
-              : const Text('Guardar'),
-        ),
-      ],
+  void _showAddAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AddAccountDialog(initialProjectId: projectId),
     );
   }
 }

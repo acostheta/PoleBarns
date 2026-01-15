@@ -11,22 +11,33 @@ class AccountsPayableRepository {
   Future<List<AccountPayableModel>> getAccounts() async {
     final response = await _supabase
         .from('vw_accounts_payable_summary')
-        .select('*, providers!inner(*)') // Inner join on providers
+        .select(
+            '*, providers!inner(*), projects(id, address)') // Joining with providers and projects
         .order('invoice_date', ascending: false);
 
-    return (response as List)
-        .map((e) => AccountPayableModel.fromJson(e))
-        .toList();
+    // Note: projects(id, name) would be better but your project model might use different field for display.
+    // In projects table, we have 'address' or 'responsable'. Let's check which field to use for "Proyecto".
+    // Usually 'address' or a custom name. Let's look at the projects table.
+    return (response as List).map((e) {
+      final json = Map<String, dynamic>.from(e);
+      // Add a display name if projects join succeeded
+      if (json['projects'] != null) {
+        json['project_name'] = json['projects']['address'] ?? 'Proyecto';
+      }
+      return AccountPayableModel.fromJson(json);
+    }).toList();
   }
 
   Future<void> createAccount({
     required String providerId,
     required DateTime invoiceDate,
     required double totalAmount,
+    String? projectId,
     String? invoiceInternRef,
   }) async {
     await _supabase.from('accounts_payable').insert({
       'provider_id': providerId,
+      'project_id': projectId,
       'invoice_date': invoiceDate.toIso8601String(),
       'total_amount': totalAmount,
       'invoice_intern_ref': invoiceInternRef,

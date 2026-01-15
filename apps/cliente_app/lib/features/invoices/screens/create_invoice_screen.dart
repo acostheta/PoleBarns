@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../config/app_styles.dart';
 import '../../project_tracking/providers/project_providers.dart';
 import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
+import '../utils/invoice_pdf_generator.dart';
+import '../../clients/repositories/client_repository.dart';
 
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
-  const CreateInvoiceScreen({super.key});
+  final String? projectId;
+  const CreateInvoiceScreen({super.key, this.projectId});
 
   @override
   ConsumerState<CreateInvoiceScreen> createState() =>
@@ -23,6 +27,16 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   DateTime _selectedDate = DateTime.now();
   List<Map<String, dynamic>> _projectPoleBarns = [];
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.projectId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onProjectSelected(widget.projectId);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -66,8 +80,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Future<void> _saveInvoice() async {
-    if (!_formKey.currentState!.validate() || _selectedProjectId == null)
+    if (!_formKey.currentState!.validate() || _selectedProjectId == null) {
       return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -98,9 +113,17 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         };
       }).toList();
 
-      await ref
+      final newId = await ref
           .read(invoiceServiceProvider)
           .createInvoice(newInvoice, productsToInsert);
+
+      // Attempt to send by email automatically
+      _sendInvoiceEmail(newId);
+
+      ref.invalidate(invoicesListProvider);
+      if (_selectedProjectId != null) {
+        ref.invalidate(invoiceByProjectProvider(_selectedProjectId!));
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -125,122 +148,264 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     final clientsAsync = ref.watch(clientListProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Crear Factura'),
+        title: const Text('Crear Factura',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Project Selection
-                    projectsAsync.when(
-                      data: (projects) => DropdownButtonFormField<String>(
-                        value: _selectedProjectId,
-                        decoration:
-                            const InputDecoration(labelText: 'Proyecto'),
-                        items: projects
-                            .map((p) => DropdownMenuItem(
-                                  value: p.id,
-                                  child: Text(p.address ?? p.id),
-                                ))
-                            .toList(),
-                        onChanged: _onProjectSelected,
-                        validator: (v) =>
-                            v == null ? 'Seleccione un proyecto' : null,
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (e, __) => Text('Error cargando proyectos: $e'),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Client (Pre-filled or selectable)
-                    clientsAsync.when(
-                      data: (clients) => DropdownButtonFormField<String>(
-                        value: _selectedClientId,
-                        decoration: const InputDecoration(labelText: 'Cliente'),
-                        items: clients
-                            .map((c) => DropdownMenuItem(
-                                  value: c.id,
-                                  child: Text(c.fullName),
-                                ))
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedClientId = v),
-                        validator: (v) =>
-                            v == null ? 'Seleccione un cliente' : null,
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (e, __) => Text('Error cargando clientes: $e'),
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                          labelText: 'Dirección de Facturación'),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Requerido' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    ListTile(
-                      title: const Text('Fecha'),
-                      subtitle:
-                          Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null)
-                          setState(() => _selectedDate = picked);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _commentController,
-                      decoration: const InputDecoration(
-                          labelText: 'Comentario (Opcional)'),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 24),
-
-                    if (_projectPoleBarns.isNotEmpty) ...[
-                      const Text(
-                          'Estructuras del Proyecto (Se incluirán en la factura):',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      ..._projectPoleBarns.map((pb) => ListTile(
-                            title: Text(pb['PoleBarns']['name'] ?? 'Pole Barn'),
-                            trailing: Text(NumberFormat.simpleCurrency()
-                                .format(pb['sale_price'])),
-                            dense: true,
-                          )),
-                      const SizedBox(height: 24),
-                    ],
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _saveInvoice,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+          : Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(32),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Información General',
+                            style: AppStyles.dialogTitleStyle),
+                        const SizedBox(height: 32),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildProjectDropdown(projectsAsync),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildClientDropdown(clientsAsync),
+                            ),
+                          ],
                         ),
-                        child: const Text('Guardar Factura'),
-                      ),
+                        const SizedBox(height: 24),
+                        _buildTextField(
+                            'Dirección de Facturación', _addressController,
+                            required: true),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDateField(
+                                  'Fecha de Factura',
+                                  _selectedDate,
+                                  (d) => setState(() => _selectedDate = d)),
+                            ),
+                            const SizedBox(width: 24),
+                            const Spacer(), // Empty space for balance
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        _buildTextField(
+                            'Comentario (Opcional)', _commentController,
+                            maxLines: 3),
+                        const SizedBox(height: 32),
+                        if (_projectPoleBarns.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(),
+                          ),
+                          const Text(
+                            'Estructuras del Proyecto (Se incluirán en la factura):',
+                            style: AppStyles.labelStyle,
+                          ),
+                          const SizedBox(height: 16),
+                          ..._projectPoleBarns.map((pb) => Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(pb['PoleBarns']['name'] ?? 'Pole Barn',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500)),
+                                    Text(
+                                        NumberFormat.simpleCurrency()
+                                            .format(pb['sale_price']),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppStyles.primaryOrange)),
+                                  ],
+                                ),
+                              )),
+                          const SizedBox(height: 32),
+                        ],
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _saveInvoice,
+                            style: AppStyles.primaryButtonStyle,
+                            child: const Text('Guardar Factura'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
     );
+  }
+
+  Widget _buildProjectDropdown(AsyncValue projectsAsync) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Proyecto', style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        projectsAsync.when(
+          data: (projects) => DropdownButtonFormField<String>(
+            value: _selectedProjectId,
+            decoration: AppStyles.inputDecoration(),
+            items: projects
+                .map<DropdownMenuItem<String>>((p) => DropdownMenuItem<String>(
+                      value: p.id,
+                      child: Text(p.address ?? p.id,
+                          style: const TextStyle(fontSize: 14)),
+                    ))
+                .toList(),
+            onChanged: _onProjectSelected,
+            validator: (v) => v == null ? 'Seleccione un proyecto' : null,
+            icon: const Icon(Icons.keyboard_arrow_down),
+          ),
+          loading: () => const LinearProgressIndicator(),
+          error: (e, __) =>
+              Text('Error: $e', style: const TextStyle(color: Colors.red)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClientDropdown(AsyncValue clientsAsync) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Cliente', style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        clientsAsync.when(
+          data: (clients) => DropdownButtonFormField<String>(
+            value: _selectedClientId,
+            decoration: AppStyles.inputDecoration(),
+            items: clients
+                .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(
+                      value: c.id,
+                      child: Text(c.fullName,
+                          style: const TextStyle(fontSize: 14)),
+                    ))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedClientId = v),
+            validator: (v) => v == null ? 'Seleccione un cliente' : null,
+            icon: const Icon(Icons.keyboard_arrow_down),
+          ),
+          loading: () => const LinearProgressIndicator(),
+          error: (e, __) =>
+              Text('Error: $e', style: const TextStyle(color: Colors.red)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool required = false, int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          validator: required
+              ? (v) => v == null || v.isEmpty ? 'Requerido' : null
+              : null,
+          decoration: AppStyles.inputDecoration(),
+        )
+      ],
+    );
+  }
+
+  Widget _buildDateField(
+      String label, DateTime date, Function(DateTime) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+                context: context,
+                initialDate: date,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2100));
+            if (picked != null) onChanged(picked);
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat('MM/dd/yyyy').format(date),
+                    style:
+                        const TextStyle(fontSize: 14, color: Colors.black87)),
+                const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+              ],
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Future<void> _sendInvoiceEmail(int invoiceId) async {
+    try {
+      final service = ref.read(invoiceServiceProvider);
+      final clientRepo = ref.read(clientRepositoryProvider);
+
+      final fullInvoice = await service.getInvoice(invoiceId);
+      final products = await service.getRelatedProducts(invoiceId);
+      final client = await clientRepo.getClient(_selectedClientId!);
+
+      if (client?.email == null || client!.email!.isEmpty) {
+        debugPrint(
+            'No se pudo enviar correo: El cliente no tiene email configurado.');
+        return;
+      }
+
+      final pdfBytes = await InvoicePdfGenerator.getBytes(
+        invoice: fullInvoice,
+        products: products,
+        payments: [],
+      );
+
+      await service.sendInvoiceByEmail(
+        invoiceId: invoiceId,
+        pdfBytes: pdfBytes,
+        clientEmail: client.email!,
+        clientName: client.nombre,
+      );
+    } catch (e) {
+      debugPrint('Error al enviar factura por correo: $e');
+    }
   }
 }

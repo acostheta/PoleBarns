@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../repositories/project_repository.dart';
 import '../models/project_models.dart';
+import '../../invoices/providers/invoice_providers.dart';
+import '../../accounts_payable/providers/accounts_payable_provider.dart';
+import '../../accounts_payable/models/account_payable_model.dart';
 
 // Repository Provider
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
@@ -21,11 +24,22 @@ final clientListProvider = FutureProvider<List<ClientSimpleModel>>((ref) async {
   final supabase = Supabase.instance.client;
   final response = await supabase
       .from('clients')
-      .select('id, first_name, last_name')
+      .select('id, first_name, last_name, photo_url')
       .order('first_name', ascending: true);
 
   final List<dynamic> data = response as List<dynamic>;
   return data.map((e) => ClientSimpleModel.fromJson(e)).toList();
+});
+
+// 1.7 Profiles List
+final profilesProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+      .from('profiles')
+      .select('id, full_name, picture')
+      .order('full_name', ascending: true);
+  return List<Map<String, dynamic>>.from(response as List);
 });
 
 // 2. Project Costs (Family)
@@ -76,11 +90,71 @@ final projectPoleBarnsProvider =
   return repo.getProjectPoleBarns(projectId);
 });
 
+final projectPoleBarnsStreamProvider =
+    StreamProvider.family<List<ProjectPoleBarnModel>, String>((ref, projectId) {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.getProjectPoleBarnsStream(projectId);
+});
+
 // 7. Pole Barns Catalog
 final poleBarnsCatalogProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getPoleBarnsCatalog();
+});
+
+// --- Master Detail State ---
+
+final projectInvoiceBalanceProvider =
+    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+  final project = ref.watch(projectDetailProvider(projectId));
+  final apTotalAsync =
+      ref.watch(projectAccountsPayableTotalProvider(projectId));
+
+  return apTotalAsync.whenData((apTotal) {
+    if (project == null) return 0.0;
+    return project.ventaTotal - apTotal;
+  });
+});
+
+final projectIncomesProvider =
+    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+  final invoicesAsync = ref.watch(invoicesStreamProvider);
+  return invoicesAsync.whenData((invoices) {
+    try {
+      final invoice = invoices.firstWhere((inv) => inv.idProyecto == projectId);
+      return invoice.totalPagado;
+    } catch (_) {
+      return 0.0;
+    }
+  });
+});
+
+final projectClientBalanceProvider =
+    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+  final project = ref.watch(projectDetailProvider(projectId));
+  final incomesAsync = ref.watch(projectIncomesProvider(projectId));
+
+  return incomesAsync.whenData((incomes) {
+    if (project == null) return 0.0;
+    return project.ventaTotal - incomes;
+  });
+});
+
+final projectAccountsPayableTotalProvider =
+    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+  final accountsAsync = ref.watch(accountsPayableListProvider);
+  return accountsAsync.whenData((accounts) => accounts
+      .where((a) => a.projectId == projectId)
+      .fold(0.0, (sum, a) => sum + a.totalAmount));
+});
+
+final projectAccountsPayableListProvider =
+    Provider.family<AsyncValue<List<AccountPayableModel>>, String>(
+        (ref, projectId) {
+  final accountsAsync = ref.watch(accountsPayableListProvider);
+  return accountsAsync.whenData(
+      (accounts) => accounts.where((a) => a.projectId == projectId).toList());
 });
 
 // --- Master Detail State ---

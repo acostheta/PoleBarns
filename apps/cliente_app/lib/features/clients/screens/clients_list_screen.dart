@@ -76,49 +76,79 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.all(8),
                   itemCount: clients.length,
                   itemBuilder: (context, index) {
                     final client = clients[index];
-                    return ListTile(
-                      title: Text(client.nombre),
-                      subtitle: Text(client.email ?? client.telefono ?? '-'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () =>
-                                context.go('/clients/${client.id}'),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Eliminar Cliente'),
-                                  content: Text(
-                                      '¿Seguro que deseas eliminar a ${client.nombre}?'),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Cancelar')),
-                                    TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Eliminar')),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                await repository.deleteClient(client.id);
-                              }
-                            },
-                          ),
-                        ],
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
                       ),
-                      onTap: () => context.go('/clients/${client.id}'),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          backgroundImage: client.photoUrl != null
+                              ? NetworkImage(client.photoUrl!)
+                              : null,
+                          child: client.photoUrl == null
+                              ? Text(
+                                  client.firstName.isNotEmpty
+                                      ? client.firstName[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                      color: Color(0xFF6B7280),
+                                      fontWeight: FontWeight.bold),
+                                )
+                              : null,
+                        ),
+                        title: Text(client.nombre,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        subtitle: Text(client.email ?? client.telefono ?? '-'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () =>
+                                  context.go('/clients/${client.id}'),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Eliminar Cliente'),
+                                    content: Text(
+                                        '¿Seguro que deseas eliminar a ${client.nombre}?'),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Cancelar')),
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Eliminar')),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await repository.deleteClient(client.id);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        onTap: () => context.go('/clients/${client.id}'),
+                      ),
                     );
                   },
                 );

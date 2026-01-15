@@ -178,6 +178,28 @@ class ProjectMediaModel {
     );
   }
 
+  ProjectMediaModel copyWith({
+    String? id,
+    String? projectRef,
+    String? urlMedia,
+    String? tipo,
+    String? etiqueta,
+    String? usuarioCargaRef,
+    DateTime? createdAt,
+    int? orderIndex,
+  }) {
+    return ProjectMediaModel(
+      id: id ?? this.id,
+      projectRef: projectRef ?? this.projectRef,
+      urlMedia: urlMedia ?? this.urlMedia,
+      tipo: tipo ?? this.tipo,
+      etiqueta: etiqueta ?? this.etiqueta,
+      usuarioCargaRef: usuarioCargaRef ?? this.usuarioCargaRef,
+      createdAt: createdAt ?? this.createdAt,
+      orderIndex: orderIndex ?? this.orderIndex,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -240,9 +262,14 @@ class ClientSimpleModel {
   final String id;
   final String firstName;
   final String lastName;
+  final String? photoUrl;
 
-  ClientSimpleModel(
-      {required this.id, required this.firstName, required this.lastName});
+  ClientSimpleModel({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    this.photoUrl,
+  });
 
   String get fullName => '$firstName $lastName';
 
@@ -251,6 +278,7 @@ class ClientSimpleModel {
       id: json['id'] as String,
       firstName: json['first_name'] as String? ?? '',
       lastName: json['last_name'] as String? ?? '',
+      photoUrl: json['photo_url'] as String?,
     );
   }
 }

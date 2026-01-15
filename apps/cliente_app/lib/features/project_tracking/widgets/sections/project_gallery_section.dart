@@ -148,6 +148,48 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
                                 ),
                                 Positioned(
                                   top: 8,
+                                  left: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: item.etiqueta,
+                                      dropdownColor: Colors.black87,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 12),
+                                      underline: const SizedBox(),
+                                      items: [
+                                        'Antes',
+                                        'Durante',
+                                        'Después',
+                                        'Gallery'
+                                      ]
+                                          .map((e) => DropdownMenuItem(
+                                              value: e, child: Text(e)))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            final idx =
+                                                _localMediaList.indexWhere(
+                                                    (m) => m.id == item.id);
+                                            if (idx != -1) {
+                                              _localMediaList[idx] =
+                                                  _localMediaList[idx]
+                                                      .copyWith(etiqueta: val);
+                                            }
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 8,
                                   right: 8,
                                   child: InkWell(
                                     onTap: () => _deletePhoto(item.id),
@@ -349,17 +391,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
           .from('project-media')
           .getPublicUrl(fileName);
 
-      final newMedia = ProjectMediaModel(
-        id: '',
-        projectRef: widget.projectId,
-        urlMedia: publicUrl,
-        tipo: 'foto',
-        etiqueta: 'Gallery',
-        usuarioCargaRef: Supabase.instance.client.auth.currentUser?.id ?? '',
-        createdAt: DateTime.now(),
-      );
-
-      await ref.read(projectRepositoryProvider).addMedia(
+      final uploadedMedia = await ref.read(projectRepositoryProvider).addMedia(
             projectId: widget.projectId,
             url: publicUrl,
             tipo: 'foto',
@@ -368,7 +400,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
 
       if (_isEditing) {
         setState(() {
-          _localMediaList.add(newMedia);
+          _localMediaList.add(uploadedMedia);
         });
       }
 
@@ -388,17 +420,19 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
     setState(() => _isSaving = true);
     try {
       // 1. Process Deletions
-      for (final id in _pendingDeletions) {
-        // Skip temporary IDs (empty strings) if any
-        if (id.isNotEmpty) {
-          await ref.read(projectRepositoryProvider).deleteMedia(id);
-        }
+      if (_pendingDeletions.isNotEmpty) {
+        await ref
+            .read(projectRepositoryProvider)
+            .deleteMediaBatch(_pendingDeletions);
       }
 
       // 2. Process Order
       await ref
           .read(projectRepositoryProvider)
           .updateMediaOrder(_localMediaList);
+
+      // 3. Refresh Provider to ensure sync
+      ref.invalidate(projectMediaProvider(widget.projectId));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

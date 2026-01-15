@@ -171,6 +171,7 @@ class PaymentDestajo {
   final String? metodoPago;
   final String? category;
   final String? nota;
+  final DateTime? createdAt;
 
   PaymentDestajo({
     required this.id,
@@ -181,6 +182,7 @@ class PaymentDestajo {
     this.metodoPago,
     this.category,
     this.nota,
+    this.createdAt,
   });
 
   factory PaymentDestajo.fromJson(Map<String, dynamic> json) {
@@ -193,6 +195,9 @@ class PaymentDestajo {
       metodoPago: json['metodo_pago'],
       category: json['category'],
       nota: json['nota'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
     );
   }
 

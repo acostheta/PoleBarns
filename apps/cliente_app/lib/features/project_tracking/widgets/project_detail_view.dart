@@ -6,10 +6,11 @@ import 'sections/project_financial_section.dart';
 import 'sections/project_gallery_section.dart';
 import 'sections/project_chat_section.dart';
 import 'sections/project_pole_barns_section.dart';
-import 'project_create_dialog.dart';
+
 import '../models/project_models.dart';
 import '../../invoices/providers/invoice_providers.dart';
-import '../../invoices/screens/invoice_detail_screen.dart';
+import '../../invoices/screens/create_invoice_screen.dart';
+import '../../../providers/navigation_providers.dart';
 
 class ProjectDetailView extends ConsumerWidget {
   final String projectId;
@@ -27,7 +28,7 @@ class ProjectDetailView extends ConsumerWidget {
     }
 
     // Colors
-    const primaryColor = Color(0xFFD97706); // Amber-600
+
     const accentGreen = Color(0xFF166534); // Green-800
 
     return Scaffold(
@@ -56,53 +57,64 @@ class ProjectDetailView extends ConsumerWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
-                          final invoice = await ref
-                              .read(invoiceByProjectProvider(projectId).future);
+                    Consumer(builder: (context, ref, child) {
+                      final invoiceAsync =
+                          ref.watch(invoiceByProjectProvider(projectId));
 
-                          if (invoice != null) {
-                            if (context.mounted) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => InvoiceDetailScreen(
-                                      invoiceId: invoice.id),
-                                ),
-                              );
-                            }
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'No hay una factura vinculada a este proyecto.'),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                            }
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('Error al buscar factura: $e')),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.receipt_long, size: 20),
-                      label: const Text('Ver Factura'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
+                      return invoiceAsync.when(
+                        data: (invoice) {
+                          final hasInvoice = invoice != null;
+                          return ElevatedButton.icon(
+                            onPressed: () {
+                              if (hasInvoice) {
+                                // Switch to Invoices module and select this invoice
+                                ref
+                                    .read(dashboardIndexProvider.notifier)
+                                    .state = DashboardIndices.invoices;
+                                ref
+                                    .read(selectedInvoiceIdProvider.notifier)
+                                    .state = invoice.id;
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CreateInvoiceScreen(
+                                        projectId: projectId),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: Icon(
+                                hasInvoice
+                                    ? Icons.receipt_long
+                                    : Icons.post_add,
+                                size: 20),
+                            label: Text(
+                                hasInvoice ? 'Ver Factura' : 'Crear Factura'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                          );
+                        },
+                        loading: () => const ElevatedButton(
+                          onPressed: null,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        error: (e, st) => IconButton(
+                          onPressed: () => ref
+                              .invalidate(invoiceByProjectProvider(projectId)),
+                          icon: const Icon(Icons.refresh, color: Colors.red),
+                        ),
+                      );
+                    }),
                     ElevatedButton.icon(
                       onPressed: () => _confirmDelete(context, ref, projectId),
                       icon: const Icon(Icons.delete, size: 20),
@@ -113,19 +125,6 @@ class ProjectDetailView extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 16),
                         elevation: 0,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _showCreateDialog(context, ref),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('Add New Project'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                   ],
@@ -143,12 +142,12 @@ class ProjectDetailView extends ConsumerWidget {
             ProjectFormSection(project: project),
             const SizedBox(height: 32),
 
-            // 1.5 Pole Barns (Structures)
-            ProjectPoleBarnsSection(projectId: project.id),
-            const SizedBox(height: 32),
-
             // 2. Costs
             ProjectFinancialSection(project: project),
+            const SizedBox(height: 32),
+
+            // 1.5 Pole Barns (Structures)
+            ProjectPoleBarnsSection(projectId: project.id),
             const SizedBox(height: 32),
 
             // 3. Photos
@@ -193,12 +192,5 @@ class ProjectDetailView extends ConsumerWidget {
       ref.read(selectedProjectIdProvider.notifier).state =
           null; // Clear selection
     }
-  }
-
-  Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) => const ProjectCreateDialog(),
-    );
   }
 }

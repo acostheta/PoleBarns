@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../config/app_styles.dart';
 import '../../settings/repositories/settings_repository.dart';
 import '../../settings/models/payment_method_model.dart';
 import '../providers/accounts_payable_provider.dart';
@@ -33,13 +35,15 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedMethodId == null) {
-        return; // Validator handles msg
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seleccione un método de pago')),
+        );
+        return;
       }
 
       final amount = double.tryParse(_amountController.text);
       if (amount == null || amount <= 0) return;
 
-      // Additional safety check
       if (amount > widget.account.currentBalance) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -47,8 +51,6 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
         );
         return;
       }
-
-      Navigator.of(context).pop();
 
       try {
         final repo = ref.read(accountsPayableRepositoryProvider);
@@ -59,8 +61,7 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
           paymentMethodId: _selectedMethodId,
           notes: _notesController.text,
         );
-
-        // Refresh handled by Realtime subscription
+        if (mounted) Navigator.of(context).pop();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -75,98 +76,186 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
   Widget build(BuildContext context) {
     final methodsAsync = ref.watch(paymentMethodsListProvider);
 
-    return AlertDialog(
-      title: Text(
-          'Abonar a Factura: ${widget.account.invoiceInternRef ?? "Sin Ref"}'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                  'Saldo Pendiente: \$${widget.account.currentBalance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.red)),
-              const SizedBox(height: 16),
-
-              // Payment Method
-              methodsAsync.when(
-                data: (methods) => DropdownButtonFormField<String>(
-                  decoration:
-                      const InputDecoration(labelText: 'Método de Pago'),
-                  value: _selectedMethodId,
-                  items: methods.map((PaymentMethodModel m) {
-                    return DropdownMenuItem(
-                      value: m.id,
-                      child: Text(m.name),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedMethodId = val),
-                  validator: (val) => val == null ? 'Requerido' : null,
+    return Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Abonar: ${widget.account.invoiceInternRef ?? "Sin Ref"}',
+                        style:
+                            AppStyles.dialogTitleStyle.copyWith(fontSize: 18),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () => Navigator.pop(context)),
+                  ],
                 ),
-                loading: () => const CircularProgressIndicator(),
-                error: (e, _) => Text('Error loading methods: $e'),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Saldo Pendiente: \$${widget.account.currentBalance.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                        fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 32),
 
-              // Date
-              InputDatePickerFormField(
-                fieldLabelText: 'Fecha del pago',
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-                initialDate: _paymentDate,
-                onDateSubmitted: (date) => _paymentDate = date,
-                onDateSaved: (date) => _paymentDate = date,
-              ),
-              const SizedBox(height: 16),
+                // Payment Method
+                const Text('Método de Pago', style: AppStyles.labelStyle),
+                const SizedBox(height: 8),
+                methodsAsync.when(
+                  data: (methods) => DropdownButtonFormField<String>(
+                    value: _selectedMethodId,
+                    items: methods
+                        .map<DropdownMenuItem<String>>((PaymentMethodModel m) {
+                      return DropdownMenuItem<String>(
+                        value: m.id,
+                        child:
+                            Text(m.name, style: const TextStyle(fontSize: 14)),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedMethodId = val),
+                    decoration: AppStyles.inputDecoration(),
+                    validator: (val) => val == null ? 'Requerido' : null,
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                  ),
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, _) => Text('Error: $e',
+                      style: const TextStyle(color: Colors.red)),
+                ),
+                const SizedBox(height: 24),
 
-              // Amount
-              TextFormField(
-                controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Monto a Abonar',
+                // Date Picker
+                _buildDateField('Fecha del Pago', _paymentDate,
+                    (d) => setState(() => _paymentDate = d)),
+                const SizedBox(height: 24),
+
+                // Amount
+                _buildTextField(
+                  'Monto a Abonar',
+                  _amountController,
+                  required: true,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   prefixText: '\$ ',
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _submit(),
-                validator: (val) {
-                  if (val == null || val.isEmpty) return 'Requerido';
-                  final n = double.tryParse(val);
-                  if (n == null || n <= 0) return 'Inválido';
-                  if (n > widget.account.currentBalance) {
-                    return 'Excede el saldo';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-              // Notes
-              TextFormField(
-                controller: _notesController,
-                decoration:
-                    const InputDecoration(labelText: 'Notas (Opcional)'),
-                maxLines: 2,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
-              ),
-            ],
+                // Notes
+                _buildTextField('Notas (Opcional)', _notesController,
+                    maxLines: 2),
+
+                const SizedBox(height: 40),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: AppStyles.primaryButtonStyle,
+                    child: const Text('Registrar Abono'),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Abonar'),
-        ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool required = false,
+      TextInputType? keyboardType,
+      String? prefixText,
+      int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          keyboardType: keyboardType,
+          validator: required
+              ? (v) {
+                  if (v == null || v.isEmpty) return 'Requerido';
+                  if (keyboardType?.decimal == true) {
+                    final n = double.tryParse(v);
+                    if (n == null || n <= 0) return 'Monto inválido';
+                  }
+                  return null;
+                }
+              : null,
+          decoration: AppStyles.inputDecoration().copyWith(
+            prefixText: prefixText,
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildDateField(
+      String label, DateTime date, Function(DateTime) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+                context: context,
+                initialDate: date,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030));
+            if (picked != null) onChanged(picked);
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat('MM/dd/yyyy').format(date),
+                    style:
+                        const TextStyle(fontSize: 14, color: Colors.black87)),
+                const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+              ],
+            ),
+          ),
+        )
       ],
     );
   }

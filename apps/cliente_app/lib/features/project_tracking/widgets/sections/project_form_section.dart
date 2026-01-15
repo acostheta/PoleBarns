@@ -23,6 +23,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
   late TextEditingController _commentsController;
 
   String? _selectedClientId;
+  String? _selectedResponsable;
+  List<String> _selectedGroupUsers = [];
   late String _selectedStatus;
 
   final List<String> _statusOptions = ['Pendiente', 'En Proceso', 'Terminado'];
@@ -45,6 +47,12 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
     _commentsController = TextEditingController(text: widget.project.comments);
 
     _selectedClientId = widget.project.refCliente;
+    _selectedResponsable = widget.project.responsable;
+    _selectedGroupUsers = (widget.project.grupoAsignado ?? '')
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
     _selectedStatus = widget.project.estatus ?? 'En Proceso';
     // Fallback if status not in options, usually 'En Proceso' or add it.
     if (!_statusOptions.contains(_selectedStatus) &&
@@ -80,9 +88,9 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
   Future<void> _save() async {
     final updated = widget.project.copyWith(
       refCliente: _selectedClientId ?? '',
-      responsable: _responsableController.text,
+      responsable: _selectedResponsable,
       estatus: _selectedStatus,
-      grupoAsignado: _grupoController.text,
+      grupoAsignado: _selectedGroupUsers.join(', '),
       address: _addressController.text,
       comments: _commentsController.text,
       fechaInicio: _startDate,
@@ -130,7 +138,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                   onPressed: () => setState(() => _isEditing = true),
                   icon: const Icon(Icons.edit,
                       size: 16, color: Color(0xFFD97706)),
-                  label: const Text('Edit Details',
+                  label: const Text('Editar Detalles',
                       style: TextStyle(
                           color: Color(0xFFD97706),
                           fontWeight: FontWeight.bold)),
@@ -147,10 +155,18 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                     width: 300, child: _buildClientReadField(clientsAsync)),
                 SizedBox(
                   width: 300,
-                  child: _buildReadFieldWithAvatar(
-                      'RESPONSABLE',
-                      _responsableController.text,
-                      _getInitials(_responsableController.text)),
+                  child: Consumer(builder: (context, ref, child) {
+                    final profilesAsync = ref.watch(profilesProvider);
+                    final profile = profilesAsync.valueOrNull?.firstWhere(
+                      (p) => p['full_name'] == _selectedResponsable,
+                      orElse: () => {},
+                    );
+                    return _buildReadFieldWithAvatar(
+                        'RESPONSABLE',
+                        _selectedResponsable ?? '-',
+                        _getInitials(_selectedResponsable ?? '-'),
+                        imageUrl: profile?['picture']);
+                  }),
                 ),
                 SizedBox(
                     width: 300,
@@ -158,7 +174,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 SizedBox(
                     width: 300,
                     child: _buildReadFieldSimple(
-                        'GRUPO ASIGNADO', _grupoController.text)),
+                        'GRUPO ASIGNADO', _selectedGroupUsers.join(', '))),
                 SizedBox(
                     width: 300,
                     child: _buildReadFieldWithIcon('FECHA DE INICIO',
@@ -177,20 +193,16 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
             _buildReadFieldSimple('COMENTARIOS', _commentsController.text),
           ] else ...[
             // EDIT MODE
-            _buildField('Project Name / Address', _addressController),
+            _buildField('Nombre del Proyecto / Dirección', _addressController),
             const SizedBox(height: 16),
             Wrap(
               spacing: 24,
               runSpacing: 24,
               children: [
                 SizedBox(width: 350, child: _buildClientDropdown(clientsAsync)),
-                SizedBox(
-                    width: 350,
-                    child: _buildField('Responsable', _responsableController)),
+                SizedBox(width: 350, child: _buildResponsableDropdown()),
                 SizedBox(width: 350, child: _buildStatusDropdown()),
-                SizedBox(
-                    width: 350,
-                    child: _buildField('Grupo Asignado', _grupoController)),
+                SizedBox(width: 350, child: _buildGroupMultiSelect()),
                 SizedBox(
                     width: 350,
                     child: _buildDateField('Fecha de Inicio', _startDate,
@@ -214,7 +226,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                     },
                     style:
                         TextButton.styleFrom(foregroundColor: Colors.grey[800]),
-                    child: const Text('Cancel')),
+                    child: const Text('Cancelar')),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _save,
@@ -224,7 +236,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                   ),
-                  child: const Text('Save Changes'),
+                  child: const Text('Guardar Cambios'),
                 ),
               ],
             )
@@ -259,7 +271,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 ClientSimpleModel(id: '', firstName: 'Unknown', lastName: ''));
         final name =
             client.id.isEmpty ? (_selectedClientId ?? '-') : client.fullName;
-        return _buildReadFieldWithAvatar('CLIENTE', name, _getInitials(name));
+        return _buildReadFieldWithAvatar('CLIENTE', name, _getInitials(name),
+            imageUrl: client.photoUrl);
       },
       loading: () => _buildReadFieldSimple('CLIENTE', 'Loading...'),
       error: (_, __) => _buildReadFieldSimple('CLIENTE', 'Error'),
@@ -283,7 +296,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
             data: (clients) => DropdownButtonFormField<String>(
               value: _selectedClientId,
               items: clients
-                  .map((c) => DropdownMenuItem(
+                  .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<
+                          String>(
                       value: c.id,
                       child: Text(c.fullName, overflow: TextOverflow.ellipsis)))
                   .toList(),
@@ -297,6 +311,133 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
         ),
       ],
     );
+  }
+
+  Widget _buildResponsableDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Responsable',
+            style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF374151),
+                fontSize: 13)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 42,
+          child: ref.watch(profilesProvider).when(
+                data: (profiles) => DropdownButtonFormField<String>(
+                  value: _selectedResponsable,
+                  items: profiles
+                      .map<DropdownMenuItem<String>>((p) =>
+                          DropdownMenuItem<String>(
+                              value: p['full_name'] as String,
+                              child: Text(p['full_name'] as String,
+                                  style: const TextStyle(fontSize: 14),
+                                  overflow: TextOverflow.ellipsis)))
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _selectedResponsable = val),
+                  decoration: _inputDecoration(),
+                  isExpanded: true,
+                ),
+                loading: () => const Center(child: LinearProgressIndicator()),
+                error: (e, _) => Text('Error: $e'),
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupMultiSelect() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Grupo Asignado',
+            style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF374151),
+                fontSize: 13)),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: () => _showMultiSelectGroup(context, ref),
+          child: Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedGroupUsers.isEmpty
+                        ? 'Seleccione usuarios'
+                        : _selectedGroupUsers.join(', '),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _selectedGroupUsers.isEmpty
+                          ? Colors.grey
+                          : Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(Icons.group_add, size: 18, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showMultiSelectGroup(BuildContext context, WidgetRef ref) {
+    ref.read(profilesProvider).whenData((profiles) {
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          return StatefulBuilder(builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Seleccionar Grupo'),
+              content: SizedBox(
+                width: 300,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: profiles.length,
+                  itemBuilder: (ctx, i) {
+                    final p = profiles[i];
+                    final name = p['full_name'] as String;
+                    final isSelected = _selectedGroupUsers.contains(name);
+                    return CheckboxListTile(
+                      title: Text(name),
+                      value: isSelected,
+                      onChanged: (val) {
+                        setDialogState(() {
+                          if (val == true) {
+                            _selectedGroupUsers.add(name);
+                          } else {
+                            _selectedGroupUsers.remove(name);
+                          }
+                        });
+                        setState(() {});
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cerrar'),
+                ),
+              ],
+            );
+          });
+        },
+      );
+    });
   }
 
   Widget _buildStatusDropdown() {
@@ -314,7 +455,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
           child: DropdownButtonFormField<String>(
             value: _selectedStatus,
             items: _statusOptions
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .map<DropdownMenuItem<String>>(
+                    (s) => DropdownMenuItem<String>(value: s, child: Text(s)))
                 .toList(),
             onChanged: (val) {
               if (val != null) setState(() => _selectedStatus = val);
@@ -350,8 +492,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
     return name.substring(0, 2).toUpperCase();
   }
 
-  Widget _buildReadFieldWithAvatar(
-      String label, String value, String initials) {
+  Widget _buildReadFieldWithAvatar(String label, String value, String initials,
+      {String? imageUrl}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -366,13 +508,17 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
         Row(
           children: [
             CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFFE5E7EB),
-                child: Text(initials,
-                    style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF4B5563),
-                        fontWeight: FontWeight.bold))),
+              radius: 14,
+              backgroundColor: const Color(0xFFE5E7EB),
+              backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+              child: imageUrl == null
+                  ? Text(initials,
+                      style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.bold))
+                  : null,
+            ),
             const SizedBox(width: 8),
             Flexible(
                 child: Text(value.isEmpty ? '-' : value,

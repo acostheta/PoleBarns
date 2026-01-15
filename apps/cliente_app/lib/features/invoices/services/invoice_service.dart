@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/invoice_models.dart';
 
@@ -44,12 +45,22 @@ class InvoiceService {
   Future<List<RelatedProductModel>> getRelatedProducts(int invoiceId) async {
     final response = await _supabase
         .from('Related Products')
-        .select('*, PoleBarns(*)')
+        .select('*, PoleBarns(*) ' // Added space to satisfy potential issues
+            '')
         .eq('IdInvoice', invoiceId);
 
     return (response as List)
         .map((e) => RelatedProductModel.fromJson(e))
         .toList();
+  }
+
+  Stream<List<RelatedProductModel>> watchRelatedProducts(int invoiceId) {
+    return _supabase
+        .from('Related Products')
+        .stream(primaryKey: ['id'])
+        .eq('IdInvoice', invoiceId)
+        .map((data) =>
+            data.map((e) => RelatedProductModel.fromJson(e)).toList());
   }
 
   Future<List<InvoicePaymentModel>> getInvoicePayments(int invoiceId) async {
@@ -88,6 +99,19 @@ class InvoiceService {
     await _supabase.from('Related Products').update(data).eq('id', id);
   }
 
+  Future<void> saveRelatedProduct(RelatedProductModel product) async {
+    final data = product.toJson();
+    if (product.id == 0) {
+      // It's a new association from the project, not yet in Related Products
+      await _supabase.from('Related Products').insert(data);
+    } else {
+      await _supabase
+          .from('Related Products')
+          .update(data)
+          .eq('id', product.id);
+    }
+  }
+
   Future<void> addPayment(InvoicePaymentModel payment) async {
     await _supabase.from('Invoice Payments').insert(payment.toJson());
   }
@@ -99,5 +123,24 @@ class InvoiceService {
         .select('*, PoleBarns(*)')
         .eq('project_id', projectId);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<void> sendInvoiceByEmail({
+    required int invoiceId,
+    required List<int> pdfBytes,
+    required String clientEmail,
+    required String clientName,
+  }) async {
+    final base64String = base64Encode(pdfBytes);
+
+    await _supabase.functions.invoke(
+      'send-invoice',
+      body: {
+        'invoiceId': invoiceId,
+        'pdfBase64': base64String,
+        'clientEmail': clientEmail,
+        'clientName': clientName,
+      },
+    );
   }
 }

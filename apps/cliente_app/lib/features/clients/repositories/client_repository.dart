@@ -9,38 +9,38 @@ class ClientRepository {
 
   Stream<List<ClientModel>> getClientsStream() {
     return _client
-        .from('clientes')
+        .from('clients')
         .stream(primaryKey: ['id'])
-        .order('nombre')
+        .order('first_name')
         .map((data) => data.map((json) => ClientModel.fromJson(json)).toList());
   }
 
   Future<List<ClientModel>> searchClients(String query) async {
     final response = await _client
-        .from('clientes')
+        .from('clients')
         .select()
-        .ilike('nombre', '%$query%')
-        .order('nombre');
+        .or('first_name.ilike.%$query%,last_name.ilike.%$query%')
+        .order('first_name');
     return (response as List)
         .map((json) => ClientModel.fromJson(json))
         .toList();
   }
 
   Future<void> createClient(ClientModel client) async {
-    await _client.from('clientes').insert(client.toJson());
+    await _client.from('clients').insert(client.toJson());
   }
 
   Future<void> updateClient(String id, ClientModel client) async {
-    await _client.from('clientes').update(client.toJson()).eq('id', id);
+    await _client.from('clients').update(client.toJson()).eq('id', id);
   }
 
   Future<void> deleteClient(String id) async {
-    await _client.from('clientes').delete().eq('id', id);
+    await _client.from('clients').delete().eq('id', id);
   }
 
   Future<ClientModel?> getClient(String id) async {
     final response =
-        await _client.from('clientes').select().eq('id', id).single();
+        await _client.from('clients').select().eq('id', id).single();
     return ClientModel.fromJson(response);
   }
 }

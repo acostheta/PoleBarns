@@ -76,15 +76,17 @@ class AccountsPayableNotifier
     required String providerId,
     required DateTime invoiceDate,
     required double totalAmount,
+    String? projectId,
     String? invoiceInternRef,
   }) async {
     await _repository.createAccount(
       providerId: providerId,
+      projectId: projectId,
       invoiceDate: invoiceDate,
       totalAmount: totalAmount,
       invoiceInternRef: invoiceInternRef,
     );
-    // Explicit refresh removed to rely on Realtime
+    await loadAccounts();
   }
 }
 

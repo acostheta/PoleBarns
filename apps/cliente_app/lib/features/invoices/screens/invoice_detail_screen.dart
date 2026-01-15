@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../config/app_styles.dart';
 import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
 import '../utils/invoice_pdf_generator.dart';
+import '../widgets/add_payment_dialog.dart';
+import '../../clients/repositories/client_repository.dart';
+import '../../project_tracking/providers/project_providers.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   final int invoiceId;
-  const InvoiceDetailScreen({super.key, required this.invoiceId});
+  final bool showAppBar;
+  const InvoiceDetailScreen({
+    super.key,
+    required this.invoiceId,
+    this.showAppBar = true,
+  });
 
   @override
   ConsumerState<InvoiceDetailScreen> createState() =>
@@ -19,59 +28,190 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // We use a stream for the invoice to get real-time balance updates
     final invoiceStream = ref.watch(invoiceStreamProvider(widget.invoiceId));
     final productsAsync = ref.watch(relatedProductsProvider(widget.invoiceId));
     final paymentsAsync = ref.watch(invoicePaymentsProvider(widget.invoiceId));
 
+    // Fetch related project and client for display
+    final invoiceData = invoiceStream.asData?.value;
+    final project = (invoiceData?.idProyecto != null)
+        ? ref.watch(projectDetailProvider(invoiceData!.idProyecto!))
+        : null;
+
+    final clientsAsync = ref.watch(clientListProvider);
+    final client = (project != null && clientsAsync.hasValue)
+        ? clientsAsync.value!
+            .where((c) => c.id == project.refCliente)
+            .firstOrNull
+        : null;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Detalle de Factura #${widget.invoiceId}'),
-        actions: [
-          invoiceStream.when(
-            data: (invoice) => IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              onPressed: () => _generatePDF(invoice),
-              tooltip: 'Generar PDF',
-            ),
-            loading: () => const SizedBox(),
-            error: (_, __) => const SizedBox(),
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: Text('Factura #${widget.invoiceId}',
+                  style: const TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.white,
+              elevation: 0.5,
+              iconTheme: const IconThemeData(color: Colors.black),
+              actions: [
+                invoiceStream.when(
+                  data: (invoice) {
+                    final products = productsAsync.value ?? [];
+                    final payments = paymentsAsync.value ?? [];
+
+                    final calculatedTotalVenta = products.fold<double>(
+                        0, (sum, p) => sum + p.totalPrice);
+                    final calculatedTotalPagado = payments
+                        .where((p) => p.tipo == 'Abono')
+                        .fold<double>(0, (sum, p) => sum + p.amount);
+                    final calculatedReembolsado = payments
+                        .where((p) => p.tipo == 'Reembolso')
+                        .fold<double>(0, (sum, p) => sum + p.amount);
+                    final calculatedSaldo = calculatedTotalVenta -
+                        calculatedTotalPagado +
+                        calculatedReembolsado;
+
+                    final enrichedInvoice = invoice.copyWith(
+                      clientName: client?.fullName,
+                      projectName: project?.address,
+                      totalVenta: calculatedTotalVenta,
+                      totalPagado: calculatedTotalPagado,
+                      reembolsado: calculatedReembolsado,
+                      saldo: calculatedSaldo,
+                    );
+                    return Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.email_outlined,
+                              color: Colors.blue),
+                          onPressed: () => _sendEmail(enrichedInvoice),
+                          tooltip: 'Enviar por correo',
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: IconButton(
+                            icon: const Icon(Icons.picture_as_pdf_outlined,
+                                color: Colors.red),
+                            onPressed: () => _generatePDF(enrichedInvoice),
+                            tooltip: 'Generar PDF',
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => const SizedBox(),
+                  error: (_, __) => const SizedBox(),
+                ),
+              ],
+            )
+          : null,
       body: invoiceStream.when(
-        data: (invoice) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(invoice),
-              const SizedBox(height: 24),
-              _buildFinancialSummary(invoice),
-              const SizedBox(height: 24),
-              const Text('Estructuras / Productos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const Divider(),
-              _buildProductsList(productsAsync),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Pagos y Reembolsos',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddPaymentModal(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Agregar Pago'),
+        data: (invoice) {
+          final products = productsAsync.value ?? [];
+          final payments = paymentsAsync.value ?? [];
+
+          final calculatedTotalVenta =
+              products.fold<double>(0, (sum, p) => sum + p.totalPrice);
+          final calculatedTotalPagado = payments
+              .where((p) => p.tipo == 'Abono')
+              .fold<double>(0, (sum, p) => sum + p.amount);
+          final calculatedReembolsado = payments
+              .where((p) => p.tipo == 'Reembolso')
+              .fold<double>(0, (sum, p) => sum + p.amount);
+          final calculatedSaldo = calculatedTotalVenta -
+              calculatedTotalPagado +
+              calculatedReembolsado;
+
+          final enrichedInvoice = invoice.copyWith(
+            clientName: client?.fullName,
+            projectName: project?.address,
+            totalVenta: calculatedTotalVenta,
+            totalPagado: calculatedTotalPagado,
+            reembolsado: calculatedReembolsado,
+            saldo: calculatedSaldo,
+          );
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!widget.showAppBar) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Factura #${widget.invoiceId}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.email_outlined,
+                                color: Colors.blue),
+                            onPressed: () => _sendEmail(enrichedInvoice),
+                            tooltip: 'Enviar por correo',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.picture_as_pdf_outlined,
+                                color: Colors.red),
+                            onPressed: () => _generatePDF(enrichedInvoice),
+                            tooltip: 'Generar PDF',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 24),
                 ],
-              ),
-              const Divider(),
-              _buildPaymentsList(paymentsAsync),
-            ],
-          ),
-        ),
+                _buildHeader(enrichedInvoice),
+                const SizedBox(height: 24),
+                _buildFinancialSummary(enrichedInvoice),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Estructuras / Productos',
+                        style: AppStyles.dialogTitleStyle),
+                    const Spacer(),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildProductsList(productsAsync),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Pagos y Reembolsos',
+                        style: AppStyles.dialogTitleStyle),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddPaymentModal(context),
+                      icon: const Icon(Icons.add_card, size: 18),
+                      label: const Text('Agregar Pago'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo.shade50,
+                        foregroundColor: Colors.indigo.shade700,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildPaymentsList(paymentsAsync),
+              ],
+            ),
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, __) => Center(child: Text('Error: $e')),
       ),
@@ -79,64 +219,124 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   }
 
   Widget _buildHeader(InvoiceModel invoice) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('CLIENTE',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Text(invoice.clientName ?? "N/A",
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('FECHA',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 4),
+                  Text(DateFormat('MM/dd/yyyy').format(invoice.date),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 20),
+          _buildInfoRow(Icons.location_on_outlined, 'Dirección',
+              invoice.address ?? "N/A"),
+          const SizedBox(height: 12),
+          _buildInfoRow(Icons.business_center_outlined, 'Proyecto',
+              invoice.projectName ?? "N/A"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.grey),
+        const SizedBox(width: 12),
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Cliente: ${invoice.clientName ?? "N/A"}',
-                style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 4),
-            Text('Dirección: ${invoice.address ?? "N/A"}'),
-            const SizedBox(height: 4),
-            Text('Proyecto: ${invoice.projectName ?? "Ver Proyecto"}'),
-            const SizedBox(height: 4),
-            Text('Fecha: ${DateFormat('dd/MM/yyyy').format(invoice.date)}'),
+            Text(label,
+                style: const TextStyle(color: Colors.grey, fontSize: 11)),
+            Text(value,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
           ],
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildFinancialSummary(InvoiceModel invoice) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .primaryContainer
-            .withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildFinTile('Total Venta', currency.format(invoice.totalVenta),
-                  Colors.black),
-              _buildFinTile(
-                  'Pagado', currency.format(invoice.totalPagado), Colors.green),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildFinTile('Reembolsado', currency.format(invoice.reembolsado),
-                  Colors.orange),
-              _buildFinTile(
-                  'Saldo Pendiente', currency.format(invoice.saldo), Colors.red,
-                  isHero: true),
-            ],
-          ),
+          Expanded(
+              child: _buildFinTile('TOTAL VENTA',
+                  currency.format(invoice.totalVenta), Colors.black)),
+          _buildSeparator(),
+          Expanded(
+              child: _buildFinTile(
+                  'PAGADO',
+                  currency.format(invoice.totalPagado),
+                  const Color(0xFF059669))),
+          _buildSeparator(),
+          Expanded(
+              child: _buildFinTile(
+                  'REEMBOLSADO',
+                  currency.format(invoice.reembolsado),
+                  const Color(0xFFD97706))),
+          _buildSeparator(),
+          Expanded(
+              child: _buildFinTile('SALDO PENDIENTE',
+                  currency.format(invoice.saldo), const Color(0xFFDC2626),
+                  isHero: true)),
         ],
       ),
     );
+  }
+
+  Widget _buildSeparator() {
+    return Container(
+        height: 40,
+        width: 1,
+        color: const Color(0xFFE5E7EB),
+        margin: const EdgeInsets.symmetric(horizontal: 16));
   }
 
   Widget _buildFinTile(String label, String value, Color color,
@@ -144,11 +344,17 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+                letterSpacing: 0.5)),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
-            fontSize: isHero ? 20 : 16,
+            fontSize: isHero ? 22 : 18,
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -160,48 +366,96 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   Widget _buildProductsList(
       AsyncValue<List<RelatedProductModel>> productsAsync) {
     return productsAsync.when(
-      data: (products) => ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final p = products[index];
-          return ListTile(
-            title: Text(p.poleBarnName ?? 'Producto'),
-            subtitle: Text(
-                'Cant: ${p.cantidad} x ${currency.format(p.precioPorUnidad)} + Tax ${p.tax}%'),
-            trailing: Text(currency.format(p.totalPrice),
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            onTap: () => _showEditProductModal(p),
-          );
-        },
+      data: (products) => Column(
+        children: products
+            .map((p) => Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    title: Text(p.poleBarnName ?? 'Producto',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        'Cantidad: ${p.cantidad} x ${currency.format(p.precioPorUnidad)} + Tax ${p.tax}%'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildStatusChip(p.estatus),
+                        const SizedBox(width: 16),
+                        Text(currency.format(p.totalPrice),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppStyles.primaryOrange)),
+                      ],
+                    ),
+                    onTap: () => _showEditProductModal(p),
+                  ),
+                ))
+            .toList(),
       ),
       loading: () => const LinearProgressIndicator(),
       error: (e, __) => Text('Error al cargar productos: $e'),
     );
   }
 
+  Widget _buildStatusChip(String? status) {
+    Color color = Colors.grey;
+    if (status == 'Completado') color = Colors.green;
+    if (status == 'En Proceso') color = Colors.blue;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Text(status ?? 'Pendiente',
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
   Widget _buildPaymentsList(
       AsyncValue<List<InvoicePaymentModel>> paymentsAsync) {
     return paymentsAsync.when(
-      data: (payments) => ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: payments.length,
-        itemBuilder: (context, index) {
-          final pay = payments[index];
+      data: (payments) => Column(
+        children: payments.map((pay) {
           final isAbono = pay.tipo == 'Abono';
-          return ListTile(
-            leading: Icon(
-              isAbono ? Icons.arrow_upward : Icons.arrow_downward,
-              color: isAbono ? Colors.green : Colors.red,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
             ),
-            title: Text('${pay.tipo}: ${currency.format(pay.amount)}'),
-            subtitle: Text(
-                '${pay.metodoDePagoNombre ?? "Efectivo"} - ${DateFormat('dd/MM/yyyy').format(pay.createdAt)}'),
-            trailing: pay.nota != null ? const Icon(Icons.info_outline) : null,
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (isAbono ? Colors.green : Colors.red).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isAbono ? Icons.add : Icons.remove,
+                  color: isAbono ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+              ),
+              title: Text('${pay.tipo}: ${currency.format(pay.amount)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(
+                  '${DateFormat('MM/dd/yyyy').format(pay.createdAt)} - ${pay.nota ?? "Sin nota"}'),
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+            ),
           );
-        },
+        }).toList(),
       ),
       loading: () => const SizedBox(),
       error: (e, __) => Text('Error cargando pagos: $e'),
@@ -209,10 +463,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   }
 
   void _showAddPaymentModal(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => AddPaymentModal(
+      builder: (context) => AddPaymentDialog(
         invoiceId: widget.invoiceId,
         onAdded: () {
           ref.invalidate(invoicePaymentsProvider(widget.invoiceId));
@@ -223,29 +476,51 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   }
 
   void _showEditProductModal(RelatedProductModel product) {
-    // Simple mock edit modal
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Producto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: product.estatus,
-              items: ['Pendiente', 'En Proceso', 'Completado']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) async {
-                await ref
-                    .read(invoiceServiceProvider)
-                    .updateRelatedProduct(product.id, {'Estatus': v});
-                ref.invalidate(relatedProductsProvider(widget.invoiceId));
-                Navigator.pop(context);
-              },
-              decoration: const InputDecoration(labelText: 'Estatus'),
-            ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Estatus del Producto',
+                  style: AppStyles.dialogTitleStyle),
+              const SizedBox(height: 32),
+              const Text('Estatus', style: AppStyles.labelStyle),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: product.estatus,
+                decoration: AppStyles.inputDecoration(),
+                items: ['Pendiente', 'En Proceso', 'Completado']
+                    .map<DropdownMenuItem<String>>((e) =>
+                        DropdownMenuItem<String>(
+                            value: e,
+                            child:
+                                Text(e, style: const TextStyle(fontSize: 14))))
+                    .toList(),
+                onChanged: (v) async {
+                  if (v == null) return;
+                  final updated = product.copyWith(estatus: v);
+                  await ref
+                      .read(invoiceServiceProvider)
+                      .saveRelatedProduct(updated);
+                  // No need to invalidate manually if using StreamProvider properly,
+                  // but it doesn't hurt.
+                  ref.invalidate(relatedProductsProvider(widget.invoiceId));
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -263,83 +538,69 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       payments: payments,
     );
   }
-}
 
-// Separate widget for Add Payment
-class AddPaymentModal extends ConsumerStatefulWidget {
-  final int invoiceId;
-  final VoidCallback onAdded;
-  const AddPaymentModal(
-      {super.key, required this.invoiceId, required this.onAdded});
+  Future<void> _sendEmail(InvoiceModel invoice) async {
+    try {
+      final service = ref.read(invoiceServiceProvider);
+      final clientRepo = ref.read(clientRepositoryProvider);
 
-  @override
-  ConsumerState<AddPaymentModal> createState() => _AddPaymentModalState();
-}
+      if (invoice.idCliente == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Esta factura no tiene un cliente asociado.')),
+          );
+        }
+        return;
+      }
 
-class _AddPaymentModalState extends ConsumerState<AddPaymentModal> {
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  String _tipo = 'Abono';
-  // String? _selectedMethodId; // Removed unused
+      final client = await clientRepo.getClient(invoice.idCliente!);
 
-  @override
-  Widget build(BuildContext context) {
-    // In a real app we would fetch payment methods
-    return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Registrar Movimiento',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'Abono', label: Text('Abono')),
-              ButtonSegment(value: 'Reembolso', label: Text('Reembolso')),
-            ],
-            selected: {_tipo},
-            onSelectionChanged: (v) => setState(() => _tipo = v.first),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _amountController,
-            decoration: const InputDecoration(labelText: 'Monto (\$)'),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _noteController,
-            decoration: const InputDecoration(labelText: 'Nota / Comentario'),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () async {
-              final amount = double.tryParse(_amountController.text) ?? 0.0;
-              if (amount <= 0) return;
+      if (client?.email == null || client!.email!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('El cliente no tiene un email configurado.')),
+          );
+        }
+        return;
+      }
 
-              final pay = InvoicePaymentModel(
-                id: 0,
-                idInvoice: widget.invoiceId,
-                tipo: _tipo,
-                amount: amount,
-                nota: _noteController.text,
-                createdAt: DateTime.now(),
-              );
+      // Show loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enviando factura por correo...')),
+        );
+      }
 
-              await ref.read(invoiceServiceProvider).addPayment(pay);
-              widget.onAdded();
-              Navigator.pop(context);
-            },
-            child: const Text('Confirmar'),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
+      final products =
+          ref.read(relatedProductsProvider(widget.invoiceId)).asData?.value ??
+              [];
+
+      final pdfBytes = await InvoicePdfGenerator.getBytes(
+        invoice: invoice,
+        products: products,
+        payments: [],
+      );
+
+      await service.sendInvoiceByEmail(
+        invoiceId: invoice.id,
+        pdfBytes: pdfBytes,
+        clientEmail: client.email!,
+        clientName: client.nombre,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Factura enviada exitosamente.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al enviar correo: $e')),
+        );
+      }
+    }
   }
 }

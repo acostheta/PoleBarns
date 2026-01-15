@@ -52,6 +52,38 @@ class InvoiceModel {
     );
   }
 
+  InvoiceModel copyWith({
+    int? id,
+    String? idProyecto,
+    String? idCliente,
+    String? address,
+    DateTime? date,
+    double? totalVenta,
+    double? totalPagado,
+    double? saldo,
+    double? reembolsado,
+    String? comentario,
+    DateTime? createdAt,
+    String? clientName,
+    String? projectName,
+  }) {
+    return InvoiceModel(
+      id: id ?? this.id,
+      idProyecto: idProyecto ?? this.idProyecto,
+      idCliente: idCliente ?? this.idCliente,
+      address: address ?? this.address,
+      date: date ?? this.date,
+      totalVenta: totalVenta ?? this.totalVenta,
+      totalPagado: totalPagado ?? this.totalPagado,
+      saldo: saldo ?? this.saldo,
+      reembolsado: reembolsado ?? this.reembolsado,
+      comentario: comentario ?? this.comentario,
+      createdAt: createdAt ?? this.createdAt,
+      clientName: clientName ?? this.clientName,
+      projectName: projectName ?? this.projectName,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id != 0) 'id': id,
@@ -108,6 +140,34 @@ class RelatedProductModel {
       createdAt: DateTime.parse(json['created_at']),
       poleBarnName:
           json['PoleBarns'] != null ? json['PoleBarns']['name'] : null,
+    );
+  }
+
+  RelatedProductModel copyWith({
+    int? id,
+    int? idInvoice,
+    String? idProyecto,
+    int? idPoleBarns,
+    String? estatus,
+    double? cantidad,
+    double? precioPorUnidad,
+    double? tax,
+    double? totalPrice,
+    DateTime? createdAt,
+    String? poleBarnName,
+  }) {
+    return RelatedProductModel(
+      id: id ?? this.id,
+      idInvoice: idInvoice ?? this.idInvoice,
+      idProyecto: idProyecto ?? this.idProyecto,
+      idPoleBarns: idPoleBarns ?? this.idPoleBarns,
+      estatus: estatus ?? this.estatus,
+      cantidad: cantidad ?? this.cantidad,
+      precioPorUnidad: precioPorUnidad ?? this.precioPorUnidad,
+      tax: tax ?? this.tax,
+      totalPrice: totalPrice ?? this.totalPrice,
+      createdAt: createdAt ?? this.createdAt,
+      poleBarnName: poleBarnName ?? this.poleBarnName,
     );
   }
 

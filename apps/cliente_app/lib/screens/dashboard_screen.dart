@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:auth/auth.dart';
-import 'package:users/users.dart';
-import 'package:clients/clients.dart';
-import 'package:measures/measures.dart';
+import '../providers/navigation_providers.dart';
 
 import '../features/settings/screens/settings_screen.dart';
 import '../features/accounts_payable/screens/accounts_payable_screen.dart';
 import '../features/project_tracking/screens/project_dashboard_screen.dart';
 import '../features/pole_barns/screens/pole_barns_list_screen.dart';
-import '../features/invoices/screens/invoices_list_screen.dart';
+import '../features/invoices/screens/invoices_dashboard_screen.dart';
 import '../features/payroll/screens/payroll_dashboard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -21,22 +19,9 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _selectedIndex = 0;
   bool _isMenuOpen = true;
 
-  // Pages
-  static const int _homeIndex = 0;
-  static const int _profileIndex = 1;
-  static const int _usersIndex = 2;
-  static const int _jobsIndex = 3;
-  static const int _clientsIndex = 4;
-  static const int _measuresIndex = 5;
-  static const int _settingsIndex = 6;
-  static const int _accountsPayableIndex = 7;
-  static const int _projectTrackingIndex = 8;
-  static const int _poleBarnsIndex = 9;
-  static const int _invoicesIndex = 10;
-  static const int _payrollIndex = 11;
+  // Indices are now in DashboardIndices
 
   @override
   Widget build(BuildContext context) {
@@ -54,43 +39,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     Widget bodyContent = const Center(child: Text('Bienvenido'));
 
-    if (_selectedIndex == _profileIndex) {
+    final selectedIndex = ref.watch(dashboardIndexProvider);
+
+    if (selectedIndex == DashboardIndices.profile) {
       title = 'Mi Perfil';
       bodyContent = const ProfileScreen();
-    } else if (_selectedIndex == _usersIndex) {
-      title = 'Gestión de Usuarios';
-      bodyContent = const UsersListScreen();
-      actions = [
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: () => ref.refresh(allUsersProvider),
-        ),
-      ];
-    } else if (_selectedIndex == _jobsIndex) {
-      title = 'Puestos de Trabajo'; // Title: Job Positions
-      bodyContent = const JobPositionsScreen();
-    } else if (_selectedIndex == _clientsIndex) {
-      title = 'Gestión de Clientes';
-      bodyContent = const ClientsListScreen();
-    } else if (_selectedIndex == _measuresIndex) {
-      title = 'Unidades de Medida';
-      bodyContent = const MeasuresScreen();
-    } else if (_selectedIndex == _settingsIndex) {
+    } else if (selectedIndex == DashboardIndices.settings) {
       title = 'Configuración';
       bodyContent = const SettingsScreen();
-    } else if (_selectedIndex == _accountsPayableIndex) {
+    } else if (selectedIndex == DashboardIndices.accountsPayable) {
       title = 'Cuentas por Pagar';
       bodyContent = const AccountsPayableScreen();
-    } else if (_selectedIndex == _projectTrackingIndex) {
-      title = 'Seguimiento de Obra';
+    } else if (selectedIndex == DashboardIndices.projectTracking) {
+      title = 'Proyectos';
       bodyContent = const ProjectDashboardScreen();
-    } else if (_selectedIndex == _poleBarnsIndex) {
-      title = 'Cotizador de Caballerizas (Pole Barns)';
+    } else if (selectedIndex == DashboardIndices.poleBarns) {
+      title = 'Productos';
       bodyContent = const PoleBarnsListScreen();
-    } else if (_selectedIndex == _invoicesIndex) {
+    } else if (selectedIndex == DashboardIndices.invoices) {
       title = 'Gestión de Facturas (Invoices)';
-      bodyContent = const InvoicesListScreen();
-    } else if (_selectedIndex == _payrollIndex) {
+      bodyContent = const InvoicesDashboardScreen();
+    } else if (selectedIndex == DashboardIndices.payroll) {
       title = 'Gestión de Nómina';
       bodyContent = const PayrollDashboardScreen();
     } else {
@@ -179,12 +148,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             _buildMenuItem(
                               icon: Icons.home,
                               title: 'Inicio',
-                              index: _homeIndex,
+                              index: DashboardIndices.home,
                             ),
                             _buildMenuItem(
                               icon: Icons.person,
                               title: 'Mi Perfil',
-                              index: _profileIndex,
+                              index: DashboardIndices.profile,
                             ),
                             if (isAdmin) ...[
                               const Divider(),
@@ -203,66 +172,62 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               _buildMenuItem(
-                                icon: Icons.people,
-                                title: 'Usuarios',
-                                index: _usersIndex,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.work,
-                                title: 'Puestos de Trabajo',
-                                index: _jobsIndex,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.business,
-                                title: 'Clientes',
-                                index: _clientsIndex,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.square_foot,
-                                title: 'Medidas',
-                                index: _measuresIndex,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.settings,
-                                title: 'Configuración',
-                                index: _settingsIndex,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.attach_money,
-                                title: 'Cuentas por Pagar',
-                                index: _accountsPayableIndex,
-                              ),
-                              _buildMenuItem(
                                 icon: Icons.construction,
-                                title: 'Seguimiento de Obra',
-                                index: _projectTrackingIndex,
+                                title: 'Proyectos',
+                                index: DashboardIndices.projectTracking,
                               ),
                               _buildMenuItem(
                                 icon: Icons.architecture,
-                                title: 'Pole Barns',
-                                index: _poleBarnsIndex,
+                                title: 'Productos',
+                                index: DashboardIndices.poleBarns,
                               ),
                               _buildMenuItem(
                                 icon: Icons.receipt_long,
                                 title: 'Invoices',
-                                index: _invoicesIndex,
+                                index: DashboardIndices.invoices,
                               ),
                               _buildMenuItem(
                                 icon: Icons.payments,
                                 title: 'Nómina',
-                                index: _payrollIndex,
+                                index: DashboardIndices.payroll,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.attach_money,
+                                title: 'Cuentas por Pagar',
+                                index: DashboardIndices.accountsPayable,
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.settings,
+                                title: 'Configuración',
+                                index: DashboardIndices.settings,
                               ),
                             ],
                             const Divider(),
-                            ListTile(
-                              leading: const Icon(Icons.logout),
-                              title: const Text('Cerrar Sesión'),
-                              onTap: () async {
-                                await ref
-                                    .read(authRepositoryProvider)
-                                    .signOut();
-                                // Router handles redirect to login
-                              },
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 2),
+                              child: ListTile(
+                                dense: true,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                leading: const Icon(Icons.logout,
+                                    color: Color(0xFF64748B), size: 22),
+                                title: const Text(
+                                  'Cerrar Sesión',
+                                  style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                onTap: () async {
+                                  await ref
+                                      .read(authRepositoryProvider)
+                                      .signOut();
+                                  // Router handles redirect to login
+                                },
+                              ),
                             ),
                           ],
                         ),
@@ -286,21 +251,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildMenuItem(
       {required IconData icon, required String title, required int index}) {
-    final isSelected = _selectedIndex == index;
-    return ListTile(
-      leading:
-          Icon(icon, color: isSelected ? Theme.of(context).primaryColor : null),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? Theme.of(context).primaryColor : null,
-          fontWeight: isSelected ? FontWeight.bold : null,
+    final selectedIndex = ref.watch(dashboardIndexProvider);
+    final isSelected = selectedIndex == index;
+    final activeColor = const Color(0xFF92400E); // Dark amber/brown
+    final activeBgColor = const Color(0xFFFEF3C7); // Light amber
+    final inactiveColor = const Color(0xFF64748B); // Slate/Grey
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
+        tileColor: isSelected ? activeBgColor : Colors.transparent,
+        leading: Icon(
+          icon,
+          color: isSelected ? activeColor : inactiveColor,
+          size: 22,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? activeColor : inactiveColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+        onTap: () {
+          ref.read(dashboardIndexProvider.notifier).state = index;
+        },
       ),
-      selected: isSelected,
-      onTap: () {
-        setState(() => _selectedIndex = index);
-      },
     );
   }
 }

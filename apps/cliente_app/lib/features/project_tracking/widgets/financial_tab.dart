@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../invoices/providers/invoice_providers.dart';
-import '../../invoices/screens/invoice_detail_screen.dart';
 import '../models/project_models.dart';
+import '../../../providers/navigation_providers.dart';
 
 class FinancialTab extends ConsumerWidget {
   final ProjectModel project;
@@ -54,13 +54,10 @@ class FinancialTab extends ConsumerWidget {
                 data: (invoice) => invoice != null
                     ? ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  InvoiceDetailScreen(invoiceId: invoice.id),
-                            ),
-                          );
+                          ref.read(dashboardIndexProvider.notifier).state =
+                              DashboardIndices.invoices;
+                          ref.read(selectedInvoiceIdProvider.notifier).state =
+                              invoice.id;
                         },
                         icon: const Icon(Icons.receipt_long),
                         label: const Text('Ver Factura (Invoice)'),
