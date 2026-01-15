@@ -11,7 +11,7 @@ class PaymentMethodModel {
 
   factory PaymentMethodModel.fromJson(Map<String, dynamic> json) {
     return PaymentMethodModel(
-      id: json['id'] as String,
+      id: json['id'].toString(),
       name: json['name'] as String,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)

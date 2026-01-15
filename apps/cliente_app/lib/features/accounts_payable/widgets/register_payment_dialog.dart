@@ -144,7 +144,7 @@ class _RegisterPaymentDialogState extends ConsumerState<RegisterPaymentDialog> {
                     icon: const Icon(Icons.keyboard_arrow_down),
                   ),
                   loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error: $e',
+                  error: (e, _) => Text('Error loading methods: $e',
                       style: const TextStyle(color: Colors.red)),
                 ),
                 const SizedBox(height: 24),
