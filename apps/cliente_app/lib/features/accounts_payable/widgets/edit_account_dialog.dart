@@ -107,8 +107,9 @@ class _EditAccountDialogState extends ConsumerState<EditAccountDialog> {
                   items: [
                     const DropdownMenuItem(
                         value: null, child: Text('Sin proyecto')),
-                    ...projects.map((p) =>
-                        DropdownMenuItem(value: p.id, child: Text(p.address))),
+                    ...projects.map((p) => DropdownMenuItem(
+                        value: p.id,
+                        child: Text(p.address ?? 'Sin dirección'))),
                   ],
                   onChanged: (val) => setState(() => _selectedProjectId = val),
                 ),
