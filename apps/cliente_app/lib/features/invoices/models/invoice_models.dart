@@ -210,6 +210,11 @@ class InvoicePaymentModel {
     this.metodoDePagoNombre,
   });
 
+  // Convenience getters for compatibility
+  int? get paymentMethodId =>
+      metodoDePagoId != null ? int.tryParse(metodoDePagoId!) : null;
+  String? get paymentMethodName => metodoDePagoNombre;
+
   factory InvoicePaymentModel.fromJson(Map<String, dynamic> json) {
     return InvoicePaymentModel(
       id: json['id'],

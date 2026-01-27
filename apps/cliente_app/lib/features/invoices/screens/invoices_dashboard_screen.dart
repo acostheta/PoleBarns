@@ -13,12 +13,12 @@ class InvoicesDashboardScreen extends ConsumerWidget {
       children: [
         // Left Panel: Invoices List
         const SizedBox(
-          width: 400,
+          width: 320,
           child: InvoicesListScreen(),
         ),
 
         // Vertical Divider
-        const VerticalDivider(width: 1),
+        VerticalDivider(width: 1, thickness: 1, color: Colors.grey[300]),
 
         // Right Panel: Invoice Detail
         Expanded(

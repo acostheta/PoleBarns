@@ -116,6 +116,14 @@ class InvoiceService {
     await _supabase.from('Invoice Payments').insert(payment.toJson());
   }
 
+  Future<void> updatePayment(int paymentId, Map<String, dynamic> data) async {
+    await _supabase.from('Invoice Payments').update(data).eq('id', paymentId);
+  }
+
+  Future<void> deletePayment(int paymentId) async {
+    await _supabase.from('Invoice Payments').delete().eq('id', paymentId);
+  }
+
   Future<List<Map<String, dynamic>>> getProjectPoleBarns(
       String projectId) async {
     final response = await _supabase

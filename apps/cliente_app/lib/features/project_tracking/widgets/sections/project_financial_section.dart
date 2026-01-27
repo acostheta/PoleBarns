@@ -31,7 +31,7 @@ class ProjectFinancialSection extends ConsumerWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -62,6 +62,7 @@ class ProjectFinancialSection extends ConsumerWidget {
                                 context: context,
                                 builder: (_) => AddPaymentDialog(
                                   invoiceId: invoice.id,
+                                  maxAmount: project.ventaTotal,
                                   onAdded: () {
                                     ref.invalidate(invoicesStreamProvider);
                                   },
@@ -109,65 +110,91 @@ class ProjectFinancialSection extends ConsumerWidget {
           const SizedBox(height: 24),
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
           const SizedBox(height: 24),
-          Wrap(
-            spacing: 24,
-            runSpacing: 24,
+          Column(
             children: [
-              _FinancialCard(
-                label: 'Venta Total',
-                amount: currency.format(project.ventaTotal),
-                bg: const Color(0xFFFAFAF9), // Stone-50
-                borderColor: const Color(0xFFD6D3D1),
-                textColor: const Color(0xFF1F2937),
+              Row(
+                children: [
+                  Expanded(
+                    child: _FinancialCard(
+                      label: 'Venta Total',
+                      amount: currency.format(project.ventaTotal),
+                      bg: const Color(0xFFFAFAF9),
+                      borderColor: const Color(0xFFD6D3D1),
+                      textColor: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: _FinancialCard(
+                      label: 'Ingresos del proyecto',
+                      amount: incomesAsync.when(
+                        data: (val) => currency.format(val),
+                        loading: () => '...',
+                        error: (_, __) => 'Error',
+                      ),
+                      bg: const Color(0xFFEFF6FF),
+                      borderColor: const Color(0xFFBFDBFE),
+                      textColor: const Color(0xFF1E40AF),
+                    ),
+                  ),
+                ],
               ),
-              _FinancialCard(
-                label: 'Ingresos del proyecto',
-                amount: incomesAsync.when(
-                  data: (val) => currency.format(val),
-                  loading: () => '...',
-                  error: (_, __) => 'Error',
-                ),
-                bg: const Color(0xFFEFF6FF), // Blue-50
-                borderColor: const Color(0xFFBFDBFE), // Blue-200
-                textColor: const Color(0xFF1E40AF), // Blue-800
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _FinancialCard(
+                      label: 'Saldo Cliente',
+                      amount: clientBalanceAsync.when(
+                        data: (val) => currency.format(val),
+                        loading: () => '...',
+                        error: (_, __) => 'Error',
+                      ),
+                      bg: const Color(0xFFFEFCE8),
+                      borderColor: const Color(0xFFFEF08A),
+                      textColor: const Color(0xFF854D0E),
+                      tooltip:
+                          'Venta Total - Ingresos (cuánto le falta al cliente por pagar)',
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: _FinancialCard(
+                      label: 'Costo Total',
+                      amount: apTotalAsync.when(
+                        data: (val) => currency.format(val),
+                        loading: () => '...',
+                        error: (_, __) => 'Error',
+                      ),
+                      bg: const Color(0xFFFAFAF9),
+                      borderColor: const Color(0xFFD6D3D1),
+                      textColor: const Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
               ),
-              _FinancialCard(
-                label: 'Saldo Cliente',
-                amount: clientBalanceAsync.when(
-                  data: (val) => currency.format(val),
-                  loading: () => '...',
-                  error: (_, __) => 'Error',
-                ),
-                bg: const Color(0xFFFEFCE8), // Yellow-50
-                borderColor: const Color(0xFFFEF08A), // Yellow-200
-                textColor: const Color(0xFF854D0E), // Yellow-800
-                tooltip:
-                    'Venta Total - Ingresos (cuánto le falta al cliente por pagar)',
-              ),
-              _FinancialCard(
-                label: 'Costo Total',
-                amount: apTotalAsync.when(
-                  data: (val) => currency.format(val),
-                  loading: () => '...',
-                  error: (_, __) => 'Error',
-                ),
-                bg: const Color(0xFFFAFAF9), // Stone-50
-                borderColor: const Color(0xFFD6D3D1),
-                textColor: const Color(0xFF1F2937),
-              ),
-              _FinancialCard(
-                label: 'Balance',
-                amount: balanceAsync.when(
-                  data: (val) => currency.format(val),
-                  loading: () => '...',
-                  error: (_, __) => 'Error',
-                ),
-                bg: const Color(0xFFF0FDF4), // Green-50
-                borderColor: const Color(0xFF86EFAC), // Green-300
-                textColor: const Color(0xFF15803D), // Green-700
-                isBold: true,
-                tooltip:
-                    'Venta Total - Costo total (cuánto se ha gastado vs. lo estimado)',
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _FinancialCard(
+                      label: 'Balance',
+                      amount: balanceAsync.when(
+                        data: (val) => currency.format(val),
+                        loading: () => '...',
+                        error: (_, __) => 'Error',
+                      ),
+                      bg: const Color(0xFFF0FDF4),
+                      borderColor: const Color(0xFF86EFAC),
+                      textColor: const Color(0xFF15803D),
+                      isBold: true,
+                      tooltip:
+                          'Venta Total - Costo total (cuánto se ha gastado vs. lo estimado)',
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  const Expanded(child: SizedBox()),
+                ],
               ),
             ],
           )

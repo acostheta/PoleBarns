@@ -6,27 +6,45 @@ import '../providers/invoice_providers.dart';
 import '../../settings/repositories/settings_repository.dart';
 import '../../settings/models/payment_method_model.dart';
 
-class AddPaymentDialog extends ConsumerStatefulWidget {
-  final int invoiceId;
+class EditPaymentDialog extends ConsumerStatefulWidget {
+  final InvoicePaymentModel payment;
   final double maxAmount;
-  final VoidCallback onAdded;
-  const AddPaymentDialog({
+  final VoidCallback onUpdated;
+
+  const EditPaymentDialog({
     super.key,
-    required this.invoiceId,
+    required this.payment,
     required this.maxAmount,
-    required this.onAdded,
+    required this.onUpdated,
   });
 
   @override
-  ConsumerState<AddPaymentDialog> createState() => _AddPaymentDialogState();
+  ConsumerState<EditPaymentDialog> createState() => _EditPaymentDialogState();
 }
 
-class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  String _tipo = 'Abono';
-  String? _selectedMethodId;
+class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
+  late final TextEditingController _amountController;
+  late final TextEditingController _noteController;
+  late String _tipo;
+  late String? _selectedMethodId;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController =
+        TextEditingController(text: widget.payment.amount.toString());
+    _noteController = TextEditingController(text: widget.payment.nota ?? '');
+    _tipo = widget.payment.tipo;
+    _selectedMethodId = widget.payment.paymentMethodId?.toString();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,15 +61,15 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Registrar Pago', style: AppStyles.dialogTitleStyle),
+                const Text('Editar Pago', style: AppStyles.dialogTitleStyle),
                 IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context)),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             const Text('Tipo de Transacción', style: AppStyles.labelStyle),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -66,35 +84,50 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
               ],
             ),
             const SizedBox(height: 24),
-            _buildTextField('Monto', _amountController,
-                keyboardType: TextInputType.number, prefixText: '\$ '),
-            const SizedBox(height: 24),
             const Text('Método de Pago', style: AppStyles.labelStyle),
             const SizedBox(height: 8),
             ref.watch(paymentMethodsListProvider).when(
-                  data: (methods) => DropdownButtonFormField<String>(
-                    value: _selectedMethodId,
-                    items: methods
-                        .map<DropdownMenuItem<String>>((PaymentMethodModel m) {
-                      return DropdownMenuItem<String>(
-                        value: m.id,
-                        child:
-                            Text(m.name, style: const TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedMethodId = val),
-                    decoration: AppStyles.inputDecoration(),
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    hint: const Text('Seleccionar Método',
-                        style: TextStyle(fontSize: 14)),
-                  ),
+                  data: (methods) {
+                    return DropdownButtonFormField<String>(
+                      value: _selectedMethodId,
+                      decoration: AppStyles.inputDecoration(),
+                      items: methods
+                          .map<DropdownMenuItem<String>>(
+                              (PaymentMethodModel m) =>
+                                  DropdownMenuItem<String>(
+                                      value: m.id.toString(),
+                                      child: Text(m.name)))
+                          .toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedMethodId = val),
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                    );
+                  },
                   loading: () => const LinearProgressIndicator(),
                   error: (e, _) => Text('Error: $e',
                       style: const TextStyle(color: Colors.red)),
                 ),
             const SizedBox(height: 24),
-            _buildTextField('Nota / Comentario', _noteController, maxLines: 2),
-            const SizedBox(height: 40),
+            const Text('Monto', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _amountController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: AppStyles.inputDecoration()
+                  .copyWith(prefixText: r'$ ', hintText: '0.00'),
+            ),
+            const SizedBox(height: 24),
+            const Text('Notas (Opcional)', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _noteController,
+              maxLines: 3,
+              decoration: AppStyles.inputDecoration()
+                  .copyWith(hintText: 'Agregar notas...'),
+            ),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -106,7 +139,7 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
                         width: 20,
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2))
-                    : const Text('Confirmar Pago'),
+                    : const Text('Guardar Cambios'),
               ),
             ),
           ],
@@ -128,44 +161,31 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
               Border.all(color: isSelected ? color : const Color(0xFFE5E7EB)),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? color : Colors.grey),
-            const SizedBox(height: 4),
+            Icon(icon, color: isSelected ? color : Colors.grey, size: 20),
+            const SizedBox(width: 8),
             Text(label,
                 style: TextStyle(
                     color: isSelected ? color : Colors.grey,
                     fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 13)),
+                        isSelected ? FontWeight.bold : FontWeight.normal)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {TextInputType? keyboardType, String? prefixText, int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          style: const TextStyle(fontSize: 14),
-          keyboardType: keyboardType,
-          decoration:
-              AppStyles.inputDecoration().copyWith(prefixText: prefixText),
-        ),
-      ],
-    );
-  }
-
   Future<void> _submit() async {
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
-    if (amount <= 0) return;
+    final amount = double.tryParse(_amountController.text) ?? 0;
+
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El monto debe ser mayor a 0')),
+      );
+      return;
+    }
 
     if (_selectedMethodId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -185,24 +205,28 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
     }
 
     setState(() => _isLoading = true);
-    try {
-      final pay = InvoicePaymentModel(
-        id: 0,
-        idInvoice: widget.invoiceId,
-        tipo: _tipo,
-        amount: amount,
-        metodoDePagoId: _selectedMethodId,
-        nota: _noteController.text,
-        createdAt: DateTime.now(),
-      );
 
-      await ref.read(invoiceServiceProvider).addPayment(pay);
-      widget.onAdded();
-      if (mounted) Navigator.pop(context);
+    try {
+      final updateData = {
+        'amount': amount,
+        'tipo': _tipo,
+        'nota': _noteController.text.isEmpty ? null : _noteController.text,
+        'payment_method_id': int.parse(_selectedMethodId!),
+      };
+
+      await ref
+          .read(invoiceServiceProvider)
+          .updatePayment(widget.payment.id, updateData);
+
+      if (mounted) {
+        widget.onUpdated();
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar el pago: $e')),
+        );
         setState(() => _isLoading = false);
       }
     }

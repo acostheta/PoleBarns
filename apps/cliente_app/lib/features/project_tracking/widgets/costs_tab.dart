@@ -35,7 +35,7 @@ class CostsTab extends ConsumerWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -60,8 +60,8 @@ class CostsTab extends ConsumerWidget {
                           onPressed: invoiceAsync.when(
                             data: (invoice) => invoice == null
                                 ? null
-                                : () => _showAddPaymentDialog(
-                                    context, invoice.id, ref),
+                                : () => _showAddPaymentDialog(context,
+                                    invoice.id, invoice.totalVenta, ref),
                             loading: () => null,
                             error: (_, __) => null,
                           ),
@@ -242,11 +242,12 @@ class CostsTab extends ConsumerWidget {
   }
 
   void _showAddPaymentDialog(
-      BuildContext context, int invoiceId, WidgetRef ref) {
+      BuildContext context, int invoiceId, double maxAmount, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AddPaymentDialog(
         invoiceId: invoiceId,
+        maxAmount: maxAmount,
         onAdded: () {
           ref.invalidate(invoicesStreamProvider);
         },

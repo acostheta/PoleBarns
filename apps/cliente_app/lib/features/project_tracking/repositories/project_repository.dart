@@ -17,8 +17,13 @@ class ProjectRepository {
             (data) => data.map((json) => ProjectModel.fromJson(json)).toList());
   }
 
-  Future<void> createProject(ProjectModel project) async {
-    await _supabase.from('projects').insert(project.toJson());
+  Future<ProjectModel> createProject(ProjectModel project) async {
+    final response = await _supabase
+        .from('projects')
+        .insert(project.toJson())
+        .select()
+        .single();
+    return ProjectModel.fromJson(response);
   }
 
   Future<void> updateProject(ProjectModel project) async {

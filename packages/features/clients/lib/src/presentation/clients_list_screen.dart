@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../infrastructure/clients_repository.dart';
 import 'package:design_system/design_system.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 
 // Provider to fetch profiles for audit log resolution
@@ -15,7 +16,9 @@ final profilesProvider = FutureProvider<Map<String, Map<String, dynamic>>>((
 });
 
 class ClientsListScreen extends ConsumerStatefulWidget {
-  const ClientsListScreen({super.key});
+  final void Function(String clientId, Map<String, dynamic> client)?
+      onCreateEstimate;
+  const ClientsListScreen({super.key, this.onCreateEstimate});
 
   @override
   ConsumerState<ClientsListScreen> createState() => _ClientsListScreenState();
@@ -104,43 +107,22 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                         color: AppColors.textLight,
                       ),
                     ),
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () => ref.invalidate(allClientsProvider),
-                          icon: const Icon(Icons.refresh, size: 20),
-                          label: const Text('Actualizar'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.surfaceLight,
-                            foregroundColor: AppColors.textLight,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: const BorderSide(color: AppColors.stone300),
-                            ),
-                          ),
+                    ElevatedButton.icon(
+                      onPressed: () => ref.invalidate(allClientsProvider),
+                      icon: const Icon(Icons.refresh, size: 20),
+                      label: const Text('Actualizar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.surfaceLight,
+                        foregroundColor: AppColors.textLight,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: _startCreatingNew,
-                          icon: const Icon(Icons.add, size: 20),
-                          label: const Text('Agregar Cliente'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: AppColors.stone300),
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -172,22 +154,45 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                           // List Header
                           Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
                               children: [
-                                const Text(
-                                  'Client List',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textLight,
-                                  ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Client List',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textLight,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${filteredClients.length} Encontrados',
+                                      style: const TextStyle(
+                                        color: AppColors.stone500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '${filteredClients.length} Encontrados',
-                                  style: const TextStyle(
-                                    color: AppColors.stone500,
-                                    fontSize: 13,
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _startCreatingNew,
+                                    icon: const Icon(Icons.add, size: 20),
+                                    label: const Text('Agregar Cliente'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -342,6 +347,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                   });
                                   ref.invalidate(allClientsProvider);
                                 },
+                                onCreateEstimate: widget.onCreateEstimate,
                               )
                             : _buildEmptyState(),
                       ),
@@ -542,12 +548,15 @@ class ClientDetailPanel extends ConsumerStatefulWidget {
   final Map<String, dynamic>? client;
   final bool isCreating;
   final VoidCallback onSaved;
+  final void Function(String clientId, Map<String, dynamic> client)?
+      onCreateEstimate;
 
   const ClientDetailPanel({
     super.key,
     this.client,
     required this.isCreating,
     required this.onSaved,
+    this.onCreateEstimate,
   });
 
   @override
@@ -581,6 +590,59 @@ class _ClientDetailPanelState extends ConsumerState<ClientDetailPanel> {
   static final _numericRegex = RegExp(r'^[0-9]+$');
   // Allow + only at the start
   static final _phoneRegex = RegExp(r'^\+?[0-9]+$');
+  String? _photoUrl;
+  bool _isUploading = false;
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final fileName = 'clients/${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .uploadBinary(fileName, bytes);
+
+      final publicUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+      if (widget.isCreating) {
+        setState(() {
+          _photoUrl = publicUrl;
+          _isUploading = false;
+        });
+      } else {
+        await ref.read(clientsRepositoryProvider).updateClient(
+          widget.client!['id'],
+          {'photo_url': publicUrl},
+        );
+        setState(() {
+          _photoUrl = publicUrl;
+          _isUploading = false;
+        });
+        ref.invalidate(allClientsProvider);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Foto actualizada correctamente')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al subir foto: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -602,6 +664,7 @@ class _ClientDetailPanelState extends ConsumerState<ClientDetailPanel> {
     _noteController = TextEditingController(text: c?['note'] ?? '');
 
     _isActive = c?['is_active'] as bool? ?? true;
+    _photoUrl = c?['photo_url'] as String?;
   }
 
   @override
@@ -655,6 +718,7 @@ class _ClientDetailPanelState extends ConsumerState<ClientDetailPanel> {
         'mobile': _mobileController.text,
         'note': _noteController.text,
         'is_active': _isActive,
+        'photo_url': _photoUrl,
       };
 
       await ref.read(clientsRepositoryProvider).createClient(data);
@@ -702,26 +766,75 @@ class _ClientDetailPanelState extends ConsumerState<ClientDetailPanel> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: AppColors.stone200,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      widget.isCreating
-                          ? '+'
-                          : (firstName.isNotEmpty
-                              ? firstName[0].toUpperCase()
-                              : 'C'),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.stone500,
+                  Column(
+                    children: [
+                      Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: _isUploading ? null : _pickAndUploadImage,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: AppColors.stone200,
+                                shape: BoxShape.circle,
+                                image: _photoUrl != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(_photoUrl!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: _photoUrl == null && !_isUploading
+                                  ? Text(
+                                      widget.isCreating
+                                          ? '+'
+                                          : (firstName.isNotEmpty
+                                              ? firstName[0].toUpperCase()
+                                              : 'C'),
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.stone500,
+                                      ),
+                                    )
+                                  : _isUploading
+                                      ? const CircularProgressIndicator()
+                                      : null,
+                            ),
+                          ),
+                          if (!_isUploading)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickAndUploadImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _isUploading ? null : _pickAndUploadImage,
+                        child: const Text(
+                          'Cambiar Foto',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -766,6 +879,26 @@ class _ClientDetailPanelState extends ConsumerState<ClientDetailPanel> {
                       ],
                     ),
                   ),
+                  if (!widget.isCreating && widget.onCreateEstimate != null)
+                    ElevatedButton.icon(
+                      onPressed: () => widget.onCreateEstimate!(
+                        widget.client!['id'],
+                        widget.client!,
+                      ),
+                      icon: const Icon(Icons.description_outlined, size: 20),
+                      label: const Text('Crear Estimado'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

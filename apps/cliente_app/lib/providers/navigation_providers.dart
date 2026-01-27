@@ -11,4 +11,6 @@ class DashboardIndices {
   static const int poleBarns = 5;
   static const int invoices = 6;
   static const int payroll = 7;
+  static const int users = 8;
+  static const int clients = 9;
 }

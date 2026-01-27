@@ -31,7 +31,7 @@ class _ProjectDashboardScreenState
           ),
 
           // Vertical Divider
-          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
+          VerticalDivider(width: 1, thickness: 1, color: Colors.grey[300]),
 
           // Right Content (Project Details)
           Expanded(

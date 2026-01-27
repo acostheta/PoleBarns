@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 import '../../../config/app_styles.dart';
 import '../models/pole_barn_model.dart';
 import '../models/related_material_model.dart';
@@ -25,6 +26,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   late TextEditingController _sheetController;
   late TextEditingController _precioVentaController;
   late TextEditingController _budgetController;
+  late TextEditingController _nameController;
 
   final NumberFormat _currencyFormat = NumberFormat.currency(symbol: r'$');
 
@@ -42,6 +44,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         TextEditingController(text: pb?.precioVenta.toString() ?? '0');
     _budgetController =
         TextEditingController(text: pb?.budgetLimit.toString() ?? '0');
+    _nameController = TextEditingController(text: pb?.name ?? '');
   }
 
   @override
@@ -53,6 +56,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     _sheetController.dispose();
     _precioVentaController.dispose();
     _budgetController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -69,6 +73,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         ref.read(poleBarnFormProvider(widget.initialPoleBarn)).poleBarn;
 
     notifier.updatePoleBarnField(currentState.copyWith(
+      name: _nameController.text,
       largo: largo,
       ancho: ancho,
       alto: alto,
@@ -102,8 +107,17 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           "ALERTA LOCAL: Presupuesto excedido ($displayTotalMaterials > ${state.poleBarn.budgetLimit})";
     }
 
-    if (!state.isPriceManuallyEdited && state.poleBarn.id == null) {
-      _precioVentaController.text = state.poleBarn.precioVenta.toString();
+    if (!state.isPriceManuallyEdited) {
+      if (_precioVentaController.text !=
+          state.poleBarn.precioVenta.toString()) {
+        _precioVentaController.text = state.poleBarn.precioVenta.toString();
+      }
+    }
+
+    if (!state.isNameManuallyEdited) {
+      if (_nameController.text != state.poleBarn.name) {
+        _nameController.text = state.poleBarn.name ?? '';
+      }
     }
 
     return Scaffold(
@@ -119,6 +133,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
+          if (state.poleBarn.id != null)
+            IconButton(
+              onPressed: () => _confirmDelete(context, ref, state.poleBarn.id!),
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Eliminar Producto',
+            ),
           if (state.isSaving || state.isLoading)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -150,6 +170,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
               if (state.error != null) _buildErrorBanner(state.error!),
               if (displayAlertStatus != 'OK')
                 _buildAlertBanner(displayAlertStatus),
+              const Text('Información del Producto',
+                  style: AppStyles.dialogTitleStyle),
+              const SizedBox(height: 24),
+              _buildNameField(),
+              const SizedBox(height: 32),
               const Text('Especificaciones Generales',
                   style: AppStyles.dialogTitleStyle),
               const SizedBox(height: 32),
@@ -221,11 +246,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           children: [
             Expanded(
                 child: _buildNumericField(
-                    _largoController, 'Largo (ft)', Icons.straighten)),
+                    _anchoController, 'Ancho (ft)', Icons.straighten)),
             const SizedBox(width: 24),
             Expanded(
                 child: _buildNumericField(
-                    _anchoController, 'Ancho (ft)', Icons.straighten)),
+                    _largoController, 'Largo (ft)', Icons.straighten)),
             const SizedBox(width: 24),
             Expanded(
                 child: _buildNumericField(
@@ -311,15 +336,42 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           decoration: AppStyles.inputDecoration().copyWith(
             prefixIcon: Icon(icon, size: 20, color: Colors.grey),
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: (val) {
             if (val == null || val.isEmpty) return 'Requerido';
-            final n = double.tryParse(val);
+            final n = int.tryParse(val);
             if (n == null) return 'Inválido';
             if (n < 0) return 'No negativo';
             return null;
           },
           onChanged: (_) => _updatePoleBarnLocal(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Nombre del Producto', style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _nameController,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          decoration: AppStyles.inputDecoration().copyWith(
+            prefixIcon:
+                const Icon(Icons.label_outline, size: 20, color: Colors.grey),
+            hintText: 'Ej: POLE BARN 30x40x12 @ 10',
+          ),
+          validator: (val) {
+            if (val == null || val.isEmpty) return 'Requerido';
+            return null;
+          },
+          onChanged: (val) {
+            _updatePoleBarnLocal();
+          },
         ),
       ],
     );
@@ -427,6 +479,33 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, int poleBarnId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Eliminar Producto?'),
+        content: const Text(
+            'Esta acción no se puede deshacer. Se eliminará el producto del catálogo permanentemente.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child:
+                  const Text('Eliminar', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await ref.read(poleBarnRepositoryProvider).deletePoleBarn(poleBarnId);
+      ref.read(selectedPoleBarnIdProvider.notifier).state =
+          null; // Clear selection
+    }
   }
 }
 
@@ -614,6 +693,8 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
       TextInputType? keyboardType,
       String? prefixText,
       bool readOnly = false}) {
+    final isNumberField =
+        keyboardType == const TextInputType.numberWithOptions(decimal: true);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -624,11 +705,11 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
           readOnly: readOnly,
           style: TextStyle(
               fontSize: 14, color: readOnly ? Colors.grey : Colors.black87),
-          keyboardType: keyboardType,
+          keyboardType: isNumberField ? TextInputType.number : keyboardType,
+          inputFormatters:
+              isNumberField ? [FilteringTextInputFormatter.digitsOnly] : null,
           validator: required
-              ? (v) => (v == null ||
-                      (keyboardType?.decimal == true &&
-                          double.tryParse(v) == null))
+              ? (v) => (v == null || (isNumberField && int.tryParse(v) == null))
                   ? 'Inválido'
                   : null
               : null,

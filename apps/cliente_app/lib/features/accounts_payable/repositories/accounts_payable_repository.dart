@@ -73,4 +73,58 @@ class AccountsPayableRepository {
   Future<void> deletePayment(String paymentId) async {
     await _supabase.from('ap_payments').delete().eq('id', paymentId);
   }
+
+  // Get single account by ID
+  Future<AccountPayableModel> getAccountById(String accountId) async {
+    final response = await _supabase
+        .from('vw_accounts_payable_summary')
+        .select('*, providers!inner(*), projects(id, address)')
+        .eq('id', accountId)
+        .single();
+
+    final json = Map<String, dynamic>.from(response);
+    if (json['projects'] != null) {
+      json['project_name'] = json['projects']['address'] ?? 'Proyecto';
+    }
+    return AccountPayableModel.fromJson(json);
+  }
+
+  // Update account
+  Future<void> updateAccount({
+    required String accountId,
+    required String providerId,
+    required DateTime invoiceDate,
+    required double totalAmount,
+    String? projectId,
+    String? invoiceInternRef,
+  }) async {
+    await _supabase.from('accounts_payable').update({
+      'provider_id': providerId,
+      'project_id': projectId,
+      'invoice_date': invoiceDate.toIso8601String(),
+      'total_amount': totalAmount,
+      'invoice_intern_ref': invoiceInternRef,
+    }).eq('id', accountId);
+  }
+
+  // Delete account
+  Future<void> deleteAccount(String accountId) async {
+    await _supabase.from('accounts_payable').delete().eq('id', accountId);
+  }
+
+  // Update payment
+  Future<void> updatePayment({
+    required String paymentId,
+    required DateTime date,
+    required double amount,
+    String? paymentMethodId,
+    String? notes,
+  }) async {
+    await _supabase.from('ap_payments').update({
+      'date': date.toIso8601String(),
+      'amount': amount,
+      'payment_method_id': paymentMethodId,
+      'notes': notes,
+    }).eq('id', paymentId);
+  }
 }

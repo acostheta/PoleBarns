@@ -6,6 +6,7 @@ import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
 import '../utils/invoice_pdf_generator.dart';
 import '../widgets/add_payment_dialog.dart';
+import '../widgets/edit_payment_dialog.dart';
 import '../../clients/repositories/client_repository.dart';
 import '../../project_tracking/providers/project_providers.dart';
 
@@ -191,7 +192,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     const Text('Pagos y Reembolsos',
                         style: AppStyles.dialogTitleStyle),
                     ElevatedButton.icon(
-                      onPressed: () => _showAddPaymentModal(context),
+                      onPressed: () => _showAddPaymentModal(
+                          context, enrichedInvoice.totalVenta),
                       icon: const Icon(Icons.add_card, size: 18),
                       label: const Text('Agregar Pago'),
                       style: ElevatedButton.styleFrom(
@@ -412,9 +414,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(status ?? 'Pendiente',
           style: TextStyle(
@@ -439,7 +441,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (isAbono ? Colors.green : Colors.red).withOpacity(0.1),
+                  color: (isAbono ? Colors.green : Colors.red)
+                      .withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -450,9 +453,37 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
               ),
               title: Text('${pay.tipo}: ${currency.format(pay.amount)}',
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(
-                  '${DateFormat('MM/dd/yyyy').format(pay.createdAt)} - ${pay.nota ?? "Sin nota"}'),
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(DateFormat('MM/dd/yyyy').format(pay.createdAt)),
+                  if (pay.nota != null && pay.nota!.isNotEmpty)
+                    Text(pay.nota!,
+                        style:
+                            TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  if (pay.paymentMethodName != null)
+                    Text('Método: ${pay.paymentMethodName}',
+                        style:
+                            TextStyle(fontSize: 12, color: Colors.grey[600])),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    color: Colors.blue,
+                    onPressed: () => _showEditPaymentModal(context, pay),
+                    tooltip: 'Editar',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: Colors.red,
+                    onPressed: () => _confirmDeletePayment(context, pay),
+                    tooltip: 'Eliminar',
+                  ),
+                ],
+              ),
             ),
           );
         }).toList(),
@@ -462,11 +493,12 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     );
   }
 
-  void _showAddPaymentModal(BuildContext context) {
+  void _showAddPaymentModal(BuildContext context, double maxAmount) {
     showDialog(
       context: context,
       builder: (context) => AddPaymentDialog(
         invoiceId: widget.invoiceId,
+        maxAmount: maxAmount,
         onAdded: () {
           ref.invalidate(invoicePaymentsProvider(widget.invoiceId));
           ref.invalidate(invoiceDetailProvider(widget.invoiceId));
@@ -600,6 +632,69 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al enviar correo: $e')),
         );
+      }
+    }
+  }
+
+  void _showEditPaymentModal(
+      BuildContext context, InvoicePaymentModel payment) {
+    final enrichedInvoice =
+        ref.read(invoiceDetailProvider(widget.invoiceId)).asData?.value;
+    if (enrichedInvoice == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => EditPaymentDialog(
+        payment: payment,
+        maxAmount: enrichedInvoice.totalVenta,
+        onUpdated: () {
+          ref.invalidate(invoicePaymentsProvider(widget.invoiceId));
+          ref.invalidate(invoiceDetailProvider(widget.invoiceId));
+        },
+      ),
+    );
+  }
+
+  Future<void> _confirmDeletePayment(
+      BuildContext context, InvoicePaymentModel payment) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Pago'),
+        content: Text(
+          '¿Está seguro de que desea eliminar este ${payment.tipo.toLowerCase()} de ${currency.format(payment.amount)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(invoiceServiceProvider).deletePayment(payment.id);
+        ref.invalidate(invoicePaymentsProvider(widget.invoiceId));
+        ref.invalidate(invoiceDetailProvider(widget.invoiceId));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pago eliminado exitosamente')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar el pago: $e')),
+          );
+        }
       }
     }
   }

@@ -5,11 +5,15 @@ import 'package:auth/auth.dart';
 import '../providers/navigation_providers.dart';
 
 import '../features/settings/screens/settings_screen.dart';
-import '../features/accounts_payable/screens/accounts_payable_screen.dart';
+import '../features/accounts_payable/screens/accounts_payable_dashboard.dart';
 import '../features/project_tracking/screens/project_dashboard_screen.dart';
-import '../features/pole_barns/screens/pole_barns_list_screen.dart';
+import '../features/pole_barns/screens/pole_barns_dashboard_screen.dart';
 import '../features/invoices/screens/invoices_dashboard_screen.dart';
 import '../features/payroll/screens/payroll_dashboard_screen.dart';
+import 'package:users/users.dart';
+import 'package:clients/clients.dart';
+import '../features/project_tracking/widgets/project_create_dialog.dart';
+import '../features/project_tracking/providers/project_providers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -21,22 +25,18 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isMenuOpen = true;
 
-  // Indices are now in DashboardIndices
-
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-    // We watch the profile to know the role
     final profileAsync = user != null
         ? ref.watch(userProfileProvider(user.id))
-        : const AsyncValue.loading();
+        : const AsyncValue<Map<String, dynamic>>.loading();
+
     final userRole = profileAsync.asData?.value?['role'];
     final isAdmin = userRole == 'Administrador' || userRole == 'Admin';
 
-    // Define titles and actions based on index
     String title = 'Inicio';
     List<Widget>? actions;
-
     Widget bodyContent = const Center(child: Text('Bienvenido'));
 
     final selectedIndex = ref.watch(dashboardIndexProvider);
@@ -49,21 +49,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       bodyContent = const SettingsScreen();
     } else if (selectedIndex == DashboardIndices.accountsPayable) {
       title = 'Cuentas por Pagar';
-      bodyContent = const AccountsPayableScreen();
+      bodyContent = const AccountsPayableDashboard();
     } else if (selectedIndex == DashboardIndices.projectTracking) {
       title = 'Proyectos';
       bodyContent = const ProjectDashboardScreen();
     } else if (selectedIndex == DashboardIndices.poleBarns) {
       title = 'Productos';
-      bodyContent = const PoleBarnsListScreen();
+      bodyContent = const PoleBarnsDashboardScreen();
     } else if (selectedIndex == DashboardIndices.invoices) {
       title = 'Gestión de Facturas (Invoices)';
       bodyContent = const InvoicesDashboardScreen();
     } else if (selectedIndex == DashboardIndices.payroll) {
       title = 'Gestión de Nómina';
       bodyContent = const PayrollDashboardScreen();
+    } else if (selectedIndex == DashboardIndices.users) {
+      title = 'Trabajadores';
+      bodyContent = const UsersListScreen();
+    } else if (selectedIndex == DashboardIndices.clients) {
+      title = 'Clientes';
+      bodyContent = ClientsListScreen(
+        onCreateEstimate: (clientId, _) {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                ProjectCreateDialog(initialClientId: clientId),
+          ).then((success) {
+            if (success == true) {
+              ref.invalidate(projectListProvider);
+              ref.read(dashboardIndexProvider.notifier).state =
+                  DashboardIndices.projectTracking;
+            }
+          });
+        },
+      );
     } else {
-      // Home
       title = 'App Gilbert';
       bodyContent = const Center(
           child:
@@ -87,163 +106,214 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           // Persistent Sidebar
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: _isMenuOpen ? 280 : 0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: _isMenuOpen ? 280 : 72,
             color: Theme.of(context).cardColor,
-            child: _isMenuOpen
-                ? Column(
+            child: Column(
+              children: [
+                // User Info Header
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: _isMenuOpen ? 24 : 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).dividerColor.withValues(alpha: 0.05),
+                  ),
+                  child: Row(
                     children: [
-                      // User Info Header
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.05),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              backgroundImage: profileAsync
-                                          .asData?.value?['picture'] !=
-                                      null
-                                  ? NetworkImage(
-                                      profileAsync.asData!.value!['picture'])
-                                  : null,
-                              child:
-                                  profileAsync.asData?.value?['picture'] == null
-                                      ? const Icon(Icons.person, size: 20)
-                                      : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    profileAsync.asData?.value?['name'] ??
-                                        'Usuario',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        backgroundImage:
+                            profileAsync.asData?.value?['picture'] != null
+                                ? NetworkImage(
+                                    profileAsync.asData!.value!['picture'])
+                                : null,
+                        child: profileAsync.asData?.value?['picture'] == null
+                            ? const Icon(Icons.person, size: 20)
+                            : null,
                       ),
                       Expanded(
-                        child: ListView(
-                          padding: EdgeInsets.zero,
-                          children: [
-                            _buildMenuItem(
-                              icon: Icons.home,
-                              title: 'Inicio',
-                              index: DashboardIndices.home,
-                            ),
-                            _buildMenuItem(
-                              icon: Icons.person,
-                              title: 'Mi Perfil',
-                              index: DashboardIndices.profile,
-                            ),
-                            if (isAdmin) ...[
-                              const Divider(),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                child: Text(
-                                  'ADMINISTRACIÓN',
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _isMenuOpen ? 1.0 : 0.0,
+                          curve: Curves.easeInOut,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 12),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  profileAsync.asData?.value?['name'] ??
+                                      'Usuario',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .labelSmall
+                                      .titleSmall
                                       ?.copyWith(
-                                        color: Theme.of(context).hintColor,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.clip,
                                 ),
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.construction,
-                                title: 'Proyectos',
-                                index: DashboardIndices.projectTracking,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.architecture,
-                                title: 'Productos',
-                                index: DashboardIndices.poleBarns,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.receipt_long,
-                                title: 'Invoices',
-                                index: DashboardIndices.invoices,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.payments,
-                                title: 'Nómina',
-                                index: DashboardIndices.payroll,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.attach_money,
-                                title: 'Cuentas por Pagar',
-                                index: DashboardIndices.accountsPayable,
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.settings,
-                                title: 'Configuración',
-                                index: DashboardIndices.settings,
-                              ),
-                            ],
-                            const Divider(),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 2),
-                              child: ListTile(
-                                dense: true,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                leading: const Icon(Icons.logout,
-                                    color: Color(0xFF64748B), size: 22),
-                                title: const Text(
-                                  'Cerrar Sesión',
-                                  style: TextStyle(
-                                    color: Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                onTap: () async {
-                                  await ref
-                                      .read(authRepositoryProvider)
-                                      .signOut();
-                                  // Router handles redirect to login
-                                },
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
-                  )
-                : null,
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      _buildMenuItem(
+                        icon: Icons.home,
+                        title: 'Inicio',
+                        index: DashboardIndices.home,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.person,
+                        title: 'Mi Perfil',
+                        index: DashboardIndices.profile,
+                      ),
+                      if (isAdmin) ...[
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _isMenuOpen ? 1.0 : 0.0,
+                          child: _isMenuOpen
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Divider(color: Colors.grey[300], height: 1),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      child: Text(
+                                        'ADMINISTRACIÓN',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color:
+                                                  Theme.of(context).hintColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: Divider(
+                                      indent: 12,
+                                      endIndent: 12,
+                                      color: Colors.grey[300],
+                                      height: 1),
+                                ),
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.person_add,
+                          title: 'Clientes',
+                          index: DashboardIndices.clients,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.construction,
+                          title: 'Proyectos',
+                          index: DashboardIndices.projectTracking,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.architecture,
+                          title: 'Productos',
+                          index: DashboardIndices.poleBarns,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.receipt_long,
+                          title: 'Invoices',
+                          index: DashboardIndices.invoices,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.payments,
+                          title: 'Nómina',
+                          index: DashboardIndices.payroll,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.attach_money,
+                          title: 'Cuentas por Pagar',
+                          index: DashboardIndices.accountsPayable,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.group,
+                          title: 'Trabajadores',
+                          index: DashboardIndices.users,
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.settings,
+                          title: 'Configuración',
+                          index: DashboardIndices.settings,
+                        ),
+                      ],
+                      Divider(color: Colors.grey[300], height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 2),
+                        child: InkWell(
+                          onTap: () async {
+                            await ref.read(authRepositoryProvider).signOut();
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            height: 48,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 12),
+                                const Icon(Icons.logout,
+                                    color: Color(0xFF64748B), size: 22),
+                                Expanded(
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: _isMenuOpen ? 1.0 : 0.0,
+                                    curve: Curves.easeInOut,
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(left: 12),
+                                      child: Text(
+                                        'Cerrar Sesión',
+                                        style: TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.clip,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          // Divider between sidebar and body
-          if (_isMenuOpen)
-            VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-
-          // Main Body
-          Expanded(
-            child: bodyContent,
-          ),
+          VerticalDivider(width: 1, thickness: 1, color: Colors.grey[300]),
+          Expanded(child: bodyContent),
         ],
       ),
     );
@@ -253,34 +323,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {required IconData icon, required String title, required int index}) {
     final selectedIndex = ref.watch(dashboardIndexProvider);
     final isSelected = selectedIndex == index;
-    final activeColor = const Color(0xFF92400E); // Dark amber/brown
-    final activeBgColor = const Color(0xFFFEF3C7); // Light amber
-    final inactiveColor = const Color(0xFF64748B); // Slate/Grey
+    const activeColor = Color(0xFF92400E);
+    const activeBgColor = Color(0xFFFEF3C7);
+    const inactiveColor = Color(0xFF64748B);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: ListTile(
-        dense: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        tileColor: isSelected ? activeBgColor : Colors.transparent,
-        leading: Icon(
-          icon,
-          color: isSelected ? activeColor : inactiveColor,
-          size: 22,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? activeColor : inactiveColor,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
+      child: InkWell(
+        onTap: () => ref.read(dashboardIndexProvider.notifier).state = index,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: 48,
+          decoration: BoxDecoration(
+            color: isSelected ? activeBgColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Icon(
+                icon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: 22,
+              ),
+              Expanded(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isMenuOpen ? 1.0 : 0.0,
+                  curve: Curves.easeInOut,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: isSelected ? activeColor : inactiveColor,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        onTap: () {
-          ref.read(dashboardIndexProvider.notifier).state = index;
-        },
       ),
     );
   }

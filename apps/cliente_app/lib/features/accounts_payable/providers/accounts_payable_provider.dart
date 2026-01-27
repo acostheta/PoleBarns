@@ -126,3 +126,20 @@ final dashboardStatsProvider = Provider<Map<String, double>>((ref) {
     },
   );
 });
+
+// Selected Account ID Provider
+final selectedAccountPayableIdProvider = StateProvider<String?>((ref) => null);
+
+// Single Account Detail Provider
+final accountPayableDetailProvider =
+    FutureProvider.family<AccountPayableModel, String>((ref, accountId) async {
+  final repository = ref.watch(accountsPayableRepositoryProvider);
+  return repository.getAccountById(accountId);
+});
+
+// Account Payments Provider (with realtime)
+final accountPaymentsProvider =
+    FutureProvider.family<List<APPaymentModel>, String>((ref, accountId) async {
+  final repository = ref.watch(accountsPayableRepositoryProvider);
+  return repository.getPayments(accountId);
+});

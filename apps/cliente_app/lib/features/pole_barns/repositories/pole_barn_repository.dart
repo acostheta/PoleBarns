@@ -86,12 +86,15 @@ class PoleBarnRepository {
     await _supabase.from('RelatedMaterials').delete().eq('id', id);
   }
 
-  // To fetch raw materials for dropdown
   Future<List<Map<String, dynamic>>> getRawMaterials() async {
     final response = await _supabase
         .from('raw_materials')
         .select('id, name, price, measures(name)')
         .order('name');
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<void> deletePoleBarn(int id) async {
+    await _supabase.from('PoleBarns').delete().eq('id', id);
   }
 }

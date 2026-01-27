@@ -12,6 +12,7 @@ class PoleBarnFormState {
   final bool isSaving; // Added for auto-save status
   final String? error;
   final bool isPriceManuallyEdited;
+  final bool isNameManuallyEdited;
 
   PoleBarnFormState({
     required this.poleBarn,
@@ -20,6 +21,7 @@ class PoleBarnFormState {
     this.isSaving = false,
     this.error,
     this.isPriceManuallyEdited = false,
+    this.isNameManuallyEdited = false,
   });
 
   // Local calculations for immediate UI feedback before DB sync
@@ -38,6 +40,7 @@ class PoleBarnFormState {
     bool? isSaving,
     String? error,
     bool? isPriceManuallyEdited,
+    bool? isNameManuallyEdited,
   }) {
     return PoleBarnFormState(
       poleBarn: poleBarn ?? this.poleBarn,
@@ -47,6 +50,7 @@ class PoleBarnFormState {
       error: error,
       isPriceManuallyEdited:
           isPriceManuallyEdited ?? this.isPriceManuallyEdited,
+      isNameManuallyEdited: isNameManuallyEdited ?? this.isNameManuallyEdited,
     );
   }
 }
@@ -68,6 +72,9 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
           relatedMaterials: [],
           isPriceManuallyEdited:
               initialPoleBarn != null && initialPoleBarn.precioVenta > 0,
+          isNameManuallyEdited: initialPoleBarn != null &&
+              initialPoleBarn.name != null &&
+              initialPoleBarn.name!.isNotEmpty,
         )) {
     if (initialPoleBarn?.id != null) {
       loadMaterials();
@@ -110,16 +117,28 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
   }
 
   void updatePoleBarnField(PoleBarn updated) {
-    bool manual = state.isPriceManuallyEdited;
+    bool priceManual = state.isPriceManuallyEdited;
     if (updated.precioVenta != state.poleBarn.precioVenta) {
-      manual = true;
+      priceManual = true;
     }
-    state = state.copyWith(poleBarn: updated, isPriceManuallyEdited: manual);
+
+    bool nameManual = state.isNameManuallyEdited;
+    if (updated.name != state.poleBarn.name) {
+      nameManual = true;
+    }
+
+    state = state.copyWith(
+      poleBarn: updated,
+      isPriceManuallyEdited: priceManual,
+      isNameManuallyEdited: nameManual,
+    );
     _updateGeneratedName();
     _debouncedSave();
   }
 
   void _updateGeneratedName() {
+    if (state.isNameManuallyEdited) return;
+
     final pb = state.poleBarn;
     // Formula: POLE BARN ${ancho}x${largo}x${alto} @ ${Spacing}
     // We use int format if they are whole numbers for a cleaner look
@@ -198,6 +217,8 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
 }
 
 // Providers
+final selectedPoleBarnIdProvider = StateProvider<int?>((ref) => null);
+
 final poleBarnRepositoryProvider = Provider<PoleBarnRepository>((ref) {
   return PoleBarnRepository(Supabase.instance.client);
 });

@@ -13,6 +13,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   supabase_flutter: ^2.8.3
   go_router: ^14.6.0
+  image_picker: ^1.1.2
   design_system:
     path: ../../core/design_system
 

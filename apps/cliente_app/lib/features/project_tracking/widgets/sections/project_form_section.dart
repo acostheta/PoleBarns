@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
+import 'package:users/users.dart';
 
 class ProjectFormSection extends ConsumerStatefulWidget {
   final ProjectModel project;
@@ -202,7 +203,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 SizedBox(width: 350, child: _buildClientDropdown(clientsAsync)),
                 SizedBox(width: 350, child: _buildResponsableDropdown()),
                 SizedBox(width: 350, child: _buildStatusDropdown()),
-                SizedBox(width: 350, child: _buildGroupMultiSelect()),
+                SizedBox(width: 350, child: _buildGroupSelection()),
                 SizedBox(
                     width: 350,
                     child: _buildDateField('Fecha de Inicio', _startDate,
@@ -326,21 +327,36 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
         SizedBox(
           height: 42,
           child: ref.watch(profilesProvider).when(
-                data: (profiles) => DropdownButtonFormField<String>(
-                  value: _selectedResponsable,
-                  items: profiles
-                      .map<DropdownMenuItem<String>>((p) =>
-                          DropdownMenuItem<String>(
-                              value: p['full_name'] as String,
-                              child: Text(p['full_name'] as String,
-                                  style: const TextStyle(fontSize: 14),
-                                  overflow: TextOverflow.ellipsis)))
-                      .toList(),
-                  onChanged: (val) =>
-                      setState(() => _selectedResponsable = val),
-                  decoration: _inputDecoration(),
-                  isExpanded: true,
-                ),
+                data: (profiles) {
+                  // Find ID for current name
+                  String? selectedId;
+                  try {
+                    selectedId = profiles.firstWhere(
+                        (p) => p['full_name'] == _selectedResponsable)['id'];
+                  } catch (_) {}
+
+                  return DropdownButtonFormField<String>(
+                    value: selectedId,
+                    items: profiles
+                        .map<DropdownMenuItem<String>>((p) =>
+                            DropdownMenuItem<String>(
+                                value: p['id'] as String,
+                                child: Text(
+                                    (p['full_name'] as String?) ?? 'N/A',
+                                    style: const TextStyle(fontSize: 14),
+                                    overflow: TextOverflow.ellipsis)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        final name = profiles.firstWhere(
+                            (p) => p['id'] == val)['full_name'] as String?;
+                        setState(() => _selectedResponsable = name);
+                      }
+                    },
+                    decoration: _inputDecoration(),
+                    isExpanded: true,
+                  );
+                },
                 loading: () => const Center(child: LinearProgressIndicator()),
                 error: (e, _) => Text('Error: $e'),
               ),
@@ -349,7 +365,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
     );
   }
 
-  Widget _buildGroupMultiSelect() {
+  Widget _buildGroupSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -359,85 +375,52 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 color: Color(0xFF374151),
                 fontSize: 13)),
         const SizedBox(height: 4),
-        InkWell(
-          onTap: () => _showMultiSelectGroup(context, ref),
-          child: Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(6),
+        ref.watch(workerGroupsProvider).when(
+              data: (groups) {
+                final usersAsync = ref.watch(allUsersProvider);
+                return DropdownButtonFormField<String>(
+                  value: groups.any(
+                          (g) => g['name'] == _selectedGroupUsers.join(', '))
+                      ? _selectedGroupUsers.join(', ')
+                      : null,
+                  items: groups.map<DropdownMenuItem<String>>((g) {
+                    final supervisorId = g['supervisor_id'] as String?;
+                    final supervisorName = usersAsync.when(
+                      data: (users) => users.firstWhere(
+                        (u) => u['id'] == supervisorId,
+                        orElse: () => {},
+                      )['name'] as String?,
+                      loading: () => '...',
+                      error: (_, __) => null,
+                    );
+
+                    final displayName = supervisorName != null
+                        ? '${g['name']} (Responsable: $supervisorName)'
+                        : (g['name'] as String);
+
+                    return DropdownMenuItem<String>(
+                      value: g['name'] as String,
+                      child: Text(displayName,
+                          style: const TextStyle(fontSize: 14),
+                          overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedGroupUsers = val != null ? [val] : [];
+                    });
+                  },
+                  decoration: _inputDecoration(),
+                  isExpanded: true,
+                  hint: const Text('Seleccionar Grupo',
+                      style: TextStyle(fontSize: 14)),
+                );
+              },
+              loading: () => const Center(child: LinearProgressIndicator()),
+              error: (e, _) => Text('Error: $e'),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedGroupUsers.isEmpty
-                        ? 'Seleccione usuarios'
-                        : _selectedGroupUsers.join(', '),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _selectedGroupUsers.isEmpty
-                          ? Colors.grey
-                          : Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Icon(Icons.group_add, size: 18, color: Colors.grey),
-              ],
-            ),
-          ),
-        ),
       ],
     );
-  }
-
-  void _showMultiSelectGroup(BuildContext context, WidgetRef ref) {
-    ref.read(profilesProvider).whenData((profiles) {
-      showDialog(
-        context: context,
-        builder: (ctx) {
-          return StatefulBuilder(builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Seleccionar Grupo'),
-              content: SizedBox(
-                width: 300,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: profiles.length,
-                  itemBuilder: (ctx, i) {
-                    final p = profiles[i];
-                    final name = p['full_name'] as String;
-                    final isSelected = _selectedGroupUsers.contains(name);
-                    return CheckboxListTile(
-                      title: Text(name),
-                      value: isSelected,
-                      onChanged: (val) {
-                        setDialogState(() {
-                          if (val == true) {
-                            _selectedGroupUsers.add(name);
-                          } else {
-                            _selectedGroupUsers.remove(name);
-                          }
-                        });
-                        setState(() {});
-                      },
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cerrar'),
-                ),
-              ],
-            );
-          });
-        },
-      );
-    });
   }
 
   Widget _buildStatusDropdown() {
