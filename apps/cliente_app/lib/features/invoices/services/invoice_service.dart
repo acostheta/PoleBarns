@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/invoice_models.dart';
 
@@ -7,7 +8,7 @@ class InvoiceService {
 
   Stream<List<InvoiceModel>> watchInvoices() {
     return _supabase
-        .from('Invoices')
+        .from('invoice_details_view')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .map((data) => data.map((e) => InvoiceModel.fromJson(e)).toList());
@@ -16,7 +17,7 @@ class InvoiceService {
   // Realtime stream for a single invoice (for detail screen)
   Stream<InvoiceModel> watchInvoice(int id) {
     return _supabase
-        .from('Invoices')
+        .from('invoice_details_view')
         .stream(primaryKey: ['id'])
         .eq('id', id)
         .limit(1)
@@ -26,7 +27,7 @@ class InvoiceService {
   Future<List<InvoiceModel>> getInvoices() async {
     final response = await _supabase
         .from('Invoices')
-        .select('*, clients(*), projects(*)')
+        .select('*, clients(*), worker_groups(*, profiles:supervisor_id(name))')
         .order('created_at', ascending: false);
 
     return (response as List).map((e) => InvoiceModel.fromJson(e)).toList();
@@ -35,7 +36,7 @@ class InvoiceService {
   Future<InvoiceModel> getInvoice(int id) async {
     final response = await _supabase
         .from('Invoices')
-        .select('*, clients(*), projects(*)')
+        .select('*, clients(*), worker_groups(*, profiles:supervisor_id(name))')
         .eq('id', id)
         .single();
 
@@ -56,7 +57,7 @@ class InvoiceService {
 
   Stream<List<RelatedProductModel>> watchRelatedProducts(int invoiceId) {
     return _supabase
-        .from('Related Products')
+        .from('related_products_view')
         .stream(primaryKey: ['id'])
         .eq('IdInvoice', invoiceId)
         .map((data) =>
@@ -93,6 +94,13 @@ class InvoiceService {
     }
 
     return newId;
+  }
+
+  Future<void> updateInvoice(InvoiceModel invoice) async {
+    await _supabase
+        .from('Invoices')
+        .update(invoice.toJson())
+        .eq('id', invoice.id);
   }
 
   Future<void> updateRelatedProduct(int id, Map<String, dynamic> data) async {
@@ -133,6 +141,22 @@ class InvoiceService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  Future<String> uploadInvoicePdf({
+    required int invoiceId,
+    required Uint8List pdfBytes,
+  }) async {
+    final path = 'invoice_$invoiceId.pdf';
+    await _supabase.storage.from('invoices').uploadBinary(
+          path,
+          pdfBytes,
+          fileOptions: const FileOptions(
+            upsert: true,
+            contentType: 'application/pdf',
+          ),
+        );
+    return _supabase.storage.from('invoices').getPublicUrl(path);
+  }
+
   Future<void> sendInvoiceByEmail({
     required int invoiceId,
     required List<int> pdfBytes,
@@ -150,5 +174,30 @@ class InvoiceService {
         'clientName': clientName,
       },
     );
+  }
+
+  Future<void> deleteInvoice(int id) async {
+    await _supabase.from('Invoices').delete().eq('id', id);
+  }
+
+  Future<void> deleteInvoices(List<int> ids) async {
+    await _supabase.from('Invoices').delete().filter('id', 'in', ids);
+  }
+
+  Future<List<GroupModel>> getGroups() async {
+    final response = await _supabase
+        .from('worker_groups')
+        .select('*, profiles:supervisor_id(name)')
+        .order('name');
+    return (response as List).map((e) => GroupModel.fromJson(e)).toList();
+  }
+
+  Future<List<CatalogItemModel>> getCatalogItems() async {
+    // Assuming 'PoleBarns' is the catalog table
+    final response = await _supabase
+        .from('PoleBarns')
+        .select('id, name, precio_venta')
+        .order('name');
+    return (response as List).map((e) => CatalogItemModel.fromJson(e)).toList();
   }
 }

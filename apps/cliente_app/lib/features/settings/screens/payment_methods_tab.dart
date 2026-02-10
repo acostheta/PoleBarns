@@ -30,6 +30,12 @@ class PaymentMethodsTab extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.payment),
                   title: Text(method.name),
+                  subtitle: method.serviceFee > 0
+                      ? Text('Service Fee: ${method.serviceFee}%',
+                          style: TextStyle(
+                              color: Colors.orange.shade700,
+                              fontWeight: FontWeight.w500))
+                      : null,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -81,6 +87,8 @@ class PaymentMethodsTab extends ConsumerWidget {
   void _showMethodDialog(BuildContext context, WidgetRef ref,
       {PaymentMethodModel? method}) {
     final nameController = TextEditingController(text: method?.name ?? '');
+    final feeController =
+        TextEditingController(text: method?.serviceFee.toString() ?? '0.0');
     final isEditing = method != null;
 
     showDialog(
@@ -88,9 +96,23 @@ class PaymentMethodsTab extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title:
             Text(isEditing ? 'Editar Método de Pago' : 'Nuevo Método de Pago'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Nombre'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: feeController,
+              decoration: const InputDecoration(
+                labelText: 'Service Fee (%)',
+                helperText: 'Cargo adicional porcentual (ej. 3.5)',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -105,10 +127,13 @@ class PaymentMethodsTab extends ConsumerWidget {
                 return;
               }
 
+              final fee = double.tryParse(feeController.text) ?? 0.0;
+
               try {
                 if (method != null) {
                   final updated = method.copyWith(
                     name: nameController.text,
+                    serviceFee: fee,
                   );
                   await ref
                       .read(settingsRepositoryProvider)
@@ -118,6 +143,7 @@ class PaymentMethodsTab extends ConsumerWidget {
                       .read(settingsRepositoryProvider)
                       .createPaymentMethod(
                         nameController.text,
+                        serviceFee: fee,
                       );
                 }
                 ref.invalidate(paymentMethodsListProvider);

@@ -135,7 +135,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         actions: [
           if (state.poleBarn.id != null)
             IconButton(
-              onPressed: () => _confirmDelete(context, ref, state.poleBarn.id!),
+              onPressed: () => _confirmDelete(state.poleBarn.id!),
               icon: const Icon(Icons.delete_outline, color: Colors.red),
               tooltip: 'Eliminar Producto',
             ),
@@ -188,7 +188,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                     style: AppStyles.dialogTitleStyle,
                   ),
                   ElevatedButton.icon(
-                    onPressed: () => _showMaterialDialog(context, null),
+                    onPressed: () => _showMaterialDialog(null),
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Agregar Material'),
                     style: ElevatedButton.styleFrom(
@@ -303,9 +303,9 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,18 +423,19 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                     fontWeight: FontWeight.bold,
                     color: Colors.indigo,
                     fontSize: 16)),
-            onTap: () => _showMaterialDialog(context, index),
+            onTap: () => _showMaterialDialog(index),
           ),
         );
       }).toList(),
     );
   }
 
-  Future<void> _showMaterialDialog(BuildContext context, int? index) async {
+  Future<void> _showMaterialDialog(int? index) async {
     final state = ref.read(poleBarnFormProvider(widget.initialPoleBarn));
     final notifier =
         ref.read(poleBarnFormProvider(widget.initialPoleBarn).notifier);
     final rawMaterials = await ref.read(rawMaterialsProvider.future);
+    if (!mounted) return;
 
     RelatedMaterial material = index != null
         ? state.relatedMaterials[index]
@@ -481,8 +482,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     );
   }
 
-  Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, int poleBarnId) async {
+  Future<void> _confirmDelete(int poleBarnId) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -502,9 +502,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     );
 
     if (confirm == true) {
-      await ref.read(poleBarnRepositoryProvider).deletePoleBarn(poleBarnId);
-      ref.read(selectedPoleBarnIdProvider.notifier).state =
-          null; // Clear selection
+      if (context.mounted) {
+        await ref.read(poleBarnRepositoryProvider).deletePoleBarn(poleBarnId);
+        ref.read(selectedPoleBarnIdProvider.notifier).state = null;
+      }
     }
   }
 }

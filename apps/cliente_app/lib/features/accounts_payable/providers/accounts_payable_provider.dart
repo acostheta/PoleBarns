@@ -77,11 +77,13 @@ class AccountsPayableNotifier
     required DateTime invoiceDate,
     required double totalAmount,
     String? projectId,
+    int? invoiceId,
     String? invoiceInternRef,
   }) async {
     await _repository.createAccount(
       providerId: providerId,
       projectId: projectId,
+      invoiceId: invoiceId,
       invoiceDate: invoiceDate,
       totalAmount: totalAmount,
       invoiceInternRef: invoiceInternRef,
@@ -89,6 +91,27 @@ class AccountsPayableNotifier
     await loadAccounts();
   }
 }
+
+// Invoice Accounts Provider
+final invoiceAccountsPayableListProvider =
+    FutureProvider.family<List<AccountPayableModel>, int>(
+        (ref, invoiceId) async {
+  final repository = ref.watch(accountsPayableRepositoryProvider);
+  // Subscribe to changes for this invoice's accounts
+  // We can't easily subscribe to filtered list without a new channel per invoice or simple general listener
+  // For now rely on manual refresh/invalidate
+  return repository.getAccountsByInvoice(invoiceId);
+});
+
+final invoiceAccountsPayableTotalProvider =
+    FutureProvider.family<double, int>((ref, invoiceId) async {
+  final accounts = ref.watch(invoiceAccountsPayableListProvider(invoiceId));
+  return accounts.maybeWhen(
+    data: (list) =>
+        list.fold<double>(0.0, (sum, item) => sum + item.totalAmount),
+    orElse: () => 0.0,
+  );
+});
 
 // Payments List Family Provider (autoDispose to clean up when dialog closes)
 final paymentsListProvider = FutureProvider.family

@@ -23,17 +23,12 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _isMenuOpen = true;
-
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final profileAsync = user != null
         ? ref.watch(userProfileProvider(user.id))
         : const AsyncValue<Map<String, dynamic>>.loading();
-
-    final userRole = profileAsync.asData?.value?['role'];
-    final isAdmin = userRole == 'Administrador' || userRole == 'Admin';
 
     String title = 'Inicio';
     List<Widget>? actions;
@@ -63,7 +58,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       title = 'Gestión de Nómina';
       bodyContent = const PayrollDashboardScreen();
     } else if (selectedIndex == DashboardIndices.users) {
-      title = 'Trabajadores';
+      title = 'Usuarios';
       bodyContent = const UsersListScreen();
     } else if (selectedIndex == DashboardIndices.clients) {
       title = 'Clientes';
@@ -89,14 +84,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Text('Bienvenido a App Gilbert', style: TextStyle(fontSize: 24)));
     }
 
+    final isMenuOpen = ref.watch(sidebarExpandedProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () {
-            setState(() {
-              _isMenuOpen = !_isMenuOpen;
-            });
+            ref.read(sidebarExpandedProvider.notifier).state = !isMenuOpen;
           },
         ),
         title: Text(title),
@@ -108,7 +103,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            width: _isMenuOpen ? 280 : 72,
+            width: isMenuOpen ? 280 : 72,
             color: Theme.of(context).cardColor,
             child: Column(
               children: [
@@ -116,7 +111,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(
                     vertical: 24,
-                    horizontal: _isMenuOpen ? 24 : 16,
+                    horizontal: isMenuOpen ? 24 : 16,
                   ),
                   decoration: BoxDecoration(
                     color:
@@ -141,7 +136,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Expanded(
                         child: AnimatedOpacity(
                           duration: const Duration(milliseconds: 200),
-                          opacity: _isMenuOpen ? 1.0 : 0.0,
+                          opacity: isMenuOpen ? 1.0 : 0.0,
                           curve: Curves.easeInOut,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 12),
@@ -183,83 +178,80 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         title: 'Mi Perfil',
                         index: DashboardIndices.profile,
                       ),
-                      if (isAdmin) ...[
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isMenuOpen ? 1.0 : 0.0,
-                          child: _isMenuOpen
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Divider(color: Colors.grey[300], height: 1),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 8),
-                                      child: Text(
-                                        'ADMINISTRACIÓN',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color:
-                                                  Theme.of(context).hintColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: isMenuOpen ? 1.0 : 0.0,
+                        child: isMenuOpen
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Divider(color: Colors.grey[300], height: 1),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    child: Text(
+                                      'ADMINISTRACIÓN',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: Theme.of(context).hintColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
-                                  ],
-                                )
-                              : Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  child: Divider(
-                                      indent: 12,
-                                      endIndent: 12,
-                                      color: Colors.grey[300],
-                                      height: 1),
-                                ),
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.person_add,
-                          title: 'Clientes',
-                          index: DashboardIndices.clients,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.construction,
-                          title: 'Proyectos',
-                          index: DashboardIndices.projectTracking,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.architecture,
-                          title: 'Productos',
-                          index: DashboardIndices.poleBarns,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.receipt_long,
-                          title: 'Invoices',
-                          index: DashboardIndices.invoices,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.payments,
-                          title: 'Nómina',
-                          index: DashboardIndices.payroll,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.attach_money,
-                          title: 'Cuentas por Pagar',
-                          index: DashboardIndices.accountsPayable,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.group,
-                          title: 'Trabajadores',
-                          index: DashboardIndices.users,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.settings,
-                          title: 'Configuración',
-                          index: DashboardIndices.settings,
-                        ),
-                      ],
+                                  ),
+                                ],
+                              )
+                            : Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Divider(
+                                    indent: 12,
+                                    endIndent: 12,
+                                    color: Colors.grey[300],
+                                    height: 1),
+                              ),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.person_add,
+                        title: 'Clientes',
+                        index: DashboardIndices.clients,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.construction,
+                        title: 'Proyectos',
+                        index: DashboardIndices.projectTracking,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.architecture,
+                        title: 'Productos',
+                        index: DashboardIndices.poleBarns,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.receipt_long,
+                        title: 'Invoices',
+                        index: DashboardIndices.invoices,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.payments,
+                        title: 'Nómina',
+                        index: DashboardIndices.payroll,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.attach_money,
+                        title: 'Cuentas por Pagar',
+                        index: DashboardIndices.accountsPayable,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.group,
+                        title: 'Usuarios',
+                        index: DashboardIndices.users,
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.settings,
+                        title: 'Configuración',
+                        index: DashboardIndices.settings,
+                      ),
                       Divider(color: Colors.grey[300], height: 1),
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -283,7 +275,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Expanded(
                                   child: AnimatedOpacity(
                                     duration: const Duration(milliseconds: 200),
-                                    opacity: _isMenuOpen ? 1.0 : 0.0,
+                                    opacity: isMenuOpen ? 1.0 : 0.0,
                                     curve: Curves.easeInOut,
                                     child: const Padding(
                                       padding: EdgeInsets.only(left: 12),
@@ -309,6 +301,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                 ),
+                Divider(color: Colors.grey[300], height: 1),
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    isMenuOpen ? Icons.chevron_left : Icons.chevron_right,
+                    color: const Color(0xFF64748B),
+                  ),
+                  title: isMenuOpen
+                      ? const Text(
+                          'Contraer Menú',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    ref.read(sidebarExpandedProvider.notifier).state =
+                        !isMenuOpen;
+                  },
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -321,6 +336,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildMenuItem(
       {required IconData icon, required String title, required int index}) {
+    final isMenuOpen = ref.watch(sidebarExpandedProvider);
     final selectedIndex = ref.watch(dashboardIndexProvider);
     final isSelected = selectedIndex == index;
     const activeColor = Color(0xFF92400E);
@@ -350,7 +366,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Expanded(
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 200),
-                  opacity: _isMenuOpen ? 1.0 : 0.0,
+                  opacity: isMenuOpen ? 1.0 : 0.0,
                   curve: Curves.easeInOut,
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12),

@@ -48,9 +48,10 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
       _categoryCtrl.clear();
       _noteCtrl.clear();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -96,10 +97,12 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
                   child: StreamBuilder<List<PaymentDestajo>>(
                     stream: stream,
                     builder: (context, snapshot) {
-                      if (snapshot.hasError)
+                      if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
-                      if (!snapshot.hasData)
+                      }
+                      if (!snapshot.hasData) {
                         return const Center(child: CircularProgressIndicator());
+                      }
 
                       final payments = snapshot.data!;
                       if (payments.isEmpty) {
@@ -119,7 +122,7 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
+                                  color: Colors.green.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.attach_money,

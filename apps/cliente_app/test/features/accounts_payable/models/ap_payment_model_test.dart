@@ -1,11 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cliente_app/features/accounts_payable/models/ap_payment_model.dart';
-import 'package:cliente_app/features/settings/models/payment_method_model.dart';
 
 void main() {
   group('APPaymentModel', () {
     final validDate = DateTime(2023, 10, 2);
-    final validMethod = PaymentMethodModel(id: 'pm-1', name: 'Cash');
 
     final validJson = {
       'id': 'pay-123',

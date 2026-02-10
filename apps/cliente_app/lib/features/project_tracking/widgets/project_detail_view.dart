@@ -7,7 +7,6 @@ import 'sections/project_gallery_section.dart';
 import 'sections/project_chat_section.dart';
 import 'sections/project_pole_barns_section.dart';
 
-import '../models/project_models.dart';
 import '../../invoices/providers/invoice_providers.dart';
 import '../../invoices/screens/create_invoice_screen.dart';
 import '../../../providers/navigation_providers.dart';

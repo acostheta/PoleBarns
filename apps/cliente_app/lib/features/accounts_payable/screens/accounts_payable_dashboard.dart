@@ -14,6 +14,8 @@ class AccountsPayableDashboard extends ConsumerStatefulWidget {
 
 class _AccountsPayableDashboardState
     extends ConsumerState<AccountsPayableDashboard> {
+  bool _isListVisible = true;
+
   @override
   Widget build(BuildContext context) {
     const bgLight = Color(0xFFFDFBF7);
@@ -23,13 +25,42 @@ class _AccountsPayableDashboardState
       body: Row(
         children: [
           // Left Sidebar (Accounts List)
-          const SizedBox(
-            width: 380,
-            child: AccountsPayableListSidebar(),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: _isListVisible ? 380 : 0,
+            child: ClipRect(
+              child: OverflowBox(
+                minWidth: 380,
+                maxWidth: 380,
+                child: const AccountsPayableListSidebar(),
+              ),
+            ),
           ),
 
-          // Vertical Divider
-          VerticalDivider(width: 1, thickness: 1, color: Colors.grey[300]),
+          // Collapsible Trigger / Divider
+          Material(
+            color: Colors.white,
+            child: InkWell(
+              onTap: () => setState(() => _isListVisible = !_isListVisible),
+              child: Container(
+                width: 24,
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Colors.grey[300]!, width: 1),
+                    left: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    _isListVisible ? Icons.chevron_left : Icons.chevron_right,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ),
+          ),
 
           // Right Content (Account Details)
           Expanded(

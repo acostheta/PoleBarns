@@ -14,13 +14,15 @@ final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
 // --- Streams ---
 
 // 1. Projects List
-final projectListProvider = StreamProvider<List<ProjectModel>>((ref) {
+final projectListProvider =
+    StreamProvider.autoDispose<List<ProjectModel>>((ref) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getProjectsStream();
 });
 
 // 1.5 Clients List
-final clientListProvider = FutureProvider<List<ClientSimpleModel>>((ref) async {
+final clientListProvider =
+    FutureProvider.autoDispose<List<ClientSimpleModel>>((ref) async {
   final supabase = Supabase.instance.client;
   final response = await supabase
       .from('clients')
@@ -33,7 +35,7 @@ final clientListProvider = FutureProvider<List<ClientSimpleModel>>((ref) async {
 
 // 1.7 Profiles List
 final profilesProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final supabase = Supabase.instance.client;
   final response = await supabase
       .from('profiles')
@@ -43,34 +45,29 @@ final profilesProvider =
 });
 
 // 2. Project Costs (Family)
-final projectCostsProvider =
-    StreamProvider.family<List<ProjectCostModel>, String>((ref, projectId) {
+final projectCostsProvider = StreamProvider.autoDispose
+    .family<List<ProjectCostModel>, String>((ref, projectId) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getCostsStream(projectId);
 });
 
 // 3. Project Media (Family)
-final projectMediaProvider =
-    StreamProvider.family<List<ProjectMediaModel>, String>((ref, projectId) {
+final projectMediaProvider = StreamProvider.autoDispose
+    .family<List<ProjectMediaModel>, String>((ref, projectId) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getMediaStream(projectId);
 });
 
 // 4. Project Chat (Family)
-final projectChatProvider =
-    StreamProvider.family<List<ProjectChatModel>, String>((ref, projectId) {
+final projectChatProvider = StreamProvider.autoDispose
+    .family<List<ProjectChatModel>, String>((ref, projectId) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getChatStream(projectId);
 });
 
-// 5. Single Project (Family) - Derived from List for simplicity or separate fetch
-// For realtime updates on the detail screen, it's best to either:
-// a) Stream the single document (Repository needs a method)
-// b) Watch the list and find the item.
-// Let's us (b) for now as it's efficient if list is small, or add (a) later.
-// Actually, let's add a single project stream to repository if needed, but for now:
+// 5. Single Project (Family)
 final projectDetailProvider =
-    Provider.family<ProjectModel?, String>((ref, projectId) {
+    Provider.autoDispose.family<ProjectModel?, String>((ref, projectId) {
   final projectsAsync = ref.watch(projectListProvider);
   return projectsAsync.when(
     data: (projects) => projects.cast<ProjectModel?>().firstWhere(
@@ -83,30 +80,36 @@ final projectDetailProvider =
 });
 
 // 6. Project Pole Barns (Associations)
-final projectPoleBarnsProvider =
-    FutureProvider.family<List<ProjectPoleBarnModel>, String>(
-        (ref, projectId) async {
+final projectPoleBarnsProvider = FutureProvider.autoDispose
+    .family<List<ProjectPoleBarnModel>, String>((ref, projectId) async {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getProjectPoleBarns(projectId);
 });
 
-final projectPoleBarnsStreamProvider =
-    StreamProvider.family<List<ProjectPoleBarnModel>, String>((ref, projectId) {
+final projectPoleBarnsStreamProvider = StreamProvider.autoDispose
+    .family<List<ProjectPoleBarnModel>, String>((ref, projectId) {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getProjectPoleBarnsStream(projectId);
 });
 
 // 7. Pole Barns Catalog
 final poleBarnsCatalogProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getPoleBarnsCatalog();
+});
+
+// 8. Project Pole Barns Materials (For new Products tab)
+final projectPoleBarnsMaterialsProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, projectId) async {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.getProjectRoleBarnMaterials(projectId);
 });
 
 // --- Master Detail State ---
 
 final projectInvoiceBalanceProvider =
-    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+    Provider.autoDispose.family<AsyncValue<double>, String>((ref, projectId) {
   final project = ref.watch(projectDetailProvider(projectId));
   final apTotalAsync =
       ref.watch(projectAccountsPayableTotalProvider(projectId));
@@ -118,7 +121,7 @@ final projectInvoiceBalanceProvider =
 });
 
 final projectIncomesProvider =
-    Provider.family<AsyncValue<double>, String>((ref, projectId) {
+    Provider.autoDispose.family<AsyncValue<double>, String>((ref, projectId) {
   final invoicesAsync = ref.watch(invoicesStreamProvider);
   return invoicesAsync.whenData((invoices) {
     try {
@@ -159,3 +162,10 @@ final projectAccountsPayableListProvider =
 
 // --- Master Detail State ---
 final selectedProjectIdProvider = StateProvider<String?>((ref) => null);
+
+final projectInvoiceDetailsProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>(
+        (ref, projectId) async {
+  final repo = ref.watch(projectRepositoryProvider);
+  return repo.getProjectInvoiceDetails(projectId);
+});

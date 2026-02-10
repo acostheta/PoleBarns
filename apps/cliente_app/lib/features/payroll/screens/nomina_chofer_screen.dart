@@ -42,10 +42,12 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
             child: StreamBuilder<List<NominaChofer>>(
               stream: repo.getChoferStream(),
               builder: (context, snapshot) {
-                if (snapshot.hasError)
+                if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
-                if (!snapshot.hasData)
+                }
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
+                }
 
                 return StreamBuilder<List<Map<String, dynamic>>>(
                     stream: repo.getEmployeesStream(),
@@ -65,8 +67,9 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                             tasks.contains(_searchQuery);
                       }).toList();
 
-                      if (items.isEmpty)
+                      if (items.isEmpty) {
                         return const Center(child: Text('No hay registros.'));
+                      }
 
                       return ListView.builder(
                         itemCount: items.length,
@@ -306,9 +309,10 @@ class _ChoferDialogState extends ConsumerState<_ChoferDialog> {
         }
         if (mounted) Navigator.pop(context);
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }

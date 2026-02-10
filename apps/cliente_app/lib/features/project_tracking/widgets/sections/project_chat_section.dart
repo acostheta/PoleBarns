@@ -40,7 +40,7 @@ class _ProjectChatSectionState extends ConsumerState<ProjectChatSection> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -161,8 +161,6 @@ class _ChatBubble extends StatelessWidget {
         : const Color(0xFFF5F5F4); // Amber vs Stone
     final textColor =
         isMe ? Colors.white : const Color(0xFF1F2937); // White vs Gray-800
-    final timeColor =
-        isMe ? Colors.white70 : const Color(0xFF9CA3AF); // White70 vs Gray-400
 
     final avatarColor = isMe ? Colors.green[200] : Colors.amber[200];
     final avatarText = isMe ? Colors.green[800] : Colors.amber[800];

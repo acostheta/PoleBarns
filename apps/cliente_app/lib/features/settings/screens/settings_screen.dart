@@ -7,12 +7,14 @@ import 'package:users/users.dart';
 import 'package:measures/measures.dart';
 
 class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+  final int initialIndex;
+  const SettingsScreen({super.key, this.initialIndex = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 5,
+      initialIndex: initialIndex,
       child: Column(
         children: [
           Container(

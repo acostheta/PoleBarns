@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/app_styles.dart';
 import '../../project_tracking/providers/project_providers.dart';
 import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
 import '../utils/invoice_pdf_generator.dart';
 import '../../clients/repositories/client_repository.dart';
+import '../../project_tracking/models/project_models.dart';
 
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
   final String? projectId;
-  const CreateInvoiceScreen({super.key, this.projectId});
+  final int? invoiceId;
+  final String? clientId;
+
+  const CreateInvoiceScreen(
+      {super.key, this.projectId, this.invoiceId, this.clientId});
 
   @override
   ConsumerState<CreateInvoiceScreen> createState() =>
@@ -21,120 +27,56 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _commentController = TextEditingController();
   final _addressController = TextEditingController();
+  final _responsibleController = TextEditingController();
+  final _projectController = TextEditingController();
 
-  String? _selectedProjectId;
   String? _selectedClientId;
+  String? _selectedGroupId;
+  String _status = 'Pendiente';
   DateTime _selectedDate = DateTime.now();
-  List<Map<String, dynamic>> _projectPoleBarns = [];
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  List<Map<String, dynamic>> _selectedItems = [];
+  List<GroupModel> _groups = [];
+  List<CatalogItemModel> _catalogItems = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.projectId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _onProjectSelected(widget.projectId);
-      });
-    }
+    _loadData();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
     _addressController.dispose();
+    _responsibleController.dispose();
+    _projectController.dispose();
     super.dispose();
   }
 
-  Future<void> _onProjectSelected(String? projectId) async {
-    if (projectId == null) return;
-
-    setState(() {
-      _selectedProjectId = projectId;
-      _isLoading = true;
-    });
-
-    try {
-      final projects = ref.read(projectListProvider).asData?.value ?? [];
-      final selectedProject = projects.firstWhere((p) => p.id == projectId);
-
-      setState(() {
-        _selectedClientId = selectedProject.refCliente;
-        _addressController.text = selectedProject.address ?? '';
-      });
-
-      // Fetch Pole Barns for this project
-      final pb =
-          await ref.read(invoiceServiceProvider).getProjectPoleBarns(projectId);
-      setState(() {
-        _projectPoleBarns = pb;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar datos del proyecto: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _saveInvoice() async {
-    if (!_formKey.currentState!.validate() || _selectedProjectId == null) {
-      return;
-    }
-
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
     try {
-      final totalVenta = _projectPoleBarns.fold<double>(
-          0, (sum, item) => sum + (item['sale_price'] as num).toDouble());
+      final service = ref.read(invoiceServiceProvider);
 
-      final newInvoice = InvoiceModel(
-        id: 0,
-        idProyecto: _selectedProjectId,
-        idCliente: _selectedClientId,
-        address: _addressController.text,
-        date: _selectedDate,
-        totalVenta: totalVenta,
-        comentario: _commentController.text,
-        createdAt: DateTime.now(),
-      );
+      // Load Groups and Catalog
+      _groups = await service.getGroups();
+      _catalogItems = await service.getCatalogItems();
 
-      // Prepare products to insert
-      final productsToInsert = _projectPoleBarns.map((pb) {
-        return {
-          'IdProyecto': _selectedProjectId,
-          'IdPoleBarns': pb['pole_barn_id'],
-          'Estatus': 'Pendiente',
-          'Cantidad': 1.0,
-          'Precio por unidad': pb['sale_price'],
-          'Tax': 0.0,
-        };
-      }).toList();
-
-      final newId = await ref
-          .read(invoiceServiceProvider)
-          .createInvoice(newInvoice, productsToInsert);
-
-      // Attempt to send by email automatically
-      _sendInvoiceEmail(newId);
-
-      ref.invalidate(invoicesListProvider);
-      if (_selectedProjectId != null) {
-        ref.invalidate(invoiceByProjectProvider(_selectedProjectId!));
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Factura creada exitosamente')),
-        );
+      if (widget.invoiceId != null) {
+        await _loadExistingInvoice(widget.invoiceId!);
+      } else {
+        if (widget.clientId != null) {
+          _selectedClientId = widget.clientId;
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al crear factura: $e')),
+          SnackBar(content: Text('Error al cargar datos: $e')),
         );
       }
     } finally {
@@ -142,239 +84,158 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final projectsAsync = ref.watch(projectListProvider);
-    final clientsAsync = ref.watch(clientListProvider);
+  Future<void> _loadExistingInvoice(int id) async {
+    final service = ref.read(invoiceServiceProvider);
+    final invoice = await service.getInvoice(id);
+    final products = await service.getRelatedProducts(id);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Crear Factura',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+    setState(() {
+      _projectController.text = invoice.projectName ?? '';
+      _selectedClientId = invoice.idCliente;
+      _addressController.text = invoice.address ?? '';
+      _commentController.text = invoice.comentario ?? '';
+      _selectedDate = invoice.date;
+
+      _selectedGroupId = invoice.groupId;
+      _responsibleController.text = invoice.responsible ?? '';
+      _status = invoice.status;
+      _startDate = invoice.startDate;
+      _endDate = invoice.endDate;
+
+      _selectedItems = products.map((p) {
+        return {
+          'pole_barn_id': p.idPoleBarns,
+          'sale_price': p.precioPorUnidad,
+          'qty': p.cantidad,
+          'tax': p.tax,
+          'estatus': p.estatus,
+          'PoleBarns': {'name': p.poleBarnName ?? 'Item'},
+          'is_existing': true,
+          'related_product_id': p.id,
+        };
+      }).toList();
+    });
+  }
+
+  void _onGroupSelected(String? groupId) {
+    setState(() {
+      _selectedGroupId = groupId;
+      if (groupId != null) {
+        final group = _groups.firstWhere((g) => g.id == groupId,
+            orElse: () => _groups.first);
+        _responsibleController.text = group.responsible ?? '';
+      } else {
+        _responsibleController.text = '';
+      }
+    });
+  }
+
+  void _addItemsFromCatalog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => _CatalogSelectionDialog(
+        items: _catalogItems,
+        onSelected: (selected) {
+          setState(() {
+            for (var item in selected) {
+              _selectedItems.add({
+                'pole_barn_id': item.id,
+                'sale_price': item.salePrice,
+                'qty': 1.0,
+                'tax': 0.0,
+                'estatus': 'Pendiente',
+                'PoleBarns': {'name': item.name},
+                'is_existing': false,
+              });
+            }
+          });
+        },
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Información General',
-                            style: AppStyles.dialogTitleStyle),
-                        const SizedBox(height: 32),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _buildProjectDropdown(projectsAsync),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: _buildClientDropdown(clientsAsync),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        _buildTextField(
-                            'Dirección de Facturación', _addressController,
-                            required: true),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDateField(
-                                  'Fecha de Factura',
-                                  _selectedDate,
-                                  (d) => setState(() => _selectedDate = d)),
-                            ),
-                            const SizedBox(width: 24),
-                            const Spacer(), // Empty space for balance
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        _buildTextField(
-                            'Comentario (Opcional)', _commentController,
-                            maxLines: 3),
-                        const SizedBox(height: 32),
-                        if (_projectPoleBarns.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Divider(),
-                          ),
-                          const Text(
-                            'Estructuras del Proyecto (Se incluirán en la factura):',
-                            style: AppStyles.labelStyle,
-                          ),
-                          const SizedBox(height: 16),
-                          ..._projectPoleBarns.map((pb) => Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF9FAFB),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: const Color(0xFFE5E7EB)),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(pb['PoleBarns']['name'] ?? 'Pole Barn',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w500)),
-                                    Text(
-                                        NumberFormat.simpleCurrency()
-                                            .format(pb['sale_price']),
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppStyles.primaryOrange)),
-                                  ],
-                                ),
-                              )),
-                          const SizedBox(height: 32),
-                        ],
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _saveInvoice,
-                            style: AppStyles.primaryButtonStyle,
-                            child: const Text('Guardar Factura'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
     );
   }
 
-  Widget _buildProjectDropdown(AsyncValue projectsAsync) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Proyecto', style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        projectsAsync.when(
-          data: (projects) => DropdownButtonFormField<String>(
-            value: _selectedProjectId,
-            decoration: AppStyles.inputDecoration(),
-            items: projects
-                .map<DropdownMenuItem<String>>((p) => DropdownMenuItem<String>(
-                      value: p.id,
-                      child: Text(p.address ?? p.id,
-                          style: const TextStyle(fontSize: 14)),
-                    ))
-                .toList(),
-            onChanged: _onProjectSelected,
-            validator: (v) => v == null ? 'Seleccione un proyecto' : null,
-            icon: const Icon(Icons.keyboard_arrow_down),
-          ),
-          loading: () => const LinearProgressIndicator(),
-          error: (e, __) =>
-              Text('Error: $e', style: const TextStyle(color: Colors.red)),
-        ),
-      ],
-    );
-  }
+  Future<void> _saveInvoice() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-  Widget _buildClientDropdown(AsyncValue clientsAsync) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Cliente', style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        clientsAsync.when(
-          data: (clients) => DropdownButtonFormField<String>(
-            value: _selectedClientId,
-            decoration: AppStyles.inputDecoration(),
-            items: clients
-                .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(
-                      value: c.id,
-                      child: Text(c.fullName,
-                          style: const TextStyle(fontSize: 14)),
-                    ))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedClientId = v),
-            validator: (v) => v == null ? 'Seleccione un cliente' : null,
-            icon: const Icon(Icons.keyboard_arrow_down),
-          ),
-          loading: () => const LinearProgressIndicator(),
-          error: (e, __) =>
-              Text('Error: $e', style: const TextStyle(color: Colors.red)),
-        ),
-      ],
-    );
-  }
+    setState(() => _isLoading = true);
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool required = false, int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
-          validator: required
-              ? (v) => v == null || v.isEmpty ? 'Requerido' : null
-              : null,
-          decoration: AppStyles.inputDecoration(),
-        )
-      ],
-    );
-  }
+    try {
+      final service = ref.read(invoiceServiceProvider);
+      final totalVenta = _selectedItems.fold<double>(0, (sum, item) {
+        final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+        final price = (item['sale_price'] as num?)?.toDouble() ?? 0.0;
+        final tax = (item['tax'] as num?)?.toDouble() ?? 0.0;
+        return sum + (qty * price * (1 + tax / 100));
+      });
 
-  Widget _buildDateField(
-      String label, DateTime date, Function(DateTime) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(
-                context: context,
-                initialDate: date,
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100));
-            if (picked != null) onChanged(picked);
-          },
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.centerLeft,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(DateFormat('MM/dd/yyyy').format(date),
-                    style:
-                        const TextStyle(fontSize: 14, color: Colors.black87)),
-                const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
-              ],
-            ),
-          ),
-        )
-      ],
-    );
+      final invoiceModel = InvoiceModel(
+        id: widget.invoiceId ?? 0,
+        idProyecto: null, // Decoupled
+        projectName: _projectController.text,
+        idCliente: _selectedClientId,
+        address: _addressController.text,
+        date: _selectedDate,
+        totalVenta: totalVenta,
+        comentario: _commentController.text,
+        createdAt: DateTime.now(),
+        groupId: _selectedGroupId,
+        responsible: _responsibleController.text,
+        status: _status,
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+
+      // Prepare items for initial save or manual processing
+      // Note: service.createInvoice handles inserting items.
+      final productsToSave = _selectedItems.map((item) {
+        return {
+          'IdProyecto': null, // Decoupled
+          'IdPoleBarns': item['pole_barn_id'],
+          'Estatus': item['estatus'] ?? 'Pendiente',
+          'Cantidad': item['qty'] ?? 1.0,
+          'Precio por unidad': item['sale_price'] ?? 0.0,
+          'Tax': item['tax'] ?? 0.0,
+          if (item['is_existing'] == true) 'id': item['related_product_id'],
+        };
+      }).toList();
+
+      if (widget.invoiceId != null) {
+        await service.updateInvoice(invoiceModel);
+        // Save items manuallly for update
+        for (var p in productsToSave) {
+          if (p.containsKey('id')) {
+            await service.updateRelatedProduct(p['id'] as int, p);
+          } else {
+            p['IdInvoice'] = widget.invoiceId;
+            await Supabase.instance.client
+                .from('Related Products')
+                .insert(p)
+                .select()
+                .single();
+            // We could update state here with new ID but we are closing the screen
+          }
+        }
+      } else {
+        final newId = await service.createInvoice(invoiceModel, productsToSave);
+        _sendInvoiceEmail(newId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Factura guardada')));
+        Navigator.pop(context);
+        ref.invalidate(invoicesListProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _sendInvoiceEmail(int invoiceId) async {
@@ -407,5 +268,412 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     } catch (e) {
       debugPrint('Error al enviar factura por correo: $e');
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final clientsAsync = ref.watch(clientListProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+            widget.invoiceId != null ? 'Editar Factura' : 'Crear Factura',
+            style: const TextStyle(
+                color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('Información del Proyecto'),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                          child:
+                              _buildTextField('Proyecto', _projectController)),
+                      const SizedBox(width: 24),
+                      Expanded(child: _buildClientDropdown(clientsAsync)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Billing Address - Text Field Plain
+                  const Text('Dirección de Facturación',
+                      style: AppStyles.labelStyle),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _addressController,
+                    decoration: AppStyles.inputDecoration(
+                      hintText: 'Ingrese dirección',
+                    ).copyWith(
+                      prefixIcon: const Icon(Icons.place, color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear,
+                            color: Colors.grey, size: 20),
+                        onPressed: () => _addressController.clear(),
+                      ),
+                    ),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Requerido' : null,
+                  ),
+
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Detalles de la Factura'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Grupo", style: AppStyles.labelStyle),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _selectedGroupId,
+                                decoration: AppStyles.inputDecoration(
+                                    hintText: 'Seleccionar Grupo'),
+                                items: _groups
+                                    .map((g) => DropdownMenuItem(
+                                        value: g.id, child: Text(g.name)))
+                                    .toList(),
+                                onChanged: _onGroupSelected,
+                                validator: (v) =>
+                                    v == null ? 'Requerido' : null,
+                              ),
+                            ]),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildTextField(
+                            'Responsable', _responsibleController),
+                        // Could make readOnly but users might want to override?
+                        // User asked for "autofill". Usually implies editable default.
+                        // I'll leave it editable unless requested otherwise.
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildDateSelector('Fecha Inicio', _startDate,
+                              (d) => setState(() => _startDate = d))),
+                      const SizedBox(width: 24),
+                      Expanded(
+                          child: _buildDateSelector('Fecha Fin', _endDate,
+                              (d) => setState(() => _endDate = d))),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildDateSelector(
+                              'Fecha Factura',
+                              _selectedDate,
+                              (d) => setState(() => _selectedDate = d))),
+                      const SizedBox(width: 24),
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            const Text("Estatus", style: AppStyles.labelStyle),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _status,
+                              decoration: AppStyles.inputDecoration(),
+                              items: [
+                                'Pendiente',
+                                'Pagado',
+                                'Parcial',
+                                'Cancelado'
+                              ]
+                                  .map((s) => DropdownMenuItem(
+                                      value: s, child: Text(s)))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _status = v!),
+                            ),
+                          ])),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionTitle('Items'),
+                      ElevatedButton.icon(
+                        onPressed: _addItemsFromCatalog,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar del Catálogo'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildItemsTable(),
+
+                  const SizedBox(height: 32),
+                  _buildTextField('Comentarios', _commentController,
+                      maxLines: 3),
+
+                  const SizedBox(height: 48),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveInvoice,
+                      style: AppStyles.primaryButtonStyle,
+                      child: Text(widget.invoiceId != null
+                          ? 'Actualizar Factura'
+                          : 'Crear Factura'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(title,
+        style: AppStyles.dialogTitleStyle.copyWith(fontSize: 18));
+  }
+
+  Widget _buildClientDropdown(AsyncValue clientsAsync) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Cliente', style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        clientsAsync.when(
+          data: (clients) => DropdownButtonFormField<String>(
+            value: _selectedClientId,
+            decoration: AppStyles.inputDecoration(),
+            items: clients
+                .map<DropdownMenuItem<String>>((ClientSimpleModel c) =>
+                    DropdownMenuItem<String>(
+                        value: c.id,
+                        child: Text(c.fullName,
+                            style: const TextStyle(fontSize: 14))))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedClientId = v),
+            validator: (v) => v == null ? 'Requerido' : null,
+          ),
+          loading: () => const LinearProgressIndicator(),
+          error: (e, __) => Text('Error: $e'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        TextFormField(
+            controller: controller,
+            maxLines: maxLines,
+            decoration: AppStyles.inputDecoration()),
+      ],
+    );
+  }
+
+  Widget _buildDateSelector(
+      String label, DateTime? date, Function(DateTime) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppStyles.labelStyle),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: date ?? DateTime.now(),
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) onChanged(picked);
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                    date != null
+                        ? DateFormat('MM/dd/yyyy').format(date)
+                        : 'Seleccionar',
+                    style: const TextStyle(fontSize: 14)),
+                const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemsTable() {
+    if (_selectedItems.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text('No hay items seleccionados',
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DataTable(
+        columnSpacing: 16,
+        columns: const [
+          DataColumn(label: Text('Item')),
+          DataColumn(label: Text('Precio', textAlign: TextAlign.right)),
+          DataColumn(label: Text('Cant.', textAlign: TextAlign.right)),
+          DataColumn(label: Text('Tax %', textAlign: TextAlign.right)),
+          DataColumn(label: Text('Total', textAlign: TextAlign.right)),
+          DataColumn(label: Text('')),
+        ],
+        rows: _selectedItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+          final price = (item['sale_price'] as num?)?.toDouble() ?? 0.0;
+          final tax = (item['tax'] as num?)?.toDouble() ?? 0.0;
+          final total = qty * price * (1 + tax / 100);
+
+          return DataRow(cells: [
+            DataCell(Text(item['PoleBarns']['name'] ?? 'Item')),
+            DataCell(TextFormField(
+              initialValue: price.toString(),
+              keyboardType: TextInputType.number,
+              onChanged: (v) => setState(
+                  () => item['sale_price'] = double.tryParse(v) ?? 0.0),
+              decoration: const InputDecoration(
+                  border: InputBorder.none, isDense: true),
+            )),
+            DataCell(TextFormField(
+              initialValue: qty.toString(),
+              keyboardType: TextInputType.number,
+              onChanged: (v) =>
+                  setState(() => item['qty'] = double.tryParse(v) ?? 1.0),
+              decoration: const InputDecoration(
+                  border: InputBorder.none, isDense: true),
+            )),
+            DataCell(TextFormField(
+              initialValue: tax.toString(),
+              keyboardType: TextInputType.number,
+              onChanged: (v) =>
+                  setState(() => item['tax'] = double.tryParse(v) ?? 0.0),
+              decoration: const InputDecoration(
+                  border: InputBorder.none, isDense: true),
+            )),
+            DataCell(Text(NumberFormat.simpleCurrency().format(total))),
+            DataCell(IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+              onPressed: () => setState(() => _selectedItems.removeAt(index)),
+            )),
+          ]);
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _CatalogSelectionDialog extends StatefulWidget {
+  final List<CatalogItemModel> items;
+  final Function(List<CatalogItemModel>) onSelected;
+
+  const _CatalogSelectionDialog(
+      {required this.items, required this.onSelected});
+
+  @override
+  State<_CatalogSelectionDialog> createState() =>
+      _CatalogSelectionDialogState();
+}
+
+class _CatalogSelectionDialogState extends State<_CatalogSelectionDialog> {
+  final Set<int> _selectedIds = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Seleccionar Items del Catálogo'),
+      content: SizedBox(
+        width: 400,
+        height: 500,
+        child: ListView.builder(
+          itemCount: widget.items.length,
+          itemBuilder: (context, index) {
+            final item = widget.items[index];
+            final isSelected = _selectedIds.contains(item.id);
+            return CheckboxListTile(
+              title: Text(item.name),
+              subtitle:
+                  Text(NumberFormat.simpleCurrency().format(item.salePrice)),
+              value: isSelected,
+              onChanged: (val) {
+                setState(() {
+                  if (val == true) {
+                    _selectedIds.add(item.id);
+                  } else {
+                    _selectedIds.remove(item.id);
+                  }
+                });
+              },
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
+        ElevatedButton(
+          onPressed: () {
+            final selected =
+                widget.items.where((i) => _selectedIds.contains(i.id)).toList();
+            widget.onSelected(selected);
+            Navigator.pop(context);
+          },
+          child: const Text('Agregar'),
+        ),
+      ],
+    );
   }
 }

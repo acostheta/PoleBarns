@@ -51,8 +51,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo placeholder or just Icon to match layout idea if desired,
-                // but keeping it simple as per request to not change fields.
+                Image.asset(
+                  'assets/branding/logo.png',
+                  height: 180,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.business, size: 80, color: Colors.amber),
+                ),
+                const SizedBox(height: 32),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),

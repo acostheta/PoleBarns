@@ -23,7 +23,7 @@ class ProjectPoleBarnsSection extends ConsumerWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -44,7 +44,8 @@ class ProjectPoleBarnsSection extends ConsumerWidget {
                 icon: const Icon(Icons.add_home_work_outlined, size: 18),
                 label: const Text('Asociar Caballeriza'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppStyles.primaryOrange.withOpacity(0.1),
+                  backgroundColor:
+                      AppStyles.primaryOrange.withValues(alpha: 0.1),
                   foregroundColor: AppStyles.primaryOrange,
                   elevation: 0,
                   padding:
@@ -123,7 +124,7 @@ class _PoleBarnRow extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppStyles.primaryOrange.withOpacity(0.1),
+              color: AppStyles.primaryOrange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.architecture_rounded,

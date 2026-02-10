@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dashboardIndexProvider = StateProvider<int>((ref) => 0);
+final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
 
 class DashboardIndices {
   static const int home = 0;
@@ -13,4 +14,6 @@ class DashboardIndices {
   static const int payroll = 7;
   static const int users = 8;
   static const int clients = 9;
+  static const int rawMaterials = 10;
+  static const int measures = 11;
 }

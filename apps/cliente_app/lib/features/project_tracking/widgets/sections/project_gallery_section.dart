@@ -35,7 +35,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -153,7 +153,8 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.6),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: DropdownButton<String>(
@@ -196,11 +197,12 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Colors.red.withOpacity(0.9),
+                                        color:
+                                            Colors.red.withValues(alpha: 0.9),
                                         boxShadow: [
                                           BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.2),
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.2),
                                               blurRadius: 4)
                                         ],
                                       ),
@@ -215,7 +217,8 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
                                   left: 8,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.5),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     padding: const EdgeInsets.all(4),
@@ -315,7 +318,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2))
               ]),
@@ -338,7 +341,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
   void _openFullScreen(BuildContext context, String url) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.9),
+      barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.zero,

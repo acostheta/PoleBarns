@@ -41,7 +41,7 @@ class AppStyles {
     backgroundColor: primaryOrange,
     foregroundColor: Colors.white,
     elevation: 0,
-    padding: const EdgeInsets.symmetric(vertical: 18),
+    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
     ),

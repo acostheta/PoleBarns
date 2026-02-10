@@ -1,15 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cliente_app/features/accounts_payable/models/account_payable_model.dart';
-import 'package:cliente_app/features/settings/models/provider_model.dart';
 
 void main() {
   group('AccountPayableModel', () {
     final validDate = DateTime(2023, 10, 1);
-    final validProvider = ProviderModel(
-      id: 'provider-123',
-      name: 'Test Provider',
-      address: '123 Test St',
-    );
 
     final validJson = {
       'id': 'ap-123',

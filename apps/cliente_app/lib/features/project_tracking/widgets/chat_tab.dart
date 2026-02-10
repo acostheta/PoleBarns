@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/project_providers.dart';
 import '../models/project_models.dart';
 
@@ -81,12 +82,11 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                 itemCount: reversedMessages.length,
                 itemBuilder: (context, index) {
                   final msg = reversedMessages[index];
-                  // TODO: Check current user ID to determine alignment
-                  // For now assuming all are "others" visually or generic,
-                  // but ideally we check supabase.auth.currentUser
-                  // We can't easily access repo auth state here without provider, let's assume left alignment for now or check if we can get ID.
-                  // Simplification: Align left.
-                  return _ChatMessageBubble(message: msg);
+                  final currentUserId =
+                      Supabase.instance.client.auth.currentUser?.id;
+                  final isMe = msg.usuarioRef == currentUserId;
+
+                  return _ChatMessageBubble(message: msg, isMe: isMe);
                 },
               );
             },
@@ -102,7 +102,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 offset: const Offset(0, -1),
                 blurRadius: 4,
               ),
@@ -148,7 +148,8 @@ class _ChatTabState extends ConsumerState<ChatTab> {
 
 class _ChatMessageBubble extends StatelessWidget {
   final ProjectChatModel message;
-  const _ChatMessageBubble({required this.message});
+  final bool isMe;
+  const _ChatMessageBubble({required this.message, this.isMe = false});
 
   @override
   Widget build(BuildContext context) {
@@ -157,25 +158,30 @@ class _ChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundImage: message.photoDesnormalizado != null
-                ? NetworkImage(message.photoDesnormalizado!)
-                : null,
-            child: message.photoDesnormalizado == null
-                ? Text(message.nombreDesnormalizado != null &&
-                        message.nombreDesnormalizado!.isNotEmpty
-                    ? message.nombreDesnormalizado![0].toUpperCase()
-                    : '?')
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
+          if (!isMe) ...[
+            CircleAvatar(
+              backgroundImage: message.photoDesnormalizado != null
+                  ? NetworkImage(message.photoDesnormalizado!)
+                  : null,
+              child: message.photoDesnormalizado == null
+                  ? Text(message.nombreDesnormalizado != null &&
+                          message.nombreDesnormalizado!.isNotEmpty
+                      ? message.nombreDesnormalizado![0].toUpperCase()
+                      : '?')
+                  : null,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                if (message.nombreDesnormalizado != null)
+                if (message.nombreDesnormalizado != null && !isMe)
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 2),
                     child: Text(
@@ -191,35 +197,56 @@ class _ChatMessageBubble extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+                    color: isMe ? const Color(0xFFD97706) : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft:
+                          isMe ? const Radius.circular(16) : Radius.zero,
+                      bottomRight:
+                          isMe ? Radius.zero : const Radius.circular(16),
                     ),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 2,
                           offset: const Offset(0, 1)),
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: isMe
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
                       Text(message.mensaje,
-                          style: const TextStyle(fontSize: 15)),
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: isMe ? Colors.white : Colors.black87)),
                       const SizedBox(height: 4),
                       Text(time,
-                          style:
-                              TextStyle(fontSize: 10, color: Colors.grey[400])),
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: isMe
+                                  ? Colors.white.withValues(alpha: 0.7)
+                                  : Colors.grey[400])),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 32), // Spacer for width limit
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            CircleAvatar(
+              backgroundImage: message.photoDesnormalizado != null
+                  ? NetworkImage(message.photoDesnormalizado!)
+                  : null,
+              child:
+                  message.photoDesnormalizado == null ? const Text('YO') : null,
+            ),
+          ] else ...[
+            const SizedBox(width: 32), // Spacer for width limit
+          ],
         ],
       ),
     );

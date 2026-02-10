@@ -9,7 +9,9 @@ import '../providers/accounts_payable_provider.dart';
 
 class AddAccountDialog extends ConsumerStatefulWidget {
   final String? initialProjectId;
-  const AddAccountDialog({super.key, this.initialProjectId});
+  final int? initialInvoiceId;
+  const AddAccountDialog(
+      {super.key, this.initialProjectId, this.initialInvoiceId});
 
   @override
   ConsumerState<AddAccountDialog> createState() => _AddAccountDialogState();
@@ -20,6 +22,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
 
   String? _selectedProviderId;
   String? _selectedProjectId;
+  int? _selectedInvoiceId;
   DateTime _selectedDate = DateTime.now();
   final _amountController = TextEditingController();
   final _refController = TextEditingController();
@@ -28,6 +31,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   void initState() {
     super.initState();
     _selectedProjectId = widget.initialProjectId;
+    _selectedInvoiceId = widget.initialInvoiceId;
   }
 
   @override
@@ -55,6 +59,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
         await ref.read(accountsPayableListProvider.notifier).addAccount(
               providerId: _selectedProviderId!,
               projectId: _selectedProjectId,
+              invoiceId: _selectedInvoiceId,
               invoiceDate: _selectedDate,
               totalAmount: amount,
               invoiceInternRef:

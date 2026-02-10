@@ -5,10 +5,33 @@ import '../../../config/app_styles.dart';
 import '../models/project_models.dart';
 import '../providers/project_providers.dart';
 import 'package:users/users.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProjectCreateDialog extends ConsumerStatefulWidget {
+  final String? projectId; // If null, create mode.
   final String? initialClientId;
-  const ProjectCreateDialog({super.key, this.initialClientId});
+  final String? initialProjectName;
+  final String? initialResponsible;
+  final String? initialGroupId;
+  final String? initialStatus;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final String? initialComments;
+  final List<Map<String, dynamic>>? initialStructures;
+
+  const ProjectCreateDialog({
+    super.key,
+    this.projectId,
+    this.initialClientId,
+    this.initialProjectName,
+    this.initialResponsible,
+    this.initialGroupId,
+    this.initialStatus,
+    this.initialStartDate,
+    this.initialEndDate,
+    this.initialComments,
+    this.initialStructures,
+  });
 
   @override
   ConsumerState<ProjectCreateDialog> createState() =>
@@ -36,10 +59,36 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
   double get _totalStructuresPrice => _selectedStructures.fold(
       0, (sum, item) => sum + (item['precio_venta'] as num).toDouble());
 
+  bool get _isEditing => widget.projectId != null;
+
   @override
   void initState() {
     super.initState();
     _selectedClientId = widget.initialClientId;
+    if (widget.initialProjectName != null) {
+      _addressController.text = widget.initialProjectName!;
+    }
+    _selectedResponsable = widget.initialResponsible;
+    if (widget.initialGroupId != null) {
+      _selectedGroupUsers = [widget.initialGroupId!];
+    }
+    if (widget.initialStatus != null) {
+      if (_statusOptions.contains(widget.initialStatus)) {
+        _selectedStatus = widget.initialStatus!;
+      }
+    }
+    if (widget.initialStartDate != null) {
+      _startDate = widget.initialStartDate!;
+    }
+    if (widget.initialEndDate != null) {
+      _endDate = widget.initialEndDate!;
+    }
+    if (widget.initialComments != null) {
+      _commentsController.text = widget.initialComments!;
+    }
+    if (widget.initialStructures != null) {
+      _selectedStructures.addAll(widget.initialStructures!);
+    }
   }
 
   Future<void> _submit() async {
@@ -50,41 +99,71 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
       return;
     }
 
-    // Create Model
-    final newProject = ProjectModel(
-      id: '',
-      refCliente: _selectedClientId!,
-      responsable: _selectedResponsable ?? 'N/A',
-      estatus: _selectedStatus,
-      grupoAsignado: _selectedGroupUsers.join(', '),
-      address: _addressController.text,
-      fechaInicio: _startDate,
-      fechaFinalizacion: _endDate,
-      ventaTotal: _totalStructuresPrice,
-      costosTotales: 0,
-      profit: 0,
-      comments: _commentsController.text,
-      createdAt: DateTime.now(),
-    );
+    final repo = ref.read(projectRepositoryProvider);
 
-    try {
-      final repo = ref.read(projectRepositoryProvider);
-      final createdProject = await repo.createProject(newProject);
+    if (_isEditing) {
+      // Update Mode
+      try {
+        final updateData = {
+          'ref_cliente': _selectedClientId,
+          'responsable': _selectedResponsable,
+          'estatus': _selectedStatus,
+          'grupo_asignado': _selectedGroupUsers.join(', '),
+          'address': _addressController.text,
+          'fecha_inicio': _startDate.toIso8601String(),
+          'fecha_finalizacion': _endDate.toIso8601String(),
+          'comments': _commentsController.text,
+        };
 
-      // Add Pole Barns
-      for (final struct in _selectedStructures) {
-        await repo.addProjectPoleBarn(
-          createdProject.id,
-          struct['id'] as int,
-          (struct['precio_venta'] as num).toDouble(),
-        );
+        // Update main fields
+        await Supabase.instance.client
+            .from('projects')
+            .update(updateData)
+            .eq('id', widget.projectId!);
+
+        if (mounted) Navigator.of(context).pop(true);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       }
+    } else {
+      // Create Mode
+      final newProject = ProjectModel(
+        id: '',
+        refCliente: _selectedClientId!,
+        responsable: _selectedResponsable ?? 'N/A',
+        estatus: _selectedStatus,
+        grupoAsignado: _selectedGroupUsers.join(', '),
+        address: _addressController.text,
+        fechaInicio: _startDate,
+        fechaFinalizacion: _endDate,
+        ventaTotal: _totalStructuresPrice,
+        costosTotales: 0,
+        profit: 0,
+        comments: _commentsController.text,
+        createdAt: DateTime.now(),
+      );
 
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al crear el proyecto: $e')));
+      try {
+        final createdProject = await repo.createProject(newProject);
+
+        // Add Pole Barns
+        for (final struct in _selectedStructures) {
+          await repo.addProjectPoleBarn(
+            createdProject.id,
+            struct['id'] as int,
+            (struct['precio_venta'] as num).toDouble(),
+          );
+        }
+
+        if (mounted) Navigator.of(context).pop(true);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error al crear el proyecto: $e')));
+        }
       }
     }
   }
@@ -115,7 +194,7 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Nuevo Proyecto',
+                      Text(_isEditing ? 'Editar Proyecto' : 'Nuevo Proyecto',
                           style: AppStyles.dialogTitleStyle),
                       IconButton(
                           icon: const Icon(Icons.close, color: Colors.grey),
@@ -346,93 +425,98 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                   const Divider(),
                   const SizedBox(height: 24),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Estructuras (Catálogo)',
-                          style: AppStyles.labelStyle),
-                      TextButton.icon(
-                        onPressed: () => _showAddStructureDialog(),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Añadir'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_selectedStructures.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text('Ninguna estructura seleccionada',
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey,
-                              fontStyle: FontStyle.italic)),
-                    )
-                  else
-                    Column(
-                      children: _selectedStructures.map((struct) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9FAFB),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                        struct['name'] as String? ??
-                                            'Sin nombre',
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(
-                                        NumberFormat.simpleCurrency()
-                                            .format(struct['precio_venta']),
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Colors.grey)),
-                                  ],
+                  if (!_isEditing) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Estructuras (Catálogo)',
+                            style: AppStyles.labelStyle),
+                        TextButton.icon(
+                          onPressed: () => _showAddStructureDialog(),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Añadir'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_selectedStructures.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('Ninguna estructura seleccionada',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic)),
+                      )
+                    else
+                      Column(
+                        children: _selectedStructures.map((struct) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          struct['name'] as String? ??
+                                              'Sin nombre',
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500)),
+                                      Text(
+                                          NumberFormat.simpleCurrency()
+                                              .format(struct['precio_venta']),
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    size: 20, color: Colors.red),
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedStructures.remove(struct);
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  if (_selectedStructures.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const Text('Total Venta Estimada: ',
-                              style: TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold)),
-                          Text(
-                              NumberFormat.simpleCurrency()
-                                  .format(_totalStructuresPrice),
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green)),
-                        ],
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline,
+                                      size: 20, color: Colors.red),
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedStructures.remove(struct);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
+                    if (_selectedStructures.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Text('Total Venta Estimada: ',
+                                style: TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text(
+                                NumberFormat.simpleCurrency()
+                                    .format(_totalStructuresPrice),
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green)),
+                          ],
+                        ),
+                      ),
+                  ],
 
                   const SizedBox(height: 40),
 
@@ -442,7 +526,8 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                     child: ElevatedButton(
                       onPressed: _submit,
                       style: AppStyles.primaryButtonStyle,
-                      child: const Text('Crear Proyecto'),
+                      child: Text(
+                          _isEditing ? 'Guardar Cambios' : 'Crear Proyecto'),
                     ),
                   )
                 ],

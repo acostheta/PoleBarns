@@ -39,15 +39,18 @@ class SettingsRepository {
     return (data as List).map((e) => PaymentMethodModel.fromJson(e)).toList();
   }
 
-  Future<void> createPaymentMethod(String name) async {
+  Future<void> createPaymentMethod(String name,
+      {double serviceFee = 0.0}) async {
     await _client.from('payment_methods').insert({
       'name': name,
+      'service_fee': serviceFee,
     });
   }
 
   Future<void> updatePaymentMethod(PaymentMethodModel method) async {
     await _client.from('payment_methods').update({
       'name': method.name,
+      'service_fee': method.serviceFee,
     }).eq('id', method.id);
   }
 

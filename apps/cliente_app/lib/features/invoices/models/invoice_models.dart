@@ -10,10 +10,16 @@ class InvoiceModel {
   final double reembolsado;
   final String? comentario;
   final DateTime createdAt;
+  final String? groupId;
+  final String? responsible;
+  final String status;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   // Joined fields
   final String? clientName;
   final String? projectName;
+  final String? groupName;
 
   InvoiceModel({
     required this.id,
@@ -27,8 +33,14 @@ class InvoiceModel {
     this.reembolsado = 0.0,
     this.comentario,
     required this.createdAt,
+    this.groupId,
+    this.responsible,
+    this.status = 'Pendiente',
+    this.startDate,
+    this.endDate,
     this.clientName,
     this.projectName,
+    this.groupName,
   });
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
@@ -44,11 +56,29 @@ class InvoiceModel {
       reembolsado: (json['Reembolsado'] as num?)?.toDouble() ?? 0.0,
       comentario: json['Comentario'],
       createdAt: DateTime.parse(json['created_at']),
-      clientName: json['clients'] != null
-          ? '${json['clients']['first_name']} ${json['clients']['last_name']}'
+      groupId: json['group_id'],
+      status: json['status'] ?? 'Pendiente',
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
           : null,
-      projectName:
-          json['projects'] != null ? json['projects']['address'] : null,
+      endDate:
+          json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      clientName: json['client_full_name'] ??
+          (json['clients'] != null
+              ? '${json['clients']['first_name']} ${json['clients']['last_name']}'
+              : null),
+      projectName: json['project_name'] ??
+          (json['projects'] != null ? json['projects']['address'] : null),
+      groupName: json['worker_group_name'] ??
+          (json['worker_groups'] != null
+              ? json['worker_groups']['name']
+              : null),
+      responsible: json['responsible_name'] ??
+          (json['worker_groups'] != null
+              ? (json['worker_groups']['profiles'] != null
+                  ? json['worker_groups']['profiles']['name']
+                  : json['worker_groups']['supervisor_id'])
+              : json['responsible']),
     );
   }
 
@@ -64,8 +94,14 @@ class InvoiceModel {
     double? reembolsado,
     String? comentario,
     DateTime? createdAt,
+    String? groupId,
+    String? responsible,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
     String? clientName,
     String? projectName,
+    String? groupName,
   }) {
     return InvoiceModel(
       id: id ?? this.id,
@@ -79,8 +115,14 @@ class InvoiceModel {
       reembolsado: reembolsado ?? this.reembolsado,
       comentario: comentario ?? this.comentario,
       createdAt: createdAt ?? this.createdAt,
+      groupId: groupId ?? this.groupId,
+      responsible: responsible ?? this.responsible,
+      status: status ?? this.status,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       clientName: clientName ?? this.clientName,
       projectName: projectName ?? this.projectName,
+      groupName: groupName ?? this.groupName,
     );
   }
 
@@ -93,7 +135,59 @@ class InvoiceModel {
       'Date': date.toIso8601String(),
       'Total Venta': totalVenta,
       'Comentario': comentario,
+      'group_id': groupId,
+      'responsible': responsible,
+      'status': status,
+      'start_date': startDate?.toIso8601String(),
+      'end_date': endDate?.toIso8601String(),
+      'project_name': projectName,
     };
+  }
+}
+
+class GroupModel {
+  final String id;
+  final String name;
+  final String? responsible;
+
+  GroupModel({required this.id, required this.name, this.responsible});
+
+  factory GroupModel.fromJson(Map<String, dynamic> json) {
+    return GroupModel(
+      id: json['id'],
+      name: json['name'],
+      responsible: json['profiles'] != null
+          ? json['profiles']['name']
+          : json['supervisor_id'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'supervisor_id': responsible,
+    };
+  }
+}
+
+class CatalogItemModel {
+  final int id;
+  final String name;
+  final double salePrice;
+
+  CatalogItemModel(
+      {required this.id, required this.name, required this.salePrice});
+
+  factory CatalogItemModel.fromJson(Map<String, dynamic> json) {
+    // Assuming mapping from PoleBarns table
+    return CatalogItemModel(
+      id: json['id'], // pole_barn_id? or id? need to check PoleBarns schema.
+      // In project_pole_barns usage: 'PoleBarns': {'name': ...}
+      // Let's assume standard 'name' and 'sale_price' or 'price'.
+      name: json['name'] ?? 'Item',
+      salePrice: (json['precio_venta'] as num?)?.toDouble() ?? 0.0,
+    );
   }
 }
 
@@ -138,8 +232,8 @@ class RelatedProductModel {
       tax: (json['Tax'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (json['Total Price'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.parse(json['created_at']),
-      poleBarnName:
-          json['PoleBarns'] != null ? json['PoleBarns']['name'] : null,
+      poleBarnName: json['pole_barn_name'] ??
+          (json['PoleBarns'] != null ? json['PoleBarns']['name'] : null),
     );
   }
 
@@ -193,6 +287,7 @@ class InvoicePaymentModel {
   final String? metodoDePagoId; // UUID ref to payment_methods
   final String? category;
   final String? nota;
+  final double feeAmount;
   final DateTime createdAt;
 
   // Joined fields
@@ -206,6 +301,7 @@ class InvoicePaymentModel {
     this.metodoDePagoId,
     this.category,
     this.nota,
+    this.feeAmount = 0.0,
     required this.createdAt,
     this.metodoDePagoNombre,
   });
@@ -224,6 +320,7 @@ class InvoicePaymentModel {
       metodoDePagoId: json['Metodo de Pago'],
       category: json['Category'],
       nota: json['Nota'],
+      feeAmount: (json['fee_amount'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.parse(json['created_at']),
       metodoDePagoNombre: json['payment_methods'] != null
           ? json['payment_methods']['name']
@@ -240,6 +337,7 @@ class InvoicePaymentModel {
       'Metodo de Pago': metodoDePagoId,
       'Category': category,
       'Nota': nota,
+      'fee_amount': feeAmount,
     };
   }
 }

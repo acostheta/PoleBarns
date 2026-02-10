@@ -205,7 +205,40 @@ class ProjectRepository {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  Future<List<Map<String, dynamic>>> getProjectRoleBarnMaterials(
+      String projectId) async {
+    // 1. Get Project Pole Barns to know which Barns are in the project
+    final projectBarns = await getProjectPoleBarns(projectId);
+
+    // 2. For each barn, fetch its related materials
+    List<Map<String, dynamic>> result = [];
+
+    for (var pBarn in projectBarns) {
+      final response = await _supabase
+          .from('RelatedMaterials')
+          .select('*, raw_materials(name)')
+          .eq('PoleBarns_Ref', pBarn.poleBarnId);
+
+      final materials = List<Map<String, dynamic>>.from(response);
+
+      result.add({'project_pole_barn': pBarn, 'materials': materials});
+    }
+
+    return result;
+  }
+
   // --- Financial Summaries ---
+
+  Future<Map<String, dynamic>?> getProjectInvoiceDetails(
+      String projectId) async {
+    final response = await _supabase
+        .from('Invoices')
+        .select('id, Address')
+        .eq('IdProyecto', projectId)
+        .maybeSingle();
+
+    return response;
+  }
 
   Future<double> getProjectInvoiceBalance(String projectId) async {
     final response = await _supabase

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -81,11 +83,17 @@ class _EvidenceTabState extends ConsumerState<EvidenceTab> {
                     final item = filtered[index];
                     return GestureDetector(
                       onTap: () {
-                        // TODO: Open full screen image
                         showDialog(
                           context: context,
-                          builder: (_) =>
-                              Dialog(child: Image.network(item.urlMedia)),
+                          barrierColor: Colors.black.withValues(alpha: 0.9),
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: EdgeInsets.zero,
+                            child: InteractiveViewer(
+                              child: Image.network(item.urlMedia,
+                                  fit: BoxFit.contain),
+                            ),
+                          ),
                         );
                       },
                       child: Stack(
@@ -163,14 +171,14 @@ class _UploadMediaDialog extends ConsumerStatefulWidget {
 
 class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
   final _picker = ImagePicker();
-  File? _imageFile;
+  XFile? _imageFile;
   String _selectedTag = 'Durante';
   bool _isUploading = false;
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
-      setState(() => _imageFile = File(picked.path));
+      setState(() => _imageFile = picked);
     }
   }
 
@@ -180,25 +188,52 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
     setState(() => _isUploading = true);
 
     try {
-      // 1. Compress
-      final compressedBytes = await FlutterImageCompress.compressWithFile(
-        _imageFile!.absolute.path,
-        minWidth: 800,
-        minHeight: 800,
-        quality: 70, // Adjustable quality
-      );
+      Uint8List? compressedBytes;
 
-      if (compressedBytes == null) throw Exception('Falló la compresión');
+      if (kIsWeb) {
+        // Web: Read bytes directly
+        final bytes = await _imageFile!.readAsBytes();
+
+        // Skip compression on web for now or use compressWithList if supported
+        // flutter_image_compress web support can be tricky without proper setup
+        // Let's rely on basic byte reading. If needed, we can try compressWithList.
+        try {
+          compressedBytes = await FlutterImageCompress.compressWithList(
+            bytes,
+            minHeight: 800,
+            minWidth: 800,
+            quality: 70,
+          );
+        } catch (e) {
+          debugPrint('Web compression failed, using original bytes: $e');
+          compressedBytes = bytes;
+        }
+      } else {
+        // Mobile: Use File path
+        final file = File(_imageFile!.path);
+        compressedBytes = await FlutterImageCompress.compressWithFile(
+          file.absolute.path,
+          minWidth: 800,
+          minHeight: 800,
+          quality: 70,
+        );
+      }
+
+      if (compressedBytes == null)
+        throw Exception('Falló el procesamiento de la imagen');
 
       // 2. Upload to Storage
-      // Create bucket 'project_media' if not exists? Ideally pre-created.
+      // Create bucket 'project-media' if not exists? Ideally pre-created.
       // We'll assume bucket 'project-media' exists or use a common one.
       // Let's use 'project-media' bucket.
       final fileName =
           '${widget.projectId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final storagePath = await Supabase.instance.client.storage
-          .from('project-media')
-          .uploadBinary(fileName, compressedBytes);
+
+      await Supabase.instance.client.storage.from('project-media').uploadBinary(
+            fileName,
+            compressedBytes,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          );
 
       // 3. Get Public URL
       final publicUrl = Supabase.instance.client.storage
@@ -241,7 +276,9 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
             SizedBox(
               height: 150,
               width: 150,
-              child: Image.file(_imageFile!, fit: BoxFit.cover),
+              child: kIsWeb
+                  ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                  : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
             )
           else
             Container(

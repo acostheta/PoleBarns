@@ -98,7 +98,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                   border: Border.all(color: const Color(0xFFE5E7EB)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -151,7 +151,8 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                                   color: Color(0xFF6B7280),
                                   letterSpacing: 0.5,
                                 ),
-                                dataRowHeight: 64,
+                                dataRowMinHeight: 64,
+                                dataRowMaxHeight: 64,
                                 horizontalMargin: 24,
                                 columnSpacing: 24,
                                 columns: [
@@ -368,8 +369,10 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
       }
       if (_dateRange != null) {
         if (a.invoiceDate.isBefore(_dateRange!.start) ||
-            a.invoiceDate.isAfter(_dateRange!.end.add(const Duration(days: 1))))
+            a.invoiceDate
+                .isAfter(_dateRange!.end.add(const Duration(days: 1)))) {
           return false;
+        }
       }
       if (_providerFilter != null && _providerFilter != 'Todos') {
         if (a.provider?.name != _providerFilter) return false;
@@ -605,7 +608,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
           border: Border.all(color: const Color(0xFFE5E7EB)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4))
           ],
@@ -615,7 +618,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
             Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 24)),
             const SizedBox(width: 20),
@@ -643,11 +646,13 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
   }
 
   Widget _buildStatusBadge(AccountPayableModel account) {
-    if (account.currentBalance <= 0)
+    if (account.currentBalance <= 0) {
       return _badge('Pagado', const Color(0xFF065F46), const Color(0xFFD1FAE5));
-    if (account.totalPaid > 0)
+    }
+    if (account.totalPaid > 0) {
       return _badge(
           'Parcial', const Color(0xFF92400E), const Color(0xFFFEF3C7));
+    }
     return _badge(
         'Pendiente', const Color(0xFF991B1B), const Color(0xFFFEE2E2));
   }
@@ -658,7 +663,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
       decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: color.withOpacity(0.1))),
+          border: Border.all(color: color.withValues(alpha: 0.1))),
       child: Text(text,
           style: TextStyle(
               color: color, fontSize: 11, fontWeight: FontWeight.bold)),

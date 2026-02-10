@@ -11,6 +11,8 @@ class AccountPayableModel {
   final double currentBalance; // From view
   final DateTime? createdAt;
 
+  final int? invoiceId;
+
   // Relations
   final ProviderModel? provider;
   final String? projectName; // Simplified project name from join
@@ -22,6 +24,7 @@ class AccountPayableModel {
     this.invoiceInternRef,
     required this.totalAmount,
     this.projectId,
+    this.invoiceId,
     this.totalPaid = 0.0,
     this.currentBalance = 0.0,
     this.createdAt,
@@ -37,6 +40,7 @@ class AccountPayableModel {
       invoiceInternRef: json['invoice_intern_ref'] as String?,
       totalAmount: (json['total_amount'] as num).toDouble(),
       projectId: json['project_id'] as String?,
+      invoiceId: json['invoice_id'] as int?,
       totalPaid: (json['total_paid'] as num?)?.toDouble() ?? 0.0,
       currentBalance: (json['current_balance'] as num?)?.toDouble() ?? 0.0,
       createdAt: json['created_at'] != null
@@ -54,6 +58,7 @@ class AccountPayableModel {
       'id': id,
       'provider_id': providerId,
       'project_id': projectId,
+      'invoice_id': invoiceId,
       'invoice_date': invoiceDate.toIso8601String(),
       'invoice_intern_ref': invoiceInternRef,
       'total_amount': totalAmount,

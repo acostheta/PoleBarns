@@ -15,12 +15,25 @@ class AccountsPayableRepository {
             '*, providers!inner(*), projects(id, address)') // Joining with providers and projects
         .order('invoice_date', ascending: false);
 
-    // Note: projects(id, name) would be better but your project model might use different field for display.
-    // In projects table, we have 'address' or 'responsable'. Let's check which field to use for "Proyecto".
-    // Usually 'address' or a custom name. Let's look at the projects table.
     return (response as List).map((e) {
       final json = Map<String, dynamic>.from(e);
       // Add a display name if projects join succeeded
+      if (json['projects'] != null) {
+        json['project_name'] = json['projects']['address'] ?? 'Proyecto';
+      }
+      return AccountPayableModel.fromJson(json);
+    }).toList();
+  }
+
+  Future<List<AccountPayableModel>> getAccountsByInvoice(int invoiceId) async {
+    final response = await _supabase
+        .from('vw_accounts_payable_summary')
+        .select('*, providers!inner(*), projects(id, address)')
+        .eq('invoice_id', invoiceId)
+        .order('invoice_date', ascending: false);
+
+    return (response as List).map((e) {
+      final json = Map<String, dynamic>.from(e);
       if (json['projects'] != null) {
         json['project_name'] = json['projects']['address'] ?? 'Proyecto';
       }
@@ -33,11 +46,13 @@ class AccountsPayableRepository {
     required DateTime invoiceDate,
     required double totalAmount,
     String? projectId,
+    int? invoiceId,
     String? invoiceInternRef,
   }) async {
     await _supabase.from('accounts_payable').insert({
       'provider_id': providerId,
       'project_id': projectId,
+      'invoice_id': invoiceId,
       'invoice_date': invoiceDate.toIso8601String(),
       'total_amount': totalAmount,
       'invoice_intern_ref': invoiceInternRef,
@@ -96,11 +111,13 @@ class AccountsPayableRepository {
     required DateTime invoiceDate,
     required double totalAmount,
     String? projectId,
+    int? invoiceId,
     String? invoiceInternRef,
   }) async {
     await _supabase.from('accounts_payable').update({
       'provider_id': providerId,
       'project_id': projectId,
+      'invoice_id': invoiceId,
       'invoice_date': invoiceDate.toIso8601String(),
       'total_amount': totalAmount,
       'invoice_intern_ref': invoiceInternRef,

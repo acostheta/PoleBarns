@@ -225,6 +225,7 @@ class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
 
   for (final entry in files.entries) {
     File(entry.key).writeAsStringSync(entry.value);
+    // ignore: avoid_print
     print('Wrote ${entry.key}');
   }
 }

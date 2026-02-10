@@ -13,10 +13,6 @@ class FinancialTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Note: ProjectModel usage here assumes it's updated in real-time by the parent watching the stream provider.
-    // If specific fields need faster updates than the list, we might need a dedicated stream.
-    // Given the architecture, the parent ProjectDetailScreen watches the list provider which is a stream, so it should update.
-
-    final currency = NumberFormat.simpleCurrency();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -72,7 +68,6 @@ class FinancialTab extends ConsumerWidget {
                 loading: () => const LinearProgressIndicator(),
                 error: (e, __) => Text('Error al buscar factura: $e'),
               ),
-          // TODO: Add graphs here in future
         ],
       ),
     );
@@ -103,11 +98,11 @@ class _FinancialCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
