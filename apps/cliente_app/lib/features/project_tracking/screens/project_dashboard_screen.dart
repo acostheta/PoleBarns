@@ -244,6 +244,9 @@ class _ProjectDashboardScreenState
                                                 ),
                                                 DataCell(
                                                   _buildStatusBadge(project),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
                                                 ),
                                                 DataCell(
                                                   Column(
@@ -282,27 +285,46 @@ class _ProjectDashboardScreenState
                                                                         .grey)),
                                                     ],
                                                   ),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
                                                 ),
-                                                DataCell(Text(NumberFormat
-                                                        .simpleCurrency()
-                                                    .format(
-                                                        project.ventaTotal))),
-                                                DataCell(Text(
-                                                    NumberFormat
-                                                            .simpleCurrency()
-                                                        .format(project
-                                                            .costosTotales),
-                                                    style: const TextStyle(
-                                                        color:
-                                                            Colors.redAccent))),
-                                                DataCell(Text(
-                                                    NumberFormat
-                                                            .simpleCurrency()
-                                                        .format(project.profit),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.green))),
+                                                DataCell(
+                                                  Text(NumberFormat
+                                                          .simpleCurrency()
+                                                      .format(
+                                                          project.ventaTotal)),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                      NumberFormat
+                                                              .simpleCurrency()
+                                                          .format(project
+                                                              .costosTotales),
+                                                      style: const TextStyle(
+                                                          color: Colors
+                                                              .redAccent)),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                      NumberFormat
+                                                              .simpleCurrency()
+                                                          .format(
+                                                              project.profit),
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.green)),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
+                                                ),
                                                 DataCell(
                                                   Align(
                                                     alignment:
@@ -488,6 +510,7 @@ class _ProjectDashboardScreenState
         const PopupMenuItem(value: 'En Proceso', child: Text('En Proceso')),
         const PopupMenuItem(value: 'Terminado', child: Text('Terminado')),
         const PopupMenuItem(value: 'Pendiente', child: Text('Pendiente')),
+        const PopupMenuItem(value: 'Cancelado', child: Text('Cancelado')),
       ],
       child: Container(
         height: 44,
@@ -531,6 +554,7 @@ class _ProjectDashboardScreenState
     if (project.estatus == 'Terminado') color = const Color(0xFF059669);
     if (project.estatus == 'En Proceso') color = const Color(0xFFD97706);
     if (project.estatus == 'Pendiente') color = const Color(0xFFDC2626);
+    if (project.estatus == 'Cancelado') color = const Color(0xFF6B7280);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

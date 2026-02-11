@@ -35,6 +35,11 @@ final invoiceStreamProvider =
   return ref.watch(invoiceServiceProvider).watchInvoice(id);
 });
 
+final invoicesByClientStreamProvider =
+    StreamProvider.family<List<InvoiceModel>, String>((ref, clientId) {
+  return ref.watch(invoiceServiceProvider).watchInvoicesByClient(clientId);
+});
+
 final invoiceByProjectProvider =
     FutureProvider.family<InvoiceModel?, String>((ref, projectId) async {
   final invoices = await ref.watch(invoiceServiceProvider).getInvoices();

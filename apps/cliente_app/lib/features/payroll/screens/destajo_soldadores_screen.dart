@@ -5,6 +5,7 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
+import '../../settings/repositories/settings_repository.dart';
 
 class DestajoSoldadoresScreen extends ConsumerStatefulWidget {
   const DestajoSoldadoresScreen({super.key});
@@ -33,9 +34,9 @@ class _DestajoSoldadoresScreenState
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              decoration: AppStyles.inputDecoration(
-                      hintText: 'Buscar por producto o empleado...')
-                  .copyWith(
+              decoration:
+                  AppStyles.inputDecoration(hintText: 'Buscar por empleado...')
+                      .copyWith(
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
               ),
               onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
@@ -59,80 +60,171 @@ class _DestajoSoldadoresScreenState
                       final empMap = {
                         for (var e in employees)
                           e['id'].toString():
-                              e['full_name']?.toString() ?? 'S/N'
+                              (e['full_name'] ?? e['name'])?.toString() ?? 'S/N'
                       };
 
                       final items = snapshot.data!.where((item) {
                         final empName =
                             empMap[item.idEmpleado]?.toLowerCase() ?? '';
-                        final product = item.trussProducto?.toLowerCase() ?? '';
-                        return empName.contains(_searchQuery) ||
-                            product.contains(_searchQuery);
+                        return empName.contains(_searchQuery);
                       }).toList();
 
                       if (items.isEmpty) {
                         return const Center(child: Text('No hay registros.'));
                       }
 
-                      return ListView.builder(
-                        itemCount: items.length,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          final total = item.cantidad != null &&
-                                  item.montoUnitario != null
-                              ? item.cantidad! * item.montoUnitario!
-                              : 0.0;
-                          final saldo = total - (item.pagoParcial ?? 0);
-                          final empName =
-                              empMap[item.idEmpleado] ?? 'Desconocido';
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        dividerColor: Colors.grey.shade200,
+                                      ),
+                                      child: DataTable(
+                                        showCheckboxColumn: false,
+                                        headingRowColor:
+                                            WidgetStateProperty.all(
+                                                Colors.grey.shade50),
+                                        dataRowMinHeight: 40,
+                                        dataRowMaxHeight: 52,
+                                        headingRowHeight: 48,
+                                        columnSpacing: 16,
+                                        horizontalMargin: 16,
+                                        columns: const [
+                                          DataColumn(label: Text('FECHA')),
+                                          DataColumn(label: Text('EMPLEADO')),
+                                          DataColumn(label: Text('CANTIDAD')),
+                                          DataColumn(label: Text('PRECIO')),
+                                          DataColumn(label: Text('MÉTODO')),
+                                          DataColumn(label: Text('TOTAL')),
+                                          DataColumn(label: Text('PAGADO')),
+                                          DataColumn(label: Text('SALDO')),
+                                          DataColumn(label: Text('ACCIONES')),
+                                        ],
+                                        rows: items.map((item) {
+                                          final total = item.cantidad != null &&
+                                                  item.montoUnitario != null
+                                              ? item.cantidad! *
+                                                  item.montoUnitario!
+                                              : 0.0;
+                                          final saldo =
+                                              total - (item.pagoParcial ?? 0);
+                                          final empName =
+                                              empMap[item.idEmpleado] ??
+                                                  'Desconocido';
 
-                          return Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                              title: Text(
-                                  'Producto: ${item.trussProducto} (Qty: ${item.cantidad})',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                    'Empleado: $empName\nTotal: \$$total | Pagado: \$${item.pagoParcial}\nSaldo: \$$saldo'),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.payments_outlined,
-                                        color: Colors.green),
-                                    onPressed: () =>
-                                        _showPaymentsDialog(context, item),
-                                    tooltip: 'Ver/Agregar Pagos',
+                                          return DataRow(
+                                            onSelectChanged: (_) {
+                                              _showPaymentsDialog(
+                                                  context, item);
+                                            },
+                                            cells: [
+                                              DataCell(Text(
+                                                  DateFormat('dd/MM/yyyy')
+                                                      .format(item.fecha))),
+                                              DataCell(Text(empName,
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
+                                              DataCell(Text(
+                                                  item.cantidad?.toString() ??
+                                                      '-')),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(
+                                                          item.montoUnitario ??
+                                                              0))),
+                                              DataCell(
+                                                  Text(item.formaPago ?? '-')),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(total),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(
+                                                          item.pagoParcial ??
+                                                              0),
+                                                  style: const TextStyle(
+                                                      color: Colors.green))),
+                                              DataCell(Text(
+                                                NumberFormat.simpleCurrency()
+                                                    .format(saldo),
+                                                style: TextStyle(
+                                                    color: saldo > 0
+                                                        ? Colors.red
+                                                        : Colors.black,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              )),
+                                              DataCell(Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.payments_outlined,
+                                                        color: Colors.green,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showPaymentsDialog(
+                                                            context, item),
+                                                    tooltip:
+                                                        'Ver/Agregar Pagos',
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.edit_outlined,
+                                                        color: Colors.blue,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showEditDialog(
+                                                            context, item),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _confirmDelete(item),
+                                                  ),
+                                                ],
+                                              )),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined,
-                                        color: Colors.blue),
-                                    onPressed: () =>
-                                        _showEditDialog(context, item),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.red),
-                                    onPressed: () => _confirmDelete(item),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       );
                     });
               },
@@ -169,7 +261,32 @@ class _DestajoSoldadoresScreenState
   void _showEditDialog(BuildContext context, NominaDestajoSoldador? item) {
     showDialog(
       context: context,
-      builder: (context) => _SoldadorDialog(item: item),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 550),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(item == null ? 'Nuevo Registro' : 'Editar Registro',
+                      style: AppStyles.dialogTitleStyle),
+                  IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(child: SoldadorForm(item: item)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -182,21 +299,23 @@ class _DestajoSoldadoresScreenState
   }
 }
 
-class _SoldadorDialog extends ConsumerStatefulWidget {
+class SoldadorForm extends ConsumerStatefulWidget {
   final NominaDestajoSoldador? item;
-  const _SoldadorDialog({this.item});
+  const SoldadorForm({super.key, this.item});
 
   @override
-  ConsumerState<_SoldadorDialog> createState() => _SoldadorDialogState();
+  ConsumerState<SoldadorForm> createState() => _SoldadorFormState();
 }
 
-class _SoldadorDialogState extends ConsumerState<_SoldadorDialog> {
+class _SoldadorFormState extends ConsumerState<SoldadorForm> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedEmployeeId;
   late TextEditingController _trussCtrl;
   late TextEditingController _qtyCtrl;
   late TextEditingController _priceCtrl;
+  late TextEditingController _totalCtrl;
   late TextEditingController _notasCtrl;
+  String? _selectedFormaPago;
   DateTime _fecha = DateTime.now();
   bool _isLoading = false;
 
@@ -210,126 +329,165 @@ class _SoldadorDialogState extends ConsumerState<_SoldadorDialog> {
     _priceCtrl = TextEditingController(
         text: widget.item?.montoUnitario?.toString() ?? '');
     _notasCtrl = TextEditingController(text: widget.item?.notas ?? '');
+    _selectedFormaPago = widget.item?.formaPago;
+
+    double initialTotal = 0;
+    if (widget.item?.total != null) {
+      initialTotal = widget.item!.total!;
+    } else {
+      final q = double.tryParse(_qtyCtrl.text) ?? 0;
+      final p = double.tryParse(_priceCtrl.text) ?? 0;
+      initialTotal = q * p;
+    }
+    _totalCtrl = TextEditingController(text: initialTotal.toStringAsFixed(2));
+
     if (widget.item != null) _fecha = widget.item!.fecha;
+
+    _qtyCtrl.addListener(_updateTotal);
+    _priceCtrl.addListener(_updateTotal);
+  }
+
+  void _updateTotal() {
+    final q = double.tryParse(_qtyCtrl.text) ?? 0;
+    final p = double.tryParse(_priceCtrl.text) ?? 0;
+    final t = q * p;
+    _totalCtrl.text = t.toStringAsFixed(2);
+  }
+
+  @override
+  void dispose() {
+    _qtyCtrl.removeListener(_updateTotal);
+    _priceCtrl.removeListener(_updateTotal);
+    _trussCtrl.dispose();
+    _qtyCtrl.dispose();
+    _priceCtrl.dispose();
+    _totalCtrl.dispose();
+    _notasCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Empleado', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: repo.getEmployeesStream(),
+              builder: (context, snapshot) {
+                final employees = snapshot.data ?? [];
+                return DropdownButtonFormField<String>(
+                  value: _selectedEmployeeId,
+                  items: employees.map<DropdownMenuItem<String>>((e) {
+                    return DropdownMenuItem<String>(
+                      value: e['id'].toString(),
+                      child: Text(
+                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
+                          style: const TextStyle(fontSize: 14)),
+                    );
+                  }).toList(),
+                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                  validator: (v) => v == null ? 'Requerido' : null,
+                  decoration: AppStyles.inputDecoration(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            _buildDateField('Fecha', _fecha, (d) => setState(() => _fecha = d)),
+            const SizedBox(height: 24),
+            const SizedBox(height: 24),
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        widget.item == null
-                            ? 'Nuevo Registro'
-                            : 'Editar Registro',
-                        style: AppStyles.dialogTitleStyle),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Empleado', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getEmployeesStream(),
-                  builder: (context, snapshot) {
-                    final employees = snapshot.data ?? [];
-                    return DropdownButtonFormField<String>(
-                      value: _selectedEmployeeId,
-                      items: employees.map<DropdownMenuItem<String>>((e) {
-                        return DropdownMenuItem<String>(
-                          value: e['id'].toString(),
-                          child: Text(e['full_name'] ?? 'S/N',
-                              style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                      validator: (v) => v == null ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildDateField(
-                    'Fecha', _fecha, (d) => setState(() => _fecha = d)),
-                const SizedBox(height: 24),
-                const Text('Truss (Producto)', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getRawMaterialsStream(),
-                  builder: (context, snapshot) {
-                    final list = snapshot.data ?? [];
-                    return DropdownButtonFormField<String>(
-                      value: list.any((e) => e['name'] == _trussCtrl.text)
-                          ? _trussCtrl.text
-                          : (widget.item?.trussProducto),
-                      items: list
-                          .map<DropdownMenuItem<String>>((e) =>
-                              DropdownMenuItem<String>(
-                                  value: e['name'].toString(),
-                                  child: Text(e['name'] ?? '',
-                                      style: const TextStyle(fontSize: 14))))
-                          .toList(),
-                      onChanged: (v) =>
-                          setState(() => _trussCtrl.text = v ?? ''),
-                      validator: (v) => v == null ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField('Cantidad', _qtyCtrl,
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField('Monto Unitario', _priceCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildTextField('Notas', _notasCtrl, maxLines: 2),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : const Text('Guardar Registro'),
-                  ),
-                )
+                Expanded(
+                    child: _buildTextField('Cantidad', _qtyCtrl,
+                        keyboardType: TextInputType.number)),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField('Monto Unitario', _priceCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: Consumer(builder: (context, ref, _) {
+                    final methodsAsync = ref.watch(paymentMethodsListProvider);
+                    return methodsAsync.when(
+                      data: (methods) {
+                        if (_selectedFormaPago != null &&
+                            !methods.any((m) => m.name == _selectedFormaPago)) {
+                          _selectedFormaPago = null;
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Forma de Pago',
+                                style: AppStyles.labelStyle),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedFormaPago,
+                              items: methods
+                                  .map((m) => DropdownMenuItem(
+                                        value: m.name,
+                                        child: Text(m.name,
+                                            style:
+                                                const TextStyle(fontSize: 14)),
+                                      ))
+                                  .toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedFormaPago = val;
+                                });
+                              },
+                              decoration: AppStyles.inputDecoration(),
+                              hint: const Text('Seleccionar'),
+                              icon: const Icon(Icons.keyboard_arrow_down),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (e, s) => const Text('Error'),
+                    );
+                  }),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField('Monto Total', _totalCtrl,
+                        keyboardType: TextInputType.number,
+                        readOnly: true, // Auto-calculated
+                        prefixText: '\$ ')),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildTextField('Notas', _notasCtrl, maxLines: 2),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: AppStyles.primaryButtonStyle,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Guardar Registro'),
+              ),
+            )
+          ],
         ),
       ),
     );
@@ -343,9 +501,11 @@ class _SoldadorDialogState extends ConsumerState<_SoldadorDialog> {
           id: widget.item?.id ?? '',
           idEmpleado: _selectedEmployeeId!,
           fecha: _fecha,
-          trussProducto: _trussCtrl.text,
+          trussProducto: '',
           cantidad: double.tryParse(_qtyCtrl.text),
           montoUnitario: double.tryParse(_priceCtrl.text),
+          formaPago: _selectedFormaPago,
+          total: double.tryParse(_totalCtrl.text),
           notas: _notasCtrl.text,
         );
         if (widget.item == null) {
@@ -371,6 +531,7 @@ class _SoldadorDialogState extends ConsumerState<_SoldadorDialog> {
       {bool required = false,
       TextInputType? keyboardType,
       String? prefixText,
+      bool readOnly = false,
       int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,6 +541,7 @@ class _SoldadorDialogState extends ConsumerState<_SoldadorDialog> {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
+          readOnly: readOnly,
           style: const TextStyle(fontSize: 14, color: Colors.black87),
           keyboardType: keyboardType,
           validator: required

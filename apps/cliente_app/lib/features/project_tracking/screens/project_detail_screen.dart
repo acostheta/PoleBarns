@@ -52,7 +52,6 @@ class ProjectDetailScreen extends ConsumerWidget {
               icon: const Icon(Icons.more_vert, color: Colors.black),
               onSelected: (value) {
                 if (value == 'edit') {
-                  // TODO: Implement Edit
                   showDialog(
                     context: context,
                     builder: (ctx) => ProjectCreateDialog(

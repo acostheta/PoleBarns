@@ -56,7 +56,7 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                       final empMap = {
                         for (var e in employees)
                           e['id'].toString():
-                              e['full_name']?.toString() ?? 'S/N'
+                              (e['full_name'] ?? e['name'])?.toString() ?? 'S/N'
                       };
 
                       final items = snapshot.data!.where((item) {
@@ -71,55 +71,121 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                         return const Center(child: Text('No hay registros.'));
                       }
 
-                      return ListView.builder(
-                        itemCount: items.length,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          final total =
-                              (item.horas ?? 0) * (item.ratePorHora ?? 0);
-                          final empName =
-                              empMap[item.idEmpleado] ?? 'Desconocido';
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        dividerColor: Colors.grey.shade200,
+                                      ),
+                                      child: DataTable(
+                                        headingRowColor:
+                                            WidgetStateProperty.all(
+                                                Colors.grey.shade50),
+                                        dataRowMinHeight: 40,
+                                        dataRowMaxHeight: 52,
+                                        headingRowHeight: 48,
+                                        columnSpacing: 16,
+                                        horizontalMargin: 16,
+                                        columns: const [
+                                          DataColumn(label: Text('FECHA')),
+                                          DataColumn(label: Text('EMPLEADO')),
+                                          DataColumn(label: Text('TAREAS')),
+                                          DataColumn(label: Text('HORAS')),
+                                          DataColumn(label: Text('RATE/H')),
+                                          DataColumn(label: Text('TOTAL')),
+                                          DataColumn(label: Text('ACCIONES')),
+                                        ],
+                                        rows: items.map((item) {
+                                          final total = (item.horas ?? 0) *
+                                              (item.ratePorHora ?? 0);
+                                          final empName =
+                                              empMap[item.idEmpleado] ??
+                                                  'Desconocido';
 
-                          return Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                              title: Text('Tareas: ${item.tareas}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                    'Empleado: $empName\nFecha: ${DateFormat('MM/dd/yyyy').format(item.fecha)}\nHoras: ${item.horas} x \$${item.ratePorHora} = \$$total'),
-                              ),
-                              isThreeLine: true,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined,
-                                        color: Colors.blue),
-                                    onPressed: () =>
-                                        _showEditDialog(context, item),
+                                          return DataRow(
+                                            cells: [
+                                              DataCell(Text(
+                                                  DateFormat('dd/MM/yyyy')
+                                                      .format(item.fecha))),
+                                              DataCell(Text(empName,
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
+                                              DataCell(Container(
+                                                constraints:
+                                                    const BoxConstraints(
+                                                        maxWidth: 200),
+                                                child: Text(item.tareas ?? '-',
+                                                    overflow:
+                                                        TextOverflow.ellipsis),
+                                              )),
+                                              DataCell(Text(
+                                                  item.horas?.toString() ??
+                                                      '-')),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(
+                                                          item.ratePorHora ??
+                                                              0))),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(total),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.green))),
+                                              DataCell(Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.edit_outlined,
+                                                        color: Colors.blue,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showEditDialog(
+                                                            context, item),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _deleteItem(item),
+                                                  ),
+                                                ],
+                                              )),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.red),
-                                    onPressed: () => _confirmDelete(item),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       );
                     });
               },
@@ -130,7 +196,7 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
     );
   }
 
-  void _confirmDelete(NominaChofer item) async {
+  void _deleteItem(NominaChofer item) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -156,20 +222,45 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
   void _showEditDialog(BuildContext context, NominaChofer? item) {
     showDialog(
       context: context,
-      builder: (context) => _ChoferDialog(item: item),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 550),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(item == null ? 'Nuevo Chofer' : 'Editar Chofer',
+                      style: AppStyles.dialogTitleStyle),
+                  IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(child: ChoferForm(item: item)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _ChoferDialog extends ConsumerStatefulWidget {
+class ChoferForm extends ConsumerStatefulWidget {
   final NominaChofer? item;
-  const _ChoferDialog({this.item});
+  const ChoferForm({super.key, this.item});
 
   @override
-  ConsumerState<_ChoferDialog> createState() => _ChoferDialogState();
+  ConsumerState<ChoferForm> createState() => _ChoferFormState();
 }
 
-class _ChoferDialogState extends ConsumerState<_ChoferDialog> {
+class _ChoferFormState extends ConsumerState<ChoferForm> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedEmployeeId;
   late TextEditingController _tareasCtrl;
@@ -196,92 +287,72 @@ class _ChoferDialogState extends ConsumerState<_ChoferDialog> {
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(widget.item == null ? 'Nuevo Chofer' : 'Editar Chofer',
-                        style: AppStyles.dialogTitleStyle),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Empleado', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getEmployeesStream(),
-                  builder: (context, snapshot) {
-                    final employees = snapshot.data ?? [];
-                    return DropdownButtonFormField<String>(
-                      value: _selectedEmployeeId,
-                      items: employees.map<DropdownMenuItem<String>>((e) {
-                        return DropdownMenuItem<String>(
-                          value: e['id'].toString(),
-                          child: Text(e['full_name'] ?? 'S/N',
-                              style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                      validator: (v) => v == null ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Empleado', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: repo.getEmployeesStream(),
+              builder: (context, snapshot) {
+                final employees = snapshot.data ?? [];
+                return DropdownButtonFormField<String>(
+                  value: _selectedEmployeeId,
+                  items: employees.map<DropdownMenuItem<String>>((e) {
+                    return DropdownMenuItem<String>(
+                      value: e['id'].toString(),
+                      child: Text(
+                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
+                          style: const TextStyle(fontSize: 14)),
                     );
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildDateField(
-                    'Fecha', _fecha, (d) => setState(() => _fecha = d)),
-                const SizedBox(height: 24),
-                _buildTextField('Tareas', _tareasCtrl),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField('Horas', _horasCtrl,
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField('Rate p/h', _rateCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildTextField('Notas', _notasCtrl, maxLines: 2),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : const Text('Guardar Registro'),
-                  ),
-                )
+                  }).toList(),
+                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                  validator: (v) => v == null ? 'Requerido' : null,
+                  decoration: AppStyles.inputDecoration(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            _buildDateField('Fecha', _fecha, (d) => setState(() => _fecha = d)),
+            const SizedBox(height: 24),
+            _buildTextField('Tareas', _tareasCtrl),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                    child: _buildTextField('Horas', _horasCtrl,
+                        keyboardType: TextInputType.number)),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField('Rate p/h', _rateCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            _buildTextField('Notas', _notasCtrl, maxLines: 2),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: AppStyles.primaryButtonStyle,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Guardar Registro'),
+              ),
+            )
+          ],
         ),
       ),
     );

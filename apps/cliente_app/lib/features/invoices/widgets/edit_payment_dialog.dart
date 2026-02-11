@@ -194,6 +194,8 @@ class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
       return;
     }
 
+    // Check removed per user request
+    /*
     if (amount > widget.maxAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -203,6 +205,7 @@ class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
       );
       return;
     }
+    */
 
     setState(() => _isLoading = true);
 

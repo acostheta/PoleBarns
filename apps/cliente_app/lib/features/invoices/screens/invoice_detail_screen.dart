@@ -321,6 +321,44 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   Text(invoice.clientName ?? "N/A",
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold)),
+                  if (invoice.idCliente != null)
+                    FutureBuilder(
+                      future: ref
+                          .read(clientRepositoryProvider)
+                          .getClient(invoice.idCliente!),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data != null) {
+                          final client = snapshot.data!;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              children: [
+                                if (client.telefono != null) ...[
+                                  Icon(Icons.phone_outlined,
+                                      size: 14, color: Colors.grey[600]),
+                                  const SizedBox(width: 4),
+                                  Text(client.telefono!,
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 12)),
+                                  const SizedBox(width: 12),
+                                ],
+                                if (client.email != null) ...[
+                                  Icon(Icons.email_outlined,
+                                      size: 14, color: Colors.grey[600]),
+                                  const SizedBox(width: 4),
+                                  Text(client.email!,
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 12)),
+                                ],
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox();
+                      },
+                    ),
                 ],
               ),
               Column(
@@ -372,66 +410,101 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   }
 
   Widget _buildSummaryBadge(InvoiceModel invoice) {
-    Color bgColor;
-    Color textColor;
-    IconData icon;
-    String status = invoice.status;
+    String status = 'Pendiente';
+    if (invoice.status.toLowerCase() == 'cancelada' ||
+        invoice.status.toLowerCase() == 'cancelado') {
+      status = 'Cancelado';
+    } else if (invoice.saldo <= 0) {
+      status = 'Pagado';
+    } else if (invoice.totalPagado > 0) {
+      status = 'Parcial';
+    }
 
-    switch (status.toLowerCase()) {
-      case 'pagada':
-      case 'paid':
-        bgColor = Colors.green.shade100;
-        textColor = Colors.green.shade800;
-        icon = Icons.check_circle;
+    Color baseColor;
+    IconData icon;
+
+    switch (status) {
+      case 'Pagado':
+        baseColor = const Color(0xFF059669); // Green
+        icon = Icons.check_circle_outline;
         break;
-      case 'pendiente':
-      case 'pending':
-        bgColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade800;
-        icon = Icons.hourglass_empty;
+      case 'Parcial':
+        baseColor = const Color(0xFFD97706); // Orange/Amber
+        icon = Icons.hourglass_bottom_rounded;
         break;
-      case 'cancelada':
-      case 'cancelled':
-        bgColor = Colors.red.shade100;
-        textColor = Colors.red.shade800;
-        icon = Icons.cancel;
+      case 'Cancelado':
+        baseColor = const Color(0xFF6B7280); // Gray
+        icon = Icons.cancel_outlined;
         break;
+      case 'Pendiente':
       default:
-        bgColor = Colors.grey.shade100;
-        textColor = Colors.grey.shade800;
-        icon = Icons.info;
+        baseColor = const Color(0xFFDC2626); // Red
+        icon = Icons.warning_amber_rounded;
+        break;
     }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withValues(alpha: 0.3)),
+        color: baseColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: baseColor.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: textColor, size: 32),
-          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: baseColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: baseColor, size: 28),
+          ),
+          const SizedBox(width: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'ESTADO DE LA FACTURA',
                 style: TextStyle(
-                  color: textColor.withValues(alpha: 0.8),
+                  color: baseColor.withValues(alpha: 0.7),
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 status.toUpperCase(),
                 style: TextStyle(
-                  color: textColor,
-                  fontSize: 20,
+                  color: baseColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text(
+                'SALDO PENDIENTE',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                currency.format(invoice.saldo),
+                style: TextStyle(
+                  color:
+                      invoice.saldo > 0 ? const Color(0xFF111827) : baseColor,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),

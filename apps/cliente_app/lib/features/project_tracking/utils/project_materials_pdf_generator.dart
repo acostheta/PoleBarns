@@ -144,7 +144,7 @@ class ProjectMaterialsPdfGenerator {
                   pw.SizedBox(height: 8),
                   if (materials.isEmpty)
                     pw.Text('No hay materiales detallados.',
-                        style: const pw.TextStyle(
+                        style: pw.TextStyle(
                             fontSize: 10, fontStyle: pw.FontStyle.italic))
                   else
                     pw.Table(
@@ -181,7 +181,7 @@ class ProjectMaterialsPdfGenerator {
                   pw.SizedBox(height: 20),
                 ],
               );
-            }).toList(),
+            }),
           ];
         },
       ),

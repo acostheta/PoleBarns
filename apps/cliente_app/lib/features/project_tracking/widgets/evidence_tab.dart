@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -219,8 +219,9 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
         );
       }
 
-      if (compressedBytes == null)
+      if (compressedBytes == null) {
         throw Exception('Falló el procesamiento de la imagen');
+      }
 
       // 2. Upload to Storage
       // Create bucket 'project-media' if not exists? Ideally pre-created.

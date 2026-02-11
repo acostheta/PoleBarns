@@ -94,7 +94,7 @@ final combinedPayrollSummaryProvider =
 
   final employeesMap = {
     for (var e in employees)
-      e['id'] as String: e['full_name'] as String? ?? 'N/A'
+      e['id'].toString(): (e['full_name'] ?? e['name'])?.toString() ?? 'N/A'
   };
   final projectsMap = {
     for (var p in projects)

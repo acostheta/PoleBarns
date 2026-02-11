@@ -262,6 +262,8 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
       return;
     }
 
+    // Check removed per user request: allow amounts greater than total (e.g. for fees)
+    /*
     if (amount > widget.maxAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -271,6 +273,7 @@ class _AddPaymentDialogState extends ConsumerState<AddPaymentDialog> {
       );
       return;
     }
+    */
 
     setState(() => _isLoading = true);
     try {

@@ -33,9 +33,9 @@ class _NominaInstalacionScreenState
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              decoration: AppStyles.inputDecoration(
-                      hintText: 'Buscar por proyecto o empleado...')
-                  .copyWith(
+              decoration:
+                  AppStyles.inputDecoration(hintText: 'Buscar por empleado...')
+                      .copyWith(
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
               ),
               onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
@@ -59,91 +59,175 @@ class _NominaInstalacionScreenState
                       final empMap = {
                         for (var e in employees)
                           e['id'].toString():
-                              e['full_name']?.toString() ?? 'S/N'
+                              (e['full_name'] ?? e['name'])?.toString() ?? 'S/N'
                       };
 
-                      return StreamBuilder<List<Map<String, dynamic>>>(
-                          stream: repo.getProjectsStream(),
-                          builder: (context, projSnapshot) {
-                            final projects = projSnapshot.data ?? [];
-                            final projMap = {
-                              for (var p in projects)
-                                p['id'].toString():
-                                    p['address']?.toString() ?? 'S/P'
-                            };
+                      final items = snapshot.data!.where((item) {
+                        final empName =
+                            empMap[item.idEmpleado]?.toLowerCase() ?? '';
+                        return empName.contains(_searchQuery);
+                      }).toList();
 
-                            final items = snapshot.data!.where((item) {
-                              final empName =
-                                  empMap[item.idEmpleado]?.toLowerCase() ?? '';
-                              final projName =
-                                  projMap[item.idProyecto]?.toLowerCase() ?? '';
-                              return empName.contains(_searchQuery) ||
-                                  projName.contains(_searchQuery);
-                            }).toList();
-
-                            if (items.isEmpty) {
-                              return const Center(
-                                  child: Text('No hay registros.'));
-                            }
-
-                            return ListView.builder(
-                              itemCount: items.length,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              itemBuilder: (context, index) {
-                                final item = items[index];
-                                final empName =
-                                    empMap[item.idEmpleado] ?? 'Desconocido';
-                                final projName = projMap[item.idProyecto] ??
-                                    'Proyecto Desconocido';
-
-                                return Card(
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side:
-                                        BorderSide(color: Colors.grey.shade200),
-                                  ),
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 12),
-                                    title: Text('Proyecto: $projName',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Text(
-                                          'Empleado: $empName\nPago: \$${item.pagoProyecto} | Saldo: \$${item.saldo}\nCerrado: ${item.proyectoCerrado ? 'Sí' : 'No'}'),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                              Icons.payments_outlined,
-                                              color: Colors.green),
-                                          onPressed: () => _showPaymentsDialog(
-                                              context, item),
+                      return items.isEmpty
+                          ? const Center(child: Text('No hay registros.'))
+                          : Align(
+                              alignment: Alignment.topCenter,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 1200),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return SingleChildScrollView(
+                                      scrollDirection: Axis.vertical,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: constraints.maxWidth,
+                                          ),
+                                          child: Theme(
+                                            data: Theme.of(context).copyWith(
+                                              dividerColor:
+                                                  Colors.grey.shade200,
+                                            ),
+                                            child: DataTable(
+                                              showCheckboxColumn: false,
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      Colors.grey.shade50),
+                                              dataRowMinHeight: 40,
+                                              dataRowMaxHeight: 52,
+                                              headingRowHeight: 48,
+                                              columnSpacing: 16,
+                                              horizontalMargin: 16,
+                                              columns: const [
+                                                DataColumn(
+                                                    label: Text('EMPLEADO')),
+                                                DataColumn(
+                                                    label: Text('PAGO P.')),
+                                                DataColumn(
+                                                    label: Text('SALDO')),
+                                                DataColumn(
+                                                    label: Text('CERRADO')),
+                                                DataColumn(
+                                                    label: Text('ACCIONES')),
+                                              ],
+                                              rows: items.map((item) {
+                                                final empName =
+                                                    empMap[item.idEmpleado] ??
+                                                        'Desconocido';
+                                                return DataRow(
+                                                  onSelectChanged: (_) {
+                                                    _showPaymentsDialog(
+                                                        context, item);
+                                                  },
+                                                  cells: [
+                                                    DataCell(Text(empName,
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold))),
+                                                    DataCell(Text(
+                                                        NumberFormat
+                                                                .simpleCurrency()
+                                                            .format(
+                                                                item.pagoProyecto ??
+                                                                    0),
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.green))),
+                                                    DataCell(Text(
+                                                      NumberFormat
+                                                              .simpleCurrency()
+                                                          .format(
+                                                              item.saldo ?? 0),
+                                                      style: TextStyle(
+                                                          color: (item.saldo ??
+                                                                      0) >
+                                                                  0
+                                                              ? Colors.red
+                                                              : Colors.black,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    )),
+                                                    DataCell(Icon(
+                                                        item.proyectoCerrado
+                                                            ? Icons.check_circle
+                                                            : Icons
+                                                                .circle_outlined,
+                                                        color:
+                                                            item.proyectoCerrado
+                                                                ? Colors.green
+                                                                : Colors.grey,
+                                                        size: 20)),
+                                                    DataCell(Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons
+                                                                  .payments_outlined,
+                                                              color:
+                                                                  Colors.green,
+                                                              size: 20),
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          constraints:
+                                                              const BoxConstraints(),
+                                                          onPressed: () =>
+                                                              _showPaymentsDialog(
+                                                                  context,
+                                                                  item),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons
+                                                                  .edit_outlined,
+                                                              color:
+                                                                  Colors.blue,
+                                                              size: 20),
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          constraints:
+                                                              const BoxConstraints(),
+                                                          onPressed: () =>
+                                                              _showEditDialog(
+                                                                  context,
+                                                                  item),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons
+                                                                  .delete_outline,
+                                                              color: Colors.red,
+                                                              size: 20),
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          constraints:
+                                                              const BoxConstraints(),
+                                                          onPressed: () =>
+                                                              _confirmDelete(
+                                                                  item),
+                                                        ),
+                                                      ],
+                                                    )),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined,
-                                              color: Colors.blue),
-                                          onPressed: () =>
-                                              _showEditDialog(context, item),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline,
-                                              color: Colors.red),
-                                          onPressed: () => _confirmDelete(item),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             );
-                          });
                     });
               },
             ),
@@ -179,7 +263,33 @@ class _NominaInstalacionScreenState
   void _showEditDialog(BuildContext context, NominaInstalacion? item) {
     showDialog(
       context: context,
-      builder: (context) => _InstalacionDialog(item: item),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 550),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                      item == null ? 'Nueva Instalación' : 'Editar Instalación',
+                      style: AppStyles.dialogTitleStyle),
+                  IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(child: InstalacionForm(item: item)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -192,15 +302,15 @@ class _NominaInstalacionScreenState
   }
 }
 
-class _InstalacionDialog extends ConsumerStatefulWidget {
+class InstalacionForm extends ConsumerStatefulWidget {
   final NominaInstalacion? item;
-  const _InstalacionDialog({this.item});
+  const InstalacionForm({super.key, this.item});
 
   @override
-  ConsumerState<_InstalacionDialog> createState() => _InstalacionDialogState();
+  ConsumerState<InstalacionForm> createState() => _InstalacionFormState();
 }
 
-class _InstalacionDialogState extends ConsumerState<_InstalacionDialog> {
+class _InstalacionFormState extends ConsumerState<InstalacionForm> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedEmployeeId;
   late TextEditingController _idProyectoCtrl;
@@ -236,146 +346,89 @@ class _InstalacionDialogState extends ConsumerState<_InstalacionDialog> {
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Empleado', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: repo.getEmployeesStream(),
+              builder: (context, snapshot) {
+                final employees = snapshot.data ?? [];
+                return DropdownButtonFormField<String>(
+                  value: _selectedEmployeeId,
+                  items: employees.map<DropdownMenuItem<String>>((e) {
+                    return DropdownMenuItem<String>(
+                      value: e['id'].toString(),
+                      child: Text(
+                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
+                          style: const TextStyle(fontSize: 14)),
+                    );
+                  }).toList(),
+                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                  validator: (v) => v == null ? 'Requerido' : null,
+                  decoration: AppStyles.inputDecoration(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            const SizedBox(height: 24),
+            _buildDateField(
+                'Fecha Culminación (Opcional)',
+                _fechaCulminacion ?? DateTime.now(),
+                (d) => setState(() => _fechaCulminacion = d)),
+            const SizedBox(height: 24),
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        widget.item == null
-                            ? 'Nueva Instalación'
-                            : 'Editar Instalación',
-                        style: AppStyles.dialogTitleStyle),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Empleado', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getEmployeesStream(),
-                  builder: (context, snapshot) {
-                    final employees = snapshot.data ?? [];
-                    return DropdownButtonFormField<String>(
-                      value: _selectedEmployeeId,
-                      items: employees.map<DropdownMenuItem<String>>((e) {
-                        return DropdownMenuItem<String>(
-                          value: e['id'].toString(),
-                          child: Text(e['full_name'] ?? 'S/N',
-                              style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                      validator: (v) => v == null ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                const Text('Proyecto', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getProjectsStream(),
-                  builder: (context, snapshot) {
-                    final projects = (snapshot.data ?? []).where((p) {
-                      final status = p['estatus'];
-                      final isPendingOrInProcess =
-                          status == 'Pendiente' || status == 'En Proceso';
-                      final isCurrentValue =
-                          _idProyectoCtrl.text == p['id'].toString();
-                      return isPendingOrInProcess || isCurrentValue;
-                    }).toList();
-
-                    return DropdownButtonFormField<String>(
-                      value: _idProyectoCtrl.text.isEmpty
-                          ? null
-                          : _idProyectoCtrl.text,
-                      items: projects.map<DropdownMenuItem<String>>((e) {
-                        return DropdownMenuItem<String>(
-                          value: e['id'].toString(),
-                          child: Text(e['address'] ?? 'S/N',
-                              style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: (v) =>
-                          setState(() => _idProyectoCtrl.text = v ?? ''),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildDateField(
-                    'Fecha Culminación (Opcional)',
-                    _fechaCulminacion ?? DateTime.now(),
-                    (d) => setState(() => _fechaCulminacion = d)),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField('Pago Proyecto', _pagoCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField('Descuentos', _discountCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    children: [
-                      const Text('Proyecto Cerrado',
-                          style: AppStyles.labelStyle),
-                      const Spacer(),
-                      Switch(
-                        value: _cerrado,
-                        activeColor: AppStyles.primaryOrange,
-                        onChanged: (v) => setState(() => _cerrado = v),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : const Text('Guardar Registro'),
-                  ),
-                )
+                Expanded(
+                    child: _buildTextField('Pago Proyecto', _pagoCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField('Descuentos', _discountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  const Text('Proyecto Cerrado', style: AppStyles.labelStyle),
+                  const Spacer(),
+                  Switch(
+                    value: _cerrado,
+                    activeColor: AppStyles.primaryOrange,
+                    onChanged: (v) => setState(() => _cerrado = v),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: AppStyles.primaryButtonStyle,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Guardar Registro'),
+              ),
+            )
+          ],
         ),
       ),
     );
@@ -388,7 +441,7 @@ class _InstalacionDialogState extends ConsumerState<_InstalacionDialog> {
         final newItem = NominaInstalacion(
           id: widget.item?.id ?? '',
           idEmpleado: _selectedEmployeeId!,
-          idProyecto: _idProyectoCtrl.text,
+          idProyecto: '',
           fechaCulminacion: _fechaCulminacion,
           pagoProyecto: double.tryParse(_pagoCtrl.text),
           proyectoCerrado: _cerrado,

@@ -48,7 +48,12 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
   List<String> _selectedGroupUsers = [];
   String _selectedStatus = 'En Proceso';
 
-  final List<String> _statusOptions = ['Pendiente', 'En Proceso', 'Terminado'];
+  final List<String> _statusOptions = [
+    'Pendiente',
+    'En Proceso',
+    'Terminado',
+    'Cancelado'
+  ];
 
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));

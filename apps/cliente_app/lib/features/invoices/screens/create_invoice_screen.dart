@@ -27,18 +27,15 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _commentController = TextEditingController();
   final _addressController = TextEditingController();
-  final _responsibleController = TextEditingController();
   final _projectController = TextEditingController();
 
   String? _selectedClientId;
-  String? _selectedGroupId;
   String _status = 'Pendiente';
   DateTime _selectedDate = DateTime.now();
   DateTime? _startDate;
   DateTime? _endDate;
 
   List<Map<String, dynamic>> _selectedItems = [];
-  List<GroupModel> _groups = [];
   List<CatalogItemModel> _catalogItems = [];
   bool _isLoading = false;
 
@@ -52,7 +49,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   void dispose() {
     _commentController.dispose();
     _addressController.dispose();
-    _responsibleController.dispose();
     _projectController.dispose();
     super.dispose();
   }
@@ -62,8 +58,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     try {
       final service = ref.read(invoiceServiceProvider);
 
-      // Load Groups and Catalog
-      _groups = await service.getGroups();
+      // Load Catalog
       _catalogItems = await service.getCatalogItems();
 
       if (widget.invoiceId != null) {
@@ -96,8 +91,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       _commentController.text = invoice.comentario ?? '';
       _selectedDate = invoice.date;
 
-      _selectedGroupId = invoice.groupId;
-      _responsibleController.text = invoice.responsible ?? '';
+      _selectedDate = invoice.date;
+
       _status = invoice.status;
       _startDate = invoice.startDate;
       _endDate = invoice.endDate;
@@ -114,19 +109,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
           'related_product_id': p.id,
         };
       }).toList();
-    });
-  }
-
-  void _onGroupSelected(String? groupId) {
-    setState(() {
-      _selectedGroupId = groupId;
-      if (groupId != null) {
-        final group = _groups.firstWhere((g) => g.id == groupId,
-            orElse: () => _groups.first);
-        _responsibleController.text = group.responsible ?? '';
-      } else {
-        _responsibleController.text = '';
-      }
     });
   }
 
@@ -180,8 +162,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         totalVenta: totalVenta,
         comentario: _commentController.text,
         createdAt: DateTime.now(),
-        groupId: _selectedGroupId,
-        responsible: _responsibleController.text,
         status: _status,
         startDate: _startDate,
         endDate: _endDate,
@@ -336,38 +316,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   const SizedBox(height: 32),
                   _buildSectionTitle('Detalles de la Factura'),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Grupo", style: AppStyles.labelStyle),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _selectedGroupId,
-                                decoration: AppStyles.inputDecoration(
-                                    hintText: 'Seleccionar Grupo'),
-                                items: _groups
-                                    .map((g) => DropdownMenuItem(
-                                        value: g.id, child: Text(g.name)))
-                                    .toList(),
-                                onChanged: _onGroupSelected,
-                                validator: (v) =>
-                                    v == null ? 'Requerido' : null,
-                              ),
-                            ]),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: _buildTextField(
-                            'Responsable', _responsibleController),
-                        // Could make readOnly but users might want to override?
-                        // User asked for "autofill". Usually implies editable default.
-                        // I'll leave it editable unless requested otherwise.
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 24),
                   Row(
                     children: [

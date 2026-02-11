@@ -58,6 +58,7 @@ class NominaDestajoSoldador {
   final double? montoUnitario;
   final double? total;
   final double? pagoParcial;
+  final String? formaPago;
   final String? notas;
 
   NominaDestajoSoldador({
@@ -69,6 +70,7 @@ class NominaDestajoSoldador {
     this.montoUnitario,
     this.total,
     this.pagoParcial,
+    this.formaPago,
     this.notas,
   });
 
@@ -88,6 +90,7 @@ class NominaDestajoSoldador {
       pagoParcial: json['pago_parcial'] != null
           ? (json['pago_parcial'] as num).toDouble()
           : 0,
+      formaPago: json['forma_pago'],
       notas: json['notas'],
     );
   }
@@ -99,6 +102,7 @@ class NominaDestajoSoldador {
       'truss_producto': trussProducto,
       'cantidad': cantidad,
       'monto_unitario': montoUnitario,
+      'forma_pago': formaPago,
       // 'total' is generated always, usually
       'notas': notas,
     };

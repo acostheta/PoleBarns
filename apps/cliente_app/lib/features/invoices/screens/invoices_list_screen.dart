@@ -215,29 +215,53 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
                                                       _navigateToDetail(
                                                           invoice.id),
                                                 ),
-                                                DataCell(Text(dateFormat
-                                                    .format(invoice.date))),
-                                                DataCell(Text(currency.format(
-                                                    invoice.totalVenta))),
-                                                DataCell(Text(
-                                                    currency.format(
-                                                        invoice.totalPagado),
-                                                    style: const TextStyle(
-                                                        color: Color(
-                                                            0xFF059669)))),
-                                                DataCell(Text(
-                                                    currency
-                                                        .format(invoice.saldo),
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: invoice.saldo > 0
-                                                            ? const Color(
-                                                                0xFFDC2626)
-                                                            : const Color(
-                                                                0xFF111827)))),
                                                 DataCell(
-                                                    _buildStatusBadge(invoice)),
+                                                  Text(dateFormat
+                                                      .format(invoice.date)),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          invoice.id),
+                                                ),
+                                                DataCell(
+                                                  Text(currency.format(
+                                                      invoice.totalVenta)),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          invoice.id),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                      currency.format(
+                                                          invoice.totalPagado),
+                                                      style: const TextStyle(
+                                                          color: Color(
+                                                              0xFF059669))),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          invoice.id),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                      currency.format(
+                                                          invoice.saldo),
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: invoice.saldo >
+                                                                  0
+                                                              ? const Color(
+                                                                  0xFFDC2626)
+                                                              : const Color(
+                                                                  0xFF111827))),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          invoice.id),
+                                                ),
+                                                DataCell(
+                                                    _buildStatusBadge(invoice),
+                                                    onTap: () =>
+                                                        _navigateToDetail(
+                                                            invoice.id)),
                                                 DataCell(
                                                   // Kebab Menu
                                                   Align(

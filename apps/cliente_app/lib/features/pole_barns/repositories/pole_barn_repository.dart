@@ -7,6 +7,15 @@ class PoleBarnRepository {
 
   PoleBarnRepository(this._supabase);
 
+  // Get all PoleBarns stream
+  Stream<List<PoleBarn>> watchPoleBarns() {
+    return _supabase
+        .from('PoleBarns')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) => PoleBarn.fromJson(json)).toList());
+  }
+
   // Get single PoleBarn stream for realtime totals
   Stream<PoleBarn?> watchPoleBarn(int id) {
     return _supabase

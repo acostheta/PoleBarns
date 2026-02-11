@@ -14,6 +14,15 @@ class InvoiceService {
         .map((data) => data.map((e) => InvoiceModel.fromJson(e)).toList());
   }
 
+  Stream<List<InvoiceModel>> watchInvoicesByClient(String clientId) {
+    return _supabase
+        .from('invoice_details_view')
+        .stream(primaryKey: ['id'])
+        .eq('IdCliente', clientId)
+        .order('created_at', ascending: false)
+        .map((data) => data.map((e) => InvoiceModel.fromJson(e)).toList());
+  }
+
   // Realtime stream for a single invoice (for detail screen)
   Stream<InvoiceModel> watchInvoice(int id) {
     return _supabase

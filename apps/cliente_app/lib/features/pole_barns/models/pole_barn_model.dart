@@ -5,8 +5,8 @@ class PoleBarn {
   final double alto;
   final double spacing;
   final double sheet;
-  final double totalMaterials;
-  final double totalSConcreto;
+  final double total;
+  final double labour;
   final double precioVenta;
   final double budgetLimit;
   final String alertStatus;
@@ -22,8 +22,8 @@ class PoleBarn {
     required this.alto,
     required this.spacing,
     required this.sheet,
-    this.totalMaterials = 0,
-    this.totalSConcreto = 0,
+    this.total = 0,
+    this.labour = 0,
     this.precioVenta = 0,
     this.budgetLimit = 0,
     this.alertStatus = 'OK',
@@ -40,8 +40,8 @@ class PoleBarn {
       alto: (json['Alto'] as num?)?.toDouble() ?? 0.0,
       spacing: (json['Spacing'] as num?)?.toDouble() ?? 0.0,
       sheet: (json['Sheet'] as num?)?.toDouble() ?? 0.0,
-      totalMaterials: (json['total_materials'] as num?)?.toDouble() ?? 0.0,
-      totalSConcreto: (json['total_s_concreto'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      labour: (json['labour'] as num?)?.toDouble() ?? 0.0,
       precioVenta: (json['precio_venta'] as num?)?.toDouble() ?? 0.0,
       budgetLimit: (json['budget_limit'] as num?)?.toDouble() ?? 0.0,
       alertStatus: json['alert_status'] ?? 'OK',
@@ -63,9 +63,9 @@ class PoleBarn {
       'Alto': alto,
       'Spacing': spacing,
       'Sheet': sheet,
+      'labour': labour,
       'precio_venta': precioVenta,
       'budget_limit': budgetLimit,
-      // total_materials, total_s_concreto, and alert_status are managed by triggers
     };
   }
 
@@ -77,8 +77,8 @@ class PoleBarn {
     double? alto,
     double? spacing,
     double? sheet,
-    double? totalMaterials,
-    double? totalSConcreto,
+    double? total,
+    double? labour,
     double? precioVenta,
     double? budgetLimit,
     String? alertStatus,
@@ -93,8 +93,8 @@ class PoleBarn {
       alto: alto ?? this.alto,
       spacing: spacing ?? this.spacing,
       sheet: sheet ?? this.sheet,
-      totalMaterials: totalMaterials ?? this.totalMaterials,
-      totalSConcreto: totalSConcreto ?? this.totalSConcreto,
+      total: total ?? this.total,
+      labour: labour ?? this.labour,
       precioVenta: precioVenta ?? this.precioVenta,
       budgetLimit: budgetLimit ?? this.budgetLimit,
       alertStatus: alertStatus ?? this.alertStatus,

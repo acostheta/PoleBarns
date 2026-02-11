@@ -25,13 +25,10 @@ class PoleBarnFormState {
   });
 
   // Local calculations for immediate UI feedback before DB sync
-  double get localTotalMaterials =>
+  double get localTotal =>
       relatedMaterials.fold(0, (sum, item) => sum + item.calculatedTotal);
 
-  double get localTotalSConcreto => relatedMaterials.where((item) {
-        final name = (item.materialName ?? '').toLowerCase();
-        return !name.contains('concreto');
-      }).fold(0, (sum, item) => sum + item.calculatedTotal);
+  double get localTotalPrice => localTotal + poleBarn.labour;
 
   PoleBarnFormState copyWith({
     PoleBarn? poleBarn,
@@ -183,8 +180,7 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
     // Note: Now we check if price was manually edited in this session or previously
     if (!state.isPriceManuallyEdited) {
       state = state.copyWith(
-        poleBarn:
-            state.poleBarn.copyWith(precioVenta: state.localTotalMaterials),
+        poleBarn: state.poleBarn.copyWith(precioVenta: state.localTotalPrice),
       );
     }
   }
@@ -254,4 +250,9 @@ final relatedMaterialsStreamProvider =
                 RelatedMaterial.fromJson(Map<String, dynamic>.from(json)))
             .toList();
       });
+});
+
+final poleBarnsListStreamProvider = StreamProvider<List<PoleBarn>>((ref) {
+  final repo = ref.watch(poleBarnRepositoryProvider);
+  return repo.watchPoleBarns();
 });

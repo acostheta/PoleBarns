@@ -27,6 +27,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   late TextEditingController _precioVentaController;
   late TextEditingController _budgetController;
   late TextEditingController _nameController;
+  late TextEditingController _labourController;
 
   final NumberFormat _currencyFormat = NumberFormat.currency(symbol: r'$');
 
@@ -45,6 +46,8 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     _budgetController =
         TextEditingController(text: pb?.budgetLimit.toString() ?? '0');
     _nameController = TextEditingController(text: pb?.name ?? '');
+    _labourController =
+        TextEditingController(text: pb?.labour.toString() ?? '0');
   }
 
   @override
@@ -57,6 +60,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     _precioVentaController.dispose();
     _budgetController.dispose();
     _nameController.dispose();
+    _labourController.dispose();
     super.dispose();
   }
 
@@ -83,6 +87,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           currentState.precioVenta,
       budgetLimit:
           double.tryParse(_budgetController.text) ?? currentState.budgetLimit,
+      labour: double.tryParse(_labourController.text) ?? currentState.labour,
     ));
   }
 
@@ -96,15 +101,15 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         ? ref.watch(poleBarnStreamProvider(state.poleBarn.id!)).value
         : null;
 
-    final displayTotalMaterials = state.localTotalMaterials;
-    final displayTotalSConcreto = state.localTotalSConcreto;
+    final displayTotal = state.localTotal;
+    final displayLabour = state.poleBarn.labour;
 
     String displayAlertStatus =
         parentStream?.alertStatus ?? state.poleBarn.alertStatus;
-    if (displayTotalMaterials > state.poleBarn.budgetLimit &&
+    if (displayTotal > state.poleBarn.budgetLimit &&
         state.poleBarn.budgetLimit > 0) {
       displayAlertStatus =
-          "ALERTA LOCAL: Presupuesto excedido ($displayTotalMaterials > ${state.poleBarn.budgetLimit})";
+          "ALERTA LOCAL: Presupuesto excedido ($displayTotal > ${state.poleBarn.budgetLimit})";
     }
 
     if (!state.isPriceManuallyEdited) {
@@ -121,16 +126,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text(
-            state.poleBarn.id == null
-                ? 'Catálogo: Nueva Caballeriza'
-                : 'Catálogo: Editar Caballeriza',
-            style: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('Detalle de Producto',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           if (state.poleBarn.id != null)
@@ -158,167 +159,501 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Icon(Icons.cloud_done, color: Colors.green),
             ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (state.error != null) _buildErrorBanner(state.error!),
-              if (displayAlertStatus != 'OK')
-                _buildAlertBanner(displayAlertStatus),
-              const Text('Información del Producto',
-                  style: AppStyles.dialogTitleStyle),
-              const SizedBox(height: 24),
-              _buildNameField(),
-              const SizedBox(height: 32),
-              const Text('Especificaciones Generales',
-                  style: AppStyles.dialogTitleStyle),
-              const SizedBox(height: 32),
-              _buildMainForm(displayTotalMaterials, displayTotalSConcreto),
-              const SizedBox(height: 48),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Materiales (Realtime)',
-                    style: AppStyles.dialogTitleStyle,
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            if (state.error != null) _buildErrorBanner(state.error!),
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  // Top Section: Info & Specs
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
+                    sliver: SliverToBoxAdapter(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHeaderCard(state, displayAlertStatus),
+                              const SizedBox(height: 24),
+                              _buildSpecificationsCard(
+                                  displayTotal, displayLabour),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showMaterialDialog(null),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Agregar Material'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo.shade50,
-                      foregroundColor: Colors.indigo.shade700,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                  // Middle Section: Materials Table
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(32, 8, 32, 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: _buildMaterialsCard(state, notifier),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Bottom Section: Service Details
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(32, 8, 32, 48),
+                    sliver: SliverToBoxAdapter(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: _buildServiceDetailsCard(state),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              _buildMaterialsList(state, notifier),
-              const SizedBox(height: 80),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAlertBanner(String msg) {
+  Widget _buildServiceDetailsCard(PoleBarnFormState state) {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade100),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(msg,
-                style: TextStyle(
-                    color: Colors.red.shade900,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMainForm(double totalMaterials, double totalSConcreto) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-                child: _buildNumericField(
-                    _anchoController, 'Ancho (ft)', Icons.straighten)),
-            const SizedBox(width: 24),
-            Expanded(
-                child: _buildNumericField(
-                    _largoController, 'Largo (ft)', Icons.straighten)),
-            const SizedBox(width: 24),
-            Expanded(
-                child: _buildNumericField(
-                    _altoController, 'Alto (ft)', Icons.height)),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-                child: _buildNumericField(
-                    _spacingController, 'Spacing', Icons.space_bar)),
-            const SizedBox(width: 24),
-            Expanded(
-                child: _buildNumericField(
-                    _sheetController, 'Sheet', Icons.layers)),
-            const SizedBox(width: 24),
-            Expanded(
-                child: _buildNumericField(
-                    _budgetController,
-                    'Presupuesto Máximo',
-                    Icons.account_balance_wallet_outlined)),
-          ],
-        ),
-        const SizedBox(height: 32),
-        const Divider(),
-        const SizedBox(height: 32),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSummaryCard('Total Materiales',
-                  _currencyFormat.format(totalMaterials), Colors.blueGrey),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: _buildSummaryCard('Total Sin Concreto',
-                  _currencyFormat.format(totalSConcreto), Colors.green),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        _buildNumericField(_precioVentaController, 'Precio de Venta Sugerido',
-            Icons.sell_outlined,
-            isCurrency: true),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
+          const Text('PRECIO DE VENTA SUGERIDO',
               style: TextStyle(
-                  color: color, fontWeight: FontWeight.w600, fontSize: 13)),
-          const SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.bold, fontSize: 22)),
+                  color: AppStyles.primaryOrange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  letterSpacing: 1.2)),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              _buildServiceStat(
+                  'Total Materiales', _currencyFormat.format(state.localTotal)),
+              _buildStatSeparator(),
+              _buildServiceStat('Mano de Obra',
+                  _currencyFormat.format(state.poleBarn.labour)),
+              const Spacer(),
+              _buildServiceStat('Precio de Venta Sugerido',
+                  _currencyFormat.format(state.poleBarn.precioVenta),
+                  isPrimary: true),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildServiceStat(String label, String value,
+      {bool isPrimary = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label,
+            style: TextStyle(
+                color:
+                    isPrimary ? AppStyles.primaryOrange : Colors.grey.shade600,
+                fontSize: 11,
+                fontWeight: isPrimary ? FontWeight.bold : FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: TextStyle(
+                color: isPrimary
+                    ? AppStyles.primaryOrange
+                    : const Color(0xFF1E293B),
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildStatSeparator() {
+    return Container(
+      height: 32,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 48),
+      color: Colors.grey.shade300,
+    );
+  }
+
+  Widget _buildHeaderCard(PoleBarnFormState state, String alertStatus) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('PRODUCTO',
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                            letterSpacing: 1.0)),
+                    const SizedBox(height: 4),
+                    _buildNameFieldInline(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              _buildStatusIndicator(alertStatus),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(height: 1),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 32,
+            runSpacing: 16,
+            children: [
+              _buildHeaderStat(
+                  'ID', '#${state.poleBarn.id ?? "NUEVO"}', Icons.tag),
+              _buildHeaderStat(
+                  'PRECIO VENTA',
+                  _currencyFormat.format(state.poleBarn.precioVenta),
+                  Icons.sell_outlined),
+              _buildHeaderStat(
+                  'DIMENSIONES',
+                  '${state.poleBarn.ancho}x${state.poleBarn.largo}x${state.poleBarn.alto}',
+                  Icons.square_foot_outlined),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderStat(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF94A3B8)),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5)),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator(String status) {
+    final isOk = status == 'OK';
+    final color = isOk ? const Color(0xFF059669) : const Color(0xFFDC2626);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isOk ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+              size: 16, color: color),
+          const SizedBox(width: 8),
+          Text(isOk ? 'PRESUPUESTO OK' : 'ALERTA DE COSTO',
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNameFieldInline() {
+    return TextFormField(
+      controller: _nameController,
+      style: const TextStyle(
+          fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+      decoration: const InputDecoration(
+        hintText: 'Nombre del Producto...',
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
+        isDense: true,
+      ),
+      onChanged: (val) => _updatePoleBarnLocal(),
+    );
+  }
+
+  Widget _buildSpecificationsCard(double total, double labour) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Especificaciones y Costos',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827))),
+          const SizedBox(height: 32),
+          _buildMainForm(total, labour),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaterialsCard(
+      PoleBarnFormState state, PoleBarnFormNotifier notifier) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Lista de Materiales de Catálogo',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827))),
+                ElevatedButton.icon(
+                  onPressed: () => _showMaterialDialog(null),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Agregar Material'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD97706),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          _buildMaterialsDataTable(state, notifier),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaterialsDataTable(
+      PoleBarnFormState state, PoleBarnFormNotifier notifier) {
+    final materials = state.relatedMaterials;
+    if (materials.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(48.0),
+        child: Center(
+            child: Text('No hay materiales asociados',
+                style: TextStyle(color: Colors.grey))),
+      );
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      return Scrollbar(
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                headingTextStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6B7280),
+                    fontSize: 11,
+                    letterSpacing: 0.5),
+                horizontalMargin: 20,
+                columnSpacing: 16,
+                dataRowMinHeight: 56,
+                dataRowMaxHeight: 56,
+                columns: const [
+                  DataColumn(label: Text('MATERIAL')),
+                  DataColumn(label: Text('CANTIDAD'), numeric: true),
+                  DataColumn(label: Text('MEDIDA')),
+                  DataColumn(label: Text('PRECIO UNIT.'), numeric: true),
+                  DataColumn(label: Text('DESPERDICIO'), numeric: true),
+                  DataColumn(label: Text('TOTAL'), numeric: true),
+                  DataColumn(label: Text('ACCIONES')),
+                ],
+                rows: materials.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final m = entry.value;
+                  return DataRow(
+                    cells: [
+                      DataCell(
+                        SizedBox(
+                          width: 250,
+                          child: Text(
+                            m.materialName ?? 'N/A',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Color(0xFF1E293B)),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      DataCell(Text(m.qty.toString(),
+                          style: const TextStyle(fontSize: 13))),
+                      DataCell(Text(m.medida ?? '-',
+                          style: const TextStyle(fontSize: 13))),
+                      DataCell(Text(_currencyFormat.format(m.pricePorUnidad),
+                          style: const TextStyle(fontSize: 13))),
+                      DataCell(Text('${m.wastePercent}%',
+                          style: const TextStyle(fontSize: 13))),
+                      DataCell(Text(_currencyFormat.format(m.calculatedTotal),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Colors.indigo))),
+                      DataCell(Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                              icon: const Icon(Icons.edit_outlined,
+                                  size: 16, color: Colors.blueGrey),
+                              onPressed: () => _showMaterialDialog(index)),
+                          IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  size: 16, color: Colors.red),
+                              onPressed: () => notifier.removeMaterial(index)),
+                        ],
+                      )),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildMainForm(double total, double labour) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildNumericField(
+                  _anchoController, 'Ancho (ft)', Icons.straighten),
+            ),
+            const SizedBox(width: 32),
+            Expanded(
+              child: _buildNumericField(
+                  _largoController, 'Largo (ft)', Icons.straighten),
+            ),
+            const SizedBox(width: 32),
+            Expanded(
+              child: _buildNumericField(
+                  _altoController, 'Alto (ft)', Icons.height),
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildNumericField(
+                  _spacingController, 'Spacing', Icons.space_bar),
+            ),
+            const SizedBox(width: 32),
+            Expanded(
+              child:
+                  _buildNumericField(_sheetController, 'Sheet', Icons.layers),
+            ),
+            const SizedBox(width: 32),
+            Expanded(
+              child: _buildNumericField(_budgetController, 'Presupuesto Máximo',
+                  Icons.account_balance_wallet_outlined),
+            ),
+          ],
+        ),
+        const SizedBox(height: 48),
+        const Divider(),
+        const SizedBox(height: 48),
+        const SizedBox(height: 32),
+        _buildNumericField(
+            _labourController, 'Mano de Obra (Input)', Icons.work_outline,
+            isCurrency: true),
+      ],
     );
   }
 
@@ -348,85 +683,6 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           onChanged: (_) => _updatePoleBarnLocal(),
         ),
       ],
-    );
-  }
-
-  Widget _buildNameField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Nombre del Producto', style: AppStyles.labelStyle),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _nameController,
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
-          decoration: AppStyles.inputDecoration().copyWith(
-            prefixIcon:
-                const Icon(Icons.label_outline, size: 20, color: Colors.grey),
-            hintText: 'Ej: POLE BARN 30x40x12 @ 10',
-          ),
-          validator: (val) {
-            if (val == null || val.isEmpty) return 'Requerido';
-            return null;
-          },
-          onChanged: (val) {
-            _updatePoleBarnLocal();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMaterialsList(
-      PoleBarnFormState state, PoleBarnFormNotifier notifier) {
-    final materials = state.relatedMaterials;
-    if (materials.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 48),
-        alignment: Alignment.center,
-        child: Column(
-          children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text('Sin materiales asociados',
-                style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-    return Column(
-      children: materials.asMap().entries.map((entry) {
-        final index = entry.key;
-        final m = entry.value;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            title: Text(m.materialName ?? 'Cargando...',
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                  'Cantidad: ${m.qty} | Medida: ${m.medida} | Precio: ${_currencyFormat.format(m.pricePorUnidad)}',
-                  style: const TextStyle(fontSize: 12)),
-            ),
-            trailing: Text(_currencyFormat.format(m.calculatedTotal),
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                    fontSize: 16)),
-            onTap: () => _showMaterialDialog(index),
-          ),
-        );
-      }).toList(),
     );
   }
 

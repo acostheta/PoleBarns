@@ -172,7 +172,6 @@ class ProductsTab extends ConsumerWidget {
     // Determine Address: prioritize Invoice Address, fallback to project address (might be name)
     final address =
         invoiceDetails?['Address'] ?? project.address ?? 'No disponible';
-    final invoiceId = invoiceDetails?['id']?.toString() ?? 'N/A';
 
     final startDate = project.fechaInicio != null
         ? DateFormat('MM/dd/yyyy').format(project.fechaInicio!)
@@ -322,7 +321,7 @@ class ProductsTab extends ConsumerWidget {
               _buildTableCell(unit.toString()),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }

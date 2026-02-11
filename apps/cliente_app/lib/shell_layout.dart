@@ -70,24 +70,31 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
             child: Column(
               children: [
                 // Logo section at the top
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 32,
-                    horizontal: isMenuOpen ? 24 : 12,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: isMenuOpen
-                        ? MainAxisAlignment.start
-                        : MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/branding/logo.png',
-                        height: isMenuOpen ? 120 : 40,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.business, size: isMenuOpen ? 120 : 40),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => context.go('/dashboard'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: isMenuOpen ? 24 : 12,
                       ),
-                    ],
+                      child: Row(
+                        mainAxisAlignment: isMenuOpen
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/branding/logo.png',
+                            height: isMenuOpen ? 120 : 40,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.business,
+                                size: isMenuOpen ? 120 : 40),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Divider(
@@ -95,79 +102,10 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                     thickness: 1,
                     indent: 16,
                     endIndent: 16),
-                // User Info Header
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 24,
-                    horizontal: isMenuOpen ? 24 : 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.05),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        foregroundColor: Theme.of(context).colorScheme.primary,
-                        backgroundImage:
-                            profileAsync.asData?.value?['picture'] != null
-                                ? NetworkImage(
-                                    profileAsync.asData!.value!['picture'])
-                                : null,
-                        child: profileAsync.asData?.value?['picture'] == null
-                            ? const Icon(Icons.person, size: 20)
-                            : null,
-                      ),
-                      Expanded(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: isMenuOpen ? 1.0 : 0.0,
-                          curve: Curves.easeInOut,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 12),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  profileAsync.asData?.value?['name'] ??
-                                      'Usuario',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      _buildMenuItem(
-                        icon: Icons.home,
-                        title: 'Inicio',
-                        path: '/dashboard',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.person,
-                        title: 'Mi Perfil',
-                        path: '/profile',
-                        location: location,
-                      ),
                       AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
                         opacity: isMenuOpen ? 1.0 : 0.0,
@@ -250,76 +188,85 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                         path: '/settings',
                         location: location,
                       ),
-                      Divider(color: Colors.grey[300], height: 1),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 2),
-                        child: InkWell(
-                          onTap: () async {
-                            await ref.read(authRepositoryProvider).signOut();
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            height: 48,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 12),
-                                const Icon(Icons.logout,
-                                    color: Color(0xFF64748B), size: 22),
-                                Expanded(
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 200),
-                                    opacity: isMenuOpen ? 1.0 : 0.0,
-                                    curve: Curves.easeInOut,
-                                    child: const Padding(
-                                      padding: EdgeInsets.only(left: 12),
-                                      child: Text(
-                                        'Cerrar Sesión',
-                                        style: TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.clip,
-                                        softWrap: false,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 Divider(color: Colors.grey[300], height: 1),
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    isMenuOpen ? Icons.chevron_left : Icons.chevron_right,
-                    color: const Color(0xFF64748B),
-                  ),
-                  title: isMenuOpen
-                      ? const Text(
-                          'Contraer Menú',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => context.go('/profile'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: isMenuOpen ? 24 : 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withValues(alpha: 0.05),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primaryContainer,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            backgroundImage:
+                                profileAsync.asData?.value?['picture'] != null
+                                    ? NetworkImage(
+                                        profileAsync.asData!.value!['picture'])
+                                    : null,
+                            child:
+                                profileAsync.asData?.value?['picture'] == null
+                                    ? const Icon(Icons.person, size: 20)
+                                    : null,
                           ),
-                        )
-                      : null,
-                  onTap: () {
-                    ref.read(sidebarExpandedProvider.notifier).state =
-                        !isMenuOpen;
-                  },
+                          Expanded(
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: isMenuOpen ? 1.0 : 0.0,
+                              curve: Curves.easeInOut,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 12),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      profileAsync.asData?.value?['name'] ??
+                                          'Usuario',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (isMenuOpen)
+                            IconButton(
+                              icon: const Icon(Icons.logout,
+                                  color: Color(0xFF64748B), size: 20),
+                              onPressed: () async {
+                                await ref
+                                    .read(authRepositoryProvider)
+                                    .signOut();
+                              },
+                              tooltip: 'Cerrar Sesión',
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],

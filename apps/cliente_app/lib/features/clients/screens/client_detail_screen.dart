@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/client_model.dart';
 import '../repositories/client_repository.dart';
 import '../../invoices/screens/create_invoice_screen.dart';
+import '../../invoices/providers/invoice_providers.dart';
+import '../../invoices/models/invoice_models.dart';
+import '../../invoices/screens/invoice_detail_screen.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String? clientId;
@@ -174,9 +178,8 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB), // Consistent background
       appBar: AppBar(
-        title: Text('Cliente #${client.id.substring(0, 8)}',
-            style: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Cliente',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -227,11 +230,158 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           children: [
             _buildHeaderCard(client),
             const SizedBox(height: 24),
-            _buildContactInfoCard(client),
-            const SizedBox(height: 24),
-            if (client.notas != null && client.notas!.isNotEmpty)
-              _buildNotesCard(client),
+            _buildInvoicesTable(client.id),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoicesTable(String clientId) {
+    final invoicesAsync = ref.watch(invoicesByClientStreamProvider(clientId));
+    final currency = NumberFormat.simpleCurrency();
+    final dateFormat = DateFormat('MM/dd/yyyy');
+
+    return invoicesAsync.when(
+      data: (invoices) {
+        if (invoices.isEmpty) return const SizedBox();
+
+        return LayoutBuilder(builder: (context, constraints) {
+          return Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text('Invoices Recientes',
+                      style: AppStyles.dialogTitleStyle),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: DataTable(
+                        showCheckboxColumn: false,
+                        headingTextStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                          letterSpacing: 0.5,
+                        ),
+                        dataRowMinHeight: 64,
+                        dataRowMaxHeight: 64,
+                        horizontalMargin: 24,
+                        columnSpacing: 24,
+                        columns: const [
+                          DataColumn(label: Text('ID (#)')),
+                          DataColumn(label: Text('PROYECTO')),
+                          DataColumn(label: Text('FECHA')),
+                          DataColumn(label: Text('TOTAL'), numeric: true),
+                          DataColumn(label: Text('PAGADO'), numeric: true),
+                          DataColumn(label: Text('SALDO'), numeric: true),
+                          DataColumn(label: Text('ESTADO')),
+                        ],
+                        rows: invoices.map((invoice) {
+                          return DataRow(
+                            onSelectChanged: (_) =>
+                                _navigateToInvoiceDetail(invoice.id),
+                            cells: [
+                              DataCell(Text('#${invoice.id}',
+                                  style: const TextStyle(
+                                      color: Color(0xFF4B5563)))),
+                              DataCell(
+                                SizedBox(
+                                  width: 180,
+                                  child: Text(
+                                      invoice.projectName ??
+                                          invoice.address ??
+                                          'Sin Proyecto',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          color: Colors.blue[700],
+                                          fontSize: 12)),
+                                ),
+                              ),
+                              DataCell(Text(dateFormat.format(invoice.date))),
+                              DataCell(
+                                  Text(currency.format(invoice.totalVenta))),
+                              DataCell(Text(
+                                  currency.format(invoice.totalPagado),
+                                  style: const TextStyle(
+                                      color: Color(0xFF059669)))),
+                              DataCell(Text(currency.format(invoice.saldo),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: invoice.saldo > 0
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF111827)))),
+                              DataCell(_buildInvoiceStatusBadge(invoice)),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  void _navigateToInvoiceDetail(int id) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InvoiceDetailScreen(invoiceId: id),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceStatusBadge(InvoiceModel invoice) {
+    String status = 'Pendiente';
+    if (invoice.status.toLowerCase() == 'cancelada' ||
+        invoice.status.toLowerCase() == 'cancelado') {
+      status = 'Cancelado';
+    } else if (invoice.saldo <= 0) {
+      status = 'Pagado';
+    } else if (invoice.totalPagado > 0) {
+      status = 'Parcial';
+    }
+
+    Color color = Colors.grey;
+    if (status == 'Pagado') color = const Color(0xFF059669);
+    if (status == 'Parcial') color = const Color(0xFFD97706);
+    if (status == 'Pendiente') color = const Color(0xFFDC2626);
+    if (status == 'Cancelado') color = const Color(0xFF6B7280);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -240,17 +390,24 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   Widget _buildHeaderCard(ClientModel client) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 40,
+            radius: 48,
             backgroundColor: const Color(0xFFF3F4F6),
             backgroundImage:
                 client.photoUrl != null ? NetworkImage(client.photoUrl!) : null,
@@ -266,118 +423,121 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                   )
                 : null,
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 32),
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   client.nombre,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                _buildStatusBadge(true), // Assuming active for now
+              ],
+            ),
+          ),
+          const SizedBox(width: 32),
+          // Column 2: Contact Info
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('CONTACTO',
+                    style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                        letterSpacing: 0.5)),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildStatusBadge(true), // Assuming active for now
+                    Icon(Icons.phone_outlined,
+                        size: 16, color: Colors.grey[400]),
+                    const SizedBox(width: 12),
+                    Text(client.telefono ?? 'S/N',
+                        style: const TextStyle(
+                            color: Color(0xFF4B5563), fontSize: 14)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.email_outlined,
+                        size: 16, color: Colors.grey[400]),
+                    const SizedBox(width: 12),
+                    Text(client.email ?? 'S/N',
+                        style: const TextStyle(
+                            color: Color(0xFF4B5563), fontSize: 14)),
                   ],
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactInfoCard(ClientModel client) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Información de Contacto',
-              style: AppStyles.dialogTitleStyle),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildInfoRow(Icons.phone_outlined, 'Teléfono',
-                    client.telefono ?? 'No registrado'),
-              ),
-              Expanded(
-                child: _buildInfoRow(Icons.email_outlined, 'Correo Electrónico',
-                    client.email ?? 'No registrado'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildInfoRow(Icons.location_on_outlined, 'Dirección',
-              client.direccion ?? 'No registrada'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotesCard(ClientModel client) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Notas', style: AppStyles.dialogTitleStyle),
-          const SizedBox(height: 16),
-          Text(
-            client.notas!,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF4B5563),
-              height: 1.5,
+          const SizedBox(width: 32),
+          // Column 3: Address and Notes
+          Expanded(
+            flex: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (client.direccion != null &&
+                    client.direccion!.isNotEmpty) ...[
+                  const Text('DIRECCIÓN',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 18, color: Colors.grey[400]),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(client.direccion!,
+                            style: const TextStyle(
+                                color: Color(0xFF4B5563), fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (client.notas != null && client.notas!.isNotEmpty) ...[
+                  const Text('NOTAS',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.notes_outlined,
+                          size: 18, color: Colors.grey[400]),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(client.notas!,
+                            style: const TextStyle(
+                                color: Color(0xFF4B5563), fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Colors.grey),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                      color: Color(0xFF1F2937))),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

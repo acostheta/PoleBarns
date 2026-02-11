@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
+import '../../settings/repositories/settings_repository.dart';
 
 class PagosDiariosScreen extends ConsumerStatefulWidget {
   const PagosDiariosScreen({super.key});
@@ -56,7 +57,7 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                       final empMap = {
                         for (var e in employees)
                           e['id'].toString():
-                              e['full_name']?.toString() ?? 'S/N'
+                              (e['full_name'] ?? e['name'])?.toString() ?? 'S/N'
                       };
 
                       final items = snapshot.data!.where((item) {
@@ -72,45 +73,116 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                         return const Center(child: Text('No hay registros.'));
                       }
 
-                      return ListView.builder(
-                        itemCount: items.length,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          final empName =
-                              empMap[item.idEmpleado] ?? 'Desconocido';
-                          return Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 8),
-                              title: Text(
-                                  'Pago: \$${item.monto ?? 0} - ${DateFormat('dd/MM/yyyy').format(item.fecha)}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                    'Concepto: ${item.conceptoPeriodo ?? ''}\nEmpleado: $empName'),
-                              ),
-                              isThreeLine: true,
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: Colors.red),
-                                onPressed: () => _deleteItem(item),
-                              ),
-                              onTap: () {
-                                _showEditDialog(context, item);
-                              },
-                            ),
-                          );
-                        },
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        dividerColor: Colors.grey.shade200,
+                                      ),
+                                      child: DataTable(
+                                        headingRowColor:
+                                            WidgetStateProperty.all(
+                                                Colors.grey.shade50),
+                                        dataRowMinHeight: 40,
+                                        dataRowMaxHeight: 52,
+                                        headingRowHeight: 48,
+                                        columnSpacing: 16,
+                                        horizontalMargin: 16,
+                                        columns: const [
+                                          DataColumn(label: Text('FECHA')),
+                                          DataColumn(label: Text('EMPLEADO')),
+                                          DataColumn(label: Text('CONCEPTO')),
+                                          DataColumn(label: Text('F. PAGO')),
+                                          DataColumn(label: Text('DÍAS')),
+                                          DataColumn(label: Text('MONTO')),
+                                          DataColumn(label: Text('ACCIONES')),
+                                        ],
+                                        rows: items.map((item) {
+                                          final empName =
+                                              empMap[item.idEmpleado] ??
+                                                  'Desconocido';
+                                          return DataRow(
+                                            cells: [
+                                              DataCell(Text(
+                                                  DateFormat('dd/MM/yyyy')
+                                                      .format(item.fecha))),
+                                              DataCell(Text(empName,
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
+                                              DataCell(Container(
+                                                constraints:
+                                                    const BoxConstraints(
+                                                        maxWidth: 180),
+                                                child: Text(
+                                                    item.conceptoPeriodo ?? '-',
+                                                    overflow:
+                                                        TextOverflow.ellipsis),
+                                              )),
+                                              DataCell(
+                                                  Text(item.formaPago ?? '-')),
+                                              DataCell(Text(
+                                                  item.dias?.toString() ??
+                                                      '-')),
+                                              DataCell(Text(
+                                                NumberFormat.simpleCurrency()
+                                                    .format(item.monto),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.green),
+                                              )),
+                                              DataCell(Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.edit_outlined,
+                                                        color: Colors.blue,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showEditDialog(
+                                                            context, item),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _deleteItem(item),
+                                                  ),
+                                                ],
+                                              )),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       );
                     });
               },
@@ -146,20 +218,45 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
   void _showEditDialog(BuildContext context, NominaPagoDiario? item) {
     showDialog(
       context: context,
-      builder: (context) => _PagoDiarioDialog(item: item),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 550),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(item == null ? 'Nuevo Pago Diario' : 'Editar Pago',
+                      style: AppStyles.dialogTitleStyle),
+                  IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(child: PagoDiarioForm(item: item)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _PagoDiarioDialog extends ConsumerStatefulWidget {
+class PagoDiarioForm extends ConsumerStatefulWidget {
   final NominaPagoDiario? item;
-  const _PagoDiarioDialog({this.item});
+  const PagoDiarioForm({super.key, this.item});
 
   @override
-  ConsumerState<_PagoDiarioDialog> createState() => _PagoDiarioDialogState();
+  ConsumerState<PagoDiarioForm> createState() => _PagoDiarioFormState();
 }
 
-class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
+class _PagoDiarioFormState extends ConsumerState<PagoDiarioForm> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedEmployeeId;
   late TextEditingController _conceptoCtrl;
@@ -167,7 +264,7 @@ class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
   late TextEditingController _notasCtrl;
   late TextEditingController _chequeCtrl;
   late TextEditingController _diasCtrl;
-  late TextEditingController _formaPagoCtrl;
+  String? _selectedFormaPago;
   DateTime _fecha = DateTime.now();
   bool _isLoading = false;
 
@@ -183,7 +280,10 @@ class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
     _chequeCtrl = TextEditingController(text: widget.item?.nroCheque ?? '');
     _diasCtrl =
         TextEditingController(text: widget.item?.dias?.toString() ?? '');
-    _formaPagoCtrl = TextEditingController(text: widget.item?.formaPago ?? '');
+    _selectedFormaPago = widget.item?.formaPago;
+    if (_selectedFormaPago != null && _selectedFormaPago!.isEmpty) {
+      _selectedFormaPago = null;
+    }
     if (widget.item != null) _fecha = widget.item!.fecha;
   }
 
@@ -191,106 +291,127 @@ class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        widget.item == null
-                            ? 'Nuevo Pago Diario'
-                            : 'Editar Pago',
-                        style: AppStyles.dialogTitleStyle),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('Empleado', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: repo.getEmployeesStream(),
-                  builder: (context, snapshot) {
-                    final employees = snapshot.data ?? [];
-                    return DropdownButtonFormField<String>(
-                      value: _selectedEmployeeId,
-                      items: employees.map<DropdownMenuItem<String>>((e) {
-                        return DropdownMenuItem<String>(
-                          value: e['id'].toString(),
-                          child: Text(e['full_name'] ?? 'S/N',
-                              style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                      validator: (v) => v == null ? 'Requerido' : null,
-                      decoration: AppStyles.inputDecoration(),
-                      icon: const Icon(Icons.keyboard_arrow_down),
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Empleado', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: repo.getEmployeesStream(),
+              builder: (context, snapshot) {
+                final employees = snapshot.data ?? [];
+                return DropdownButtonFormField<String>(
+                  value: _selectedEmployeeId,
+                  items: employees.map<DropdownMenuItem<String>>((e) {
+                    return DropdownMenuItem<String>(
+                      value: e['id'].toString(),
+                      child: Text(
+                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
+                          style: const TextStyle(fontSize: 14)),
                     );
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildDateField(
-                    'Fecha', _fecha, (d) => setState(() => _fecha = d)),
-                const SizedBox(height: 24),
-                _buildTextField('Concepto / Periodo', _conceptoCtrl),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: _buildTextField('Nro Cheque', _chequeCtrl)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child:
-                            _buildTextField('Forma de Pago', _formaPagoCtrl)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField('Días', _diasCtrl,
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField('Monto', _montoCtrl,
-                            required: true,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildTextField('Notas', _notasCtrl, maxLines: 2),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : const Text('Guardar Pago'),
-                  ),
-                )
+                  }).toList(),
+                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                  validator: (v) => v == null ? 'Requerido' : null,
+                  decoration: AppStyles.inputDecoration(),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            _buildDateField('Fecha', _fecha, (d) => setState(() => _fecha = d)),
+            const SizedBox(height: 24),
+            _buildTextField('Concepto / Periodo', _conceptoCtrl),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: Consumer(builder: (context, ref, _) {
+                  final methodsAsync = ref.watch(paymentMethodsListProvider);
+                  return methodsAsync.when(
+                    data: (methods) {
+                      // Ensure selected value exists in list or is null
+                      if (_selectedFormaPago != null &&
+                          !methods.any((m) => m.name == _selectedFormaPago)) {
+                        _selectedFormaPago = null;
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Forma de Pago',
+                              style: AppStyles.labelStyle),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedFormaPago,
+                            items: methods
+                                .map((m) => DropdownMenuItem(
+                                      value: m.name,
+                                      child: Text(m.name,
+                                          style: const TextStyle(fontSize: 14)),
+                                    ))
+                                .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedFormaPago = val;
+                              });
+                            },
+                            decoration: AppStyles.inputDecoration(),
+                            hint: const Text('Seleccionar'),
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Forma de Pago', style: AppStyles.labelStyle),
+                        SizedBox(height: 8),
+                        CircularProgressIndicator(),
+                      ],
+                    ),
+                    error: (e, s) => const Text('Error cargando métodos'),
+                  );
+                })),
+                const SizedBox(width: 16),
+                Expanded(child: _buildTextField('Nro Referencia', _chequeCtrl)),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                    child: _buildTextField('Días', _diasCtrl,
+                        keyboardType: TextInputType.number)),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField('Monto', _montoCtrl,
+                        required: true,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildTextField('Notas', _notasCtrl, maxLines: 2),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: AppStyles.primaryButtonStyle,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Guardar Pago'),
+              ),
+            )
+          ],
         ),
       ),
     );
@@ -307,7 +428,7 @@ class _PagoDiarioDialogState extends ConsumerState<_PagoDiarioDialog> {
           conceptoPeriodo: _conceptoCtrl.text,
           nroCheque: _chequeCtrl.text,
           dias: double.tryParse(_diasCtrl.text),
-          formaPago: _formaPagoCtrl.text,
+          formaPago: _selectedFormaPago,
           monto: double.tryParse(_montoCtrl.text),
           notas: _notasCtrl.text,
         );
