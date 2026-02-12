@@ -74,19 +74,30 @@ class ProjectRepository {
   Future<ProjectMediaModel> addMedia({
     required String projectId,
     required String url,
-    required String tipo,
-    required String etiqueta,
+    required DateTime fecha,
+    String? descripcion,
     int orderIndex = 0,
   }) async {
     final userId = _supabase.auth.currentUser!.id;
+
+    // Get user name from profiles
+    final profile = await _supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+
+    final userName = profile?['full_name'] ?? 'Usuario';
+
     final response = await _supabase
         .from('project_media')
         .insert({
           'project_ref': projectId,
           'url_media': url,
-          'tipo': tipo,
-          'etiqueta': etiqueta,
+          'fecha': fecha.toIso8601String().split('T')[0],
+          'descripcion': descripcion,
           'usuario_carga_ref': userId,
+          'usuario_nombre': userName,
           'order_index': orderIndex,
         })
         .select()
@@ -95,8 +106,26 @@ class ProjectRepository {
     return ProjectMediaModel.fromJson(response);
   }
 
+  Future<void> updateMediaMetadata({
+    required String mediaId,
+    required DateTime fecha,
+    String? descripcion,
+  }) async {
+    await _supabase.from('project_media').update({
+      'fecha': fecha.toIso8601String().split('T')[0],
+      'descripcion': descripcion,
+    }).eq('id', mediaId);
+  }
+
   Future<void> deleteMedia(String mediaId) async {
     await _supabase.from('project_media').delete().eq('id', mediaId);
+  }
+
+  Future<void> updateMediaDescription(
+      String mediaId, String description) async {
+    await _supabase
+        .from('project_media')
+        .update({'descripcion': description}).eq('id', mediaId);
   }
 
   Future<void> deleteMediaBatch(List<String> ids) async {
@@ -191,6 +220,33 @@ class ProjectRepository {
     await _supabase
         .from('project_pole_barns')
         .update({'sale_price': newPrice}).eq('id', id);
+  }
+
+  Future<void> updateProjectPoleBarnStatus(
+      String productId, String status, String projectId) async {
+    // 1. Update product status
+    await _supabase
+        .from('project_pole_barns')
+        .update({'status': status}).eq('id', productId);
+
+    // 2. Fetch all products for this project to calculate overall status
+    final products = await getProjectPoleBarns(projectId);
+
+    String overallStatus;
+    if (products.isEmpty) {
+      overallStatus = 'Pendiente';
+    } else if (products.every((p) => p.status == 'Terminado')) {
+      overallStatus = 'Terminado';
+    } else if (products.every((p) => p.status == 'Pendiente')) {
+      overallStatus = 'Pendiente';
+    } else {
+      overallStatus = 'En Proceso';
+    }
+
+    // 3. Update project status
+    await _supabase
+        .from('projects')
+        .update({'estatus': overallStatus}).eq('id', projectId);
   }
 
   Future<void> deleteProjectPoleBarn(String id) async {

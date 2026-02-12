@@ -148,49 +148,6 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
                                 ),
                                 Positioned(
                                   top: 8,
-                                  left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.6),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: DropdownButton<String>(
-                                      value: item.etiqueta,
-                                      dropdownColor: Colors.black87,
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 12),
-                                      underline: const SizedBox(),
-                                      items: [
-                                        'Antes',
-                                        'Durante',
-                                        'Después',
-                                        'Gallery'
-                                      ]
-                                          .map((e) => DropdownMenuItem(
-                                              value: e, child: Text(e)))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() {
-                                            final idx =
-                                                _localMediaList.indexWhere(
-                                                    (m) => m.id == item.id);
-                                            if (idx != -1) {
-                                              _localMediaList[idx] =
-                                                  _localMediaList[idx]
-                                                      .copyWith(etiqueta: val);
-                                            }
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
                                   right: 8,
                                   child: InkWell(
                                     onTap: () => _deletePhoto(item.id),
@@ -397,8 +354,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
       final uploadedMedia = await ref.read(projectRepositoryProvider).addMedia(
             projectId: widget.projectId,
             url: publicUrl,
-            tipo: 'foto',
-            etiqueta: 'Gallery',
+            fecha: DateTime.now(),
           );
 
       if (_isEditing) {

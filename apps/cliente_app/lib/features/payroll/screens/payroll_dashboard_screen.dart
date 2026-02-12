@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/payroll_summary_provider.dart';
 import 'pagos_diarios_screen.dart';
-import 'destajo_soldadores_screen.dart';
+import 'pagos_soldadores_screen.dart';
 import 'nomina_instalacion_screen.dart';
 import 'nomina_chofer_screen.dart';
 
@@ -29,7 +29,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
             tabs: [
               Tab(text: 'Dashboard'),
               Tab(text: 'Diario'),
-              Tab(text: 'Destajo'),
+              Tab(text: 'Soldadores'),
               Tab(text: 'Instalación'),
               Tab(text: 'Chofer'),
             ],
@@ -61,7 +61,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
             ),
             // Other Tabs
             const PagosDiariosScreen(),
-            const DestajoSoldadoresScreen(),
+            const PagosSoldadoresScreen(),
             const NominaInstalacionScreen(),
             const NominaChoferScreen(),
           ],
@@ -115,85 +115,60 @@ class PayrollDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
 
-              // NEW LAYOUT: 3 Columns
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Col 1
                     Expanded(
-                      flex: 3,
                       child: _buildMainTotalCard(
                           context, data.totalPagado, currencyFormatter),
                     ),
-                    const SizedBox(width: 24),
-
-                    // Col 2
+                    const SizedBox(width: 16),
                     Expanded(
-                      flex: 2,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: _buildCategoryCard(
-                              context,
-                              'Diario',
-                              data.diarioTotal,
-                              Icons.calendar_today_outlined,
-                              const Color(0xFFFFF7ED),
-                              const Color(0xFFEA580C),
-                              () =>
-                                  DefaultTabController.of(context).animateTo(1),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Expanded(
-                            child: _buildCategoryCard(
-                              context,
-                              'Instalación',
-                              data.instalacionTotal,
-                              Icons.build_outlined,
-                              const Color(0xFFEFF6FF),
-                              const Color(0xFF2563EB),
-                              () =>
-                                  DefaultTabController.of(context).animateTo(3),
-                            ),
-                          ),
-                        ],
+                      child: _buildCategoryCard(
+                        context,
+                        'Diario',
+                        data.diarioTotal,
+                        Icons.calendar_today_outlined,
+                        const Color(0xFFFFF7ED),
+                        const Color(0xFFEA580C),
+                        () => DefaultTabController.of(context).animateTo(1),
                       ),
                     ),
-                    const SizedBox(width: 24),
-
-                    // Col 3
+                    const SizedBox(width: 16),
                     Expanded(
-                      flex: 2,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: _buildCategoryCard(
-                              context,
-                              'Destajo',
-                              data.destajoTotal,
-                              Icons.inventory_2_outlined,
-                              const Color(0xFFF0FDF4),
-                              const Color(0xFF16A34A),
-                              () =>
-                                  DefaultTabController.of(context).animateTo(2),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Expanded(
-                            child: _buildCategoryCard(
-                              context,
-                              'Por Hora',
-                              data.porHoraTotal,
-                              Icons.access_time_outlined,
-                              const Color(0xFFF5F3FF),
-                              const Color(0xFF7C3AED),
-                              () =>
-                                  DefaultTabController.of(context).animateTo(4),
-                            ),
-                          ),
-                        ],
+                      child: _buildCategoryCard(
+                        context,
+                        'Soldadores',
+                        data.soldadoresTotal,
+                        Icons.inventory_2_outlined,
+                        const Color(0xFFF0FDF4),
+                        const Color(0xFF16A34A),
+                        () => DefaultTabController.of(context).animateTo(2),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildCategoryCard(
+                        context,
+                        'Instalación',
+                        data.instalacionTotal,
+                        Icons.build_outlined,
+                        const Color(0xFFEFF6FF),
+                        const Color(0xFF2563EB),
+                        () => DefaultTabController.of(context).animateTo(3),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildCategoryCard(
+                        context,
+                        'Por Hora',
+                        data.porHoraTotal,
+                        Icons.access_time_outlined,
+                        const Color(0xFFF5F3FF),
+                        const Color(0xFF7C3AED),
+                        () => DefaultTabController.of(context).animateTo(4),
                       ),
                     ),
                   ],
@@ -216,7 +191,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
       BuildContext context, double total, NumberFormat formatter) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -233,22 +208,25 @@ class PayrollDashboardScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Total Pagado por Nómina (Este Mes)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
-                ),
+          const Text(
+            'Total del Mes',
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            formatter.format(total),
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: const Color(0xFF92400E),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 64,
-                ),
+          const SizedBox(height: 12),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              formatter.format(total),
+              style: const TextStyle(
+                color: Color(0xFF92400E),
+                fontWeight: FontWeight.bold,
+                fontSize: 28,
+              ),
+            ),
           ),
         ],
       ),
@@ -443,7 +421,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFF92400E);
         break;
-      case 'Destajo':
+      case 'Soldadores':
         bgColor = const Color(0xFFDCFCE7);
         textColor = const Color(0xFF166534);
         break;
@@ -530,7 +508,7 @@ class UnifiedPayrollDialog extends StatelessWidget {
                   indicatorColor: Color(0xFFD97706),
                   tabs: [
                     Tab(text: 'Diario'),
-                    Tab(text: 'Destajo'),
+                    Tab(text: 'Soldadores'),
                     Tab(text: 'Instalación'),
                     Tab(text: 'Chofer'),
                   ],

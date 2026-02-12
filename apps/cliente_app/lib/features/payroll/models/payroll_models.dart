@@ -49,7 +49,7 @@ class NominaPagoDiario {
   }
 }
 
-class NominaDestajoSoldador {
+class NominaSoldador {
   final String id;
   final String idEmpleado;
   final DateTime fecha;
@@ -61,7 +61,7 @@ class NominaDestajoSoldador {
   final String? formaPago;
   final String? notas;
 
-  NominaDestajoSoldador({
+  NominaSoldador({
     required this.id,
     required this.idEmpleado,
     required this.fecha,
@@ -74,8 +74,8 @@ class NominaDestajoSoldador {
     this.notas,
   });
 
-  factory NominaDestajoSoldador.fromJson(Map<String, dynamic> json) {
-    return NominaDestajoSoldador(
+  factory NominaSoldador.fromJson(Map<String, dynamic> json) {
+    return NominaSoldador(
       id: json['id'],
       idEmpleado: json['id_empleado'] ?? '',
       fecha: DateTime.parse(json['fecha']),
@@ -166,7 +166,7 @@ class NominaInstalacion {
   }
 }
 
-class PaymentDestajo {
+class NominaPago {
   final String id;
   final String tipo; // 'Instalación' or 'Soldadura'
   final String? idNominaSoldadura;
@@ -177,7 +177,7 @@ class PaymentDestajo {
   final String? nota;
   final DateTime? createdAt;
 
-  PaymentDestajo({
+  NominaPago({
     required this.id,
     required this.tipo,
     this.idNominaSoldadura,
@@ -189,8 +189,8 @@ class PaymentDestajo {
     this.createdAt,
   });
 
-  factory PaymentDestajo.fromJson(Map<String, dynamic> json) {
-    return PaymentDestajo(
+  factory NominaPago.fromJson(Map<String, dynamic> json) {
+    return NominaPago(
       id: json['id'],
       tipo: json['tipo'],
       idNominaSoldadura: json['id_nomina_soldadura'],

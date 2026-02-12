@@ -20,7 +20,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
   // Controllers / State
   late TextEditingController _responsableController;
   late TextEditingController _grupoController;
-  late TextEditingController _addressController;
+  late TextEditingController _nameController;
+  late TextEditingController _direccionController;
   late TextEditingController _commentsController;
 
   String? _selectedClientId;
@@ -44,7 +45,9 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
         TextEditingController(text: widget.project.responsable);
     _grupoController =
         TextEditingController(text: widget.project.grupoAsignado);
-    _addressController = TextEditingController(text: widget.project.address);
+    _nameController = TextEditingController(text: widget.project.address);
+    _direccionController =
+        TextEditingController(text: widget.project.direccion);
     _commentsController = TextEditingController(text: widget.project.comments);
 
     _selectedClientId = widget.project.refCliente;
@@ -81,7 +84,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
   void dispose() {
     _responsableController.dispose();
     _grupoController.dispose();
-    _addressController.dispose();
+    _nameController.dispose();
+    _direccionController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -92,7 +96,8 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
       responsable: _selectedResponsable,
       estatus: _selectedStatus,
       grupoAsignado: _selectedGroupUsers.join(', '),
-      address: _addressController.text,
+      address: _nameController.text,
+      direccion: _direccionController.text,
       comments: _commentsController.text,
       fechaInicio: _startDate,
       fechaFinalizacion: _endDate,
@@ -153,7 +158,18 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
               runSpacing: 24,
               children: [
                 SizedBox(
+                    width: 300,
+                    child:
+                        _buildReadFieldSimple('NOMBRE', _nameController.text)),
+                SizedBox(
                     width: 300, child: _buildClientReadField(clientsAsync)),
+                SizedBox(
+                    width: 300,
+                    child: _buildReadStatusPill('ESTATUS', _selectedStatus)),
+                SizedBox(
+                    width: 300,
+                    child: _buildReadFieldSimple(
+                        'GRUPO ASIGNADO', _selectedGroupUsers.join(', '))),
                 SizedBox(
                   width: 300,
                   child: Consumer(builder: (context, ref, child) {
@@ -171,13 +187,6 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 ),
                 SizedBox(
                     width: 300,
-                    child: _buildReadStatusPill('ESTATUS', _selectedStatus)),
-                SizedBox(
-                    width: 300,
-                    child: _buildReadFieldSimple(
-                        'GRUPO ASIGNADO', _selectedGroupUsers.join(', '))),
-                SizedBox(
-                    width: 300,
                     child: _buildReadFieldWithIcon('FECHA DE INICIO',
                         _startDate, Icons.calendar_today_outlined)),
                 SizedBox(
@@ -189,21 +198,23 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
             const SizedBox(height: 24),
             _buildReadFieldWithIcon(
                 'DIRECCIÓN', null, Icons.location_on_outlined,
-                customText: _addressController.text),
+                customText: _direccionController.text),
             const SizedBox(height: 24),
             _buildReadFieldSimple('COMENTARIOS', _commentsController.text),
           ] else ...[
             // EDIT MODE
-            _buildField('Nombre del Proyecto / Dirección', _addressController),
+            _buildField('Nombre', _nameController),
+            const SizedBox(height: 16),
+            _buildField('Dirección', _direccionController),
             const SizedBox(height: 16),
             Wrap(
               spacing: 24,
               runSpacing: 24,
               children: [
                 SizedBox(width: 350, child: _buildClientDropdown(clientsAsync)),
-                SizedBox(width: 350, child: _buildResponsableDropdown()),
-                SizedBox(width: 350, child: _buildStatusDropdown()),
                 SizedBox(width: 350, child: _buildGroupSelection()),
+                SizedBox(width: 350, child: _buildStatusDropdown()),
+                SizedBox(width: 350, child: _buildResponsableDropdown()),
                 SizedBox(
                     width: 350,
                     child: _buildDateField('Fecha de Inicio', _startDate,
@@ -406,9 +417,28 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                     );
                   }).toList(),
                   onChanged: (val) {
-                    setState(() {
-                      _selectedGroupUsers = val != null ? [val] : [];
-                    });
+                    if (val != null) {
+                      // Find the supervisor name for this group
+                      final group = groups.firstWhere((g) => g['name'] == val);
+                      final supervisorId = group['supervisor_id'] as String?;
+                      final users = usersAsync.valueOrNull ?? [];
+                      final supervisor = users.firstWhere(
+                        (u) => u['id'] == supervisorId,
+                        orElse: () => {},
+                      );
+                      final supervisorName = supervisor['name'] as String?;
+
+                      setState(() {
+                        _selectedGroupUsers = [val];
+                        if (supervisorName != null) {
+                          _selectedResponsable = supervisorName;
+                        }
+                      });
+                    } else {
+                      setState(() {
+                        _selectedGroupUsers = [];
+                      });
+                    }
                   },
                   decoration: _inputDecoration(),
                   isExpanded: true,

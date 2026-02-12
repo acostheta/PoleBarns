@@ -11,7 +11,7 @@ import '../features/clients/screens/clients_list_screen.dart';
 import '../features/clients/screens/client_detail_screen.dart';
 import '../features/payroll/screens/payroll_dashboard_screen.dart';
 import '../features/payroll/screens/pagos_diarios_screen.dart';
-import '../features/payroll/screens/destajo_soldadores_screen.dart';
+import '../features/payroll/screens/pagos_soldadores_screen.dart';
 import '../features/payroll/screens/nomina_instalacion_screen.dart';
 import '../features/payroll/screens/nomina_chofer_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
@@ -136,7 +136,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'welders',
-                builder: (context, state) => const DestajoSoldadoresScreen(),
+                builder: (context, state) => const PagosSoldadoresScreen(),
               ),
               GoRoute(
                 path: 'installation',

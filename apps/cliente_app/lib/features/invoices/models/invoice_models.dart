@@ -15,6 +15,8 @@ class InvoiceModel {
   final String status;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? notesForInvoice;
+  final String? paymentTerm;
 
   // Joined fields
   final String? clientName;
@@ -38,6 +40,8 @@ class InvoiceModel {
     this.status = 'Pendiente',
     this.startDate,
     this.endDate,
+    this.notesForInvoice,
+    this.paymentTerm = 'Net 30',
     this.clientName,
     this.projectName,
     this.groupName,
@@ -79,6 +83,8 @@ class InvoiceModel {
                   ? json['worker_groups']['profiles']['name']
                   : json['worker_groups']['supervisor_id'])
               : json['responsible']),
+      notesForInvoice: json['notes_for_invoice'],
+      paymentTerm: json['payment_term'] ?? 'Net 30',
     );
   }
 
@@ -102,6 +108,8 @@ class InvoiceModel {
     String? clientName,
     String? projectName,
     String? groupName,
+    String? notesForInvoice,
+    String? paymentTerm,
   }) {
     return InvoiceModel(
       id: id ?? this.id,
@@ -123,6 +131,8 @@ class InvoiceModel {
       clientName: clientName ?? this.clientName,
       projectName: projectName ?? this.projectName,
       groupName: groupName ?? this.groupName,
+      notesForInvoice: notesForInvoice ?? this.notesForInvoice,
+      paymentTerm: paymentTerm ?? this.paymentTerm,
     );
   }
 
@@ -141,6 +151,8 @@ class InvoiceModel {
       'start_date': startDate?.toIso8601String(),
       'end_date': endDate?.toIso8601String(),
       'project_name': projectName,
+      'notes_for_invoice': notesForInvoice,
+      'payment_term': paymentTerm,
     };
   }
 }

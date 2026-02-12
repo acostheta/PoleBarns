@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/payroll_models.dart';
+import '../../settings/models/truss_model.dart';
 
 final payrollRepositoryProvider = Provider((ref) => PayrollRepository());
 
@@ -32,29 +33,36 @@ class PayrollRepository {
     await _client.from('nomina_pagos_diarios').delete().eq('id', id);
   }
 
-  // --- Soldadores (Destajo) ---
-  Stream<List<NominaDestajoSoldador>> getSoldadoresStream() {
+  // --- Soldadores ---
+  Stream<List<NominaSoldador>> getSoldadoresStream() {
     return _client
-        .from('nomina_destajo_soldadores')
+        .from('nomina_soldadores')
         .stream(primaryKey: ['id'])
         .order('fecha', ascending: false)
         .map((data) =>
-            data.map((json) => NominaDestajoSoldador.fromJson(json)).toList());
+            data.map((json) => NominaSoldador.fromJson(json)).toList());
   }
 
-  Future<void> createSoldador(NominaDestajoSoldador item) async {
-    await _client.from('nomina_destajo_soldadores').insert(item.toJson());
+  Future<String> createSoldador(NominaSoldador item) async {
+    final response = await _client
+        .from('nomina_soldadores')
+        .insert(item.toJson())
+        .select('id')
+        .maybeSingle();
+
+    if (response == null) {
+      throw Exception('Error creating soldador record');
+    }
+
+    return response['id'].toString();
   }
 
-  Future<void> updateSoldador(String id, NominaDestajoSoldador item) async {
-    await _client
-        .from('nomina_destajo_soldadores')
-        .update(item.toJson())
-        .eq('id', id);
+  Future<void> updateSoldador(String id, NominaSoldador item) async {
+    await _client.from('nomina_soldadores').update(item.toJson()).eq('id', id);
   }
 
   Future<void> deleteSoldador(String id) async {
-    await _client.from('nomina_destajo_soldadores').delete().eq('id', id);
+    await _client.from('nomina_soldadores').delete().eq('id', id);
   }
 
   // --- Instalacion ---
@@ -108,36 +116,33 @@ class PayrollRepository {
         .stream(primaryKey: ['id']).order('full_name', ascending: true);
   }
 
-  // --- Payment Destajo ---
-  Stream<List<PaymentDestajo>> getPaymentsDestajoStream() {
+  // --- Pagos de Nómina ---
+  Stream<List<NominaPago>> getPaymentsStream() {
     return _client
-        .from('payment_destajo')
+        .from('nomina_pagos')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
-        .map((data) =>
-            data.map((json) => PaymentDestajo.fromJson(json)).toList());
+        .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
   }
 
-  Future<void> createPaymentDestajo(PaymentDestajo item) async {
-    await _client.from('payment_destajo').insert(item.toJson());
+  Future<void> createPayment(NominaPago item) async {
+    await _client.from('nomina_pagos').insert(item.toJson());
   }
 
-  Stream<List<PaymentDestajo>> getPaymentsForSoldador(String soldadorId) {
+  Stream<List<NominaPago>> getPaymentsForSoldador(String soldadorId) {
     return _client
-        .from('payment_destajo')
+        .from('nomina_pagos')
         .stream(primaryKey: ['id'])
         .eq('id_nomina_soldadura', soldadorId)
-        .map((data) =>
-            data.map((json) => PaymentDestajo.fromJson(json)).toList());
+        .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
   }
 
-  Stream<List<PaymentDestajo>> getPaymentsForInstalacion(String instalacionId) {
+  Stream<List<NominaPago>> getPaymentsForInstalacion(String instalacionId) {
     return _client
-        .from('payment_destajo')
+        .from('nomina_pagos')
         .stream(primaryKey: ['id'])
         .eq('id_nomina_instalacion', instalacionId)
-        .map((data) =>
-            data.map((json) => PaymentDestajo.fromJson(json)).toList());
+        .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
   }
 
   // --- Catalog/Reference Streams ---
@@ -157,5 +162,49 @@ class PayrollRepository {
     return _client
         .from('PoleBarns')
         .stream(primaryKey: ['id']).order('name', ascending: true);
+  }
+
+  // --- Specific Trusses (Trazabilidad) ---
+  Future<void> createSpecificTrusses(
+      String nominaSoldadorId, List<Map<String, dynamic>> trusses) async {
+    final trussesData = trusses
+        .map((t) => {
+              'nomina_soldador_id': nominaSoldadorId,
+              'truss_id': t['truss_id'],
+              'truss_name': t['truss_name'],
+              'quantity': t['quantity'],
+              'unit_price': t['unit_price'],
+            })
+        .toList();
+
+    await _client.from('specific_trusses').insert(trussesData);
+  }
+
+  Future<List<SpecificTruss>> getSpecificTrussesBySoldador(
+      String nominaSoldadorId) async {
+    final data = await _client
+        .from('specific_trusses')
+        .select()
+        .eq('nomina_soldador_id', nominaSoldadorId)
+        .order('created_at');
+    return (data as List).map((e) => SpecificTruss.fromJson(e)).toList();
+  }
+
+  Stream<List<SpecificTruss>> getSpecificTrussesBySoldadorStream(
+      String nominaSoldadorId) {
+    return _client
+        .from('specific_trusses')
+        .stream(primaryKey: ['id'])
+        .eq('nomina_soldador_id', nominaSoldadorId)
+        .order('created_at')
+        .map((data) =>
+            (data as List).map((e) => SpecificTruss.fromJson(e)).toList());
+  }
+
+  Future<void> deleteSpecificTrussesBySoldador(String nominaSoldadorId) async {
+    await _client
+        .from('specific_trusses')
+        .delete()
+        .eq('nomina_soldador_id', nominaSoldadorId);
   }
 }

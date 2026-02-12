@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/invoice_models.dart';
 import '../services/invoice_service.dart';
 
@@ -6,13 +6,14 @@ final invoiceServiceProvider = Provider((ref) => InvoiceService());
 
 final selectedInvoiceIdProvider = StateProvider<int?>((ref) => null);
 
-final invoicesListProvider = FutureProvider<List<InvoiceModel>>((ref) async {
-  return ref.watch(invoiceServiceProvider).getInvoices();
+// Using StreamProvider for real-time updates
+final invoicesListProvider = StreamProvider<List<InvoiceModel>>((ref) {
+  return ref.watch(invoiceServiceProvider).watchInvoices();
 });
 
 final invoiceDetailProvider =
-    FutureProvider.family<InvoiceModel, int>((ref, id) async {
-  return ref.watch(invoiceServiceProvider).getInvoice(id);
+    StreamProvider.family<InvoiceModel, int>((ref, id) {
+  return ref.watch(invoiceServiceProvider).watchInvoice(id);
 });
 
 final relatedProductsProvider =

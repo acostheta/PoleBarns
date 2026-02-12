@@ -111,16 +111,8 @@ class InvoicePdfGenerator {
                     children: [
                       _detailRow('Invoice #', invoice.id.toString()),
                       _detailRow('Invoice Date', dateFmt.format(invoice.date)),
-                      _detailRow('Payment Term', 'Net 30'),
-                      pw.SizedBox(height: 10),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        color: PdfColors.grey200,
-                        child: _detailRow(
-                            'Amount Due', currency.format(invoice.saldo),
-                            isBold: true),
-                      ),
+                      _detailRow(
+                          'Payment Term', invoice.paymentTerm ?? 'Net 30'),
                     ],
                   ),
                 ],
@@ -149,23 +141,27 @@ class InvoicePdfGenerator {
                       _tableHeader('Item'),
                       _tableHeader('Quantity'),
                       _tableHeader('Price'),
-                      _tableHeader('Tax1'),
-                      _tableHeader('Tax2'),
+                      _tableHeader('Tax %'),
+                      _tableHeader(r'Tax $'),
                       _tableHeader('Line Total', pw.TextAlign.right),
                     ],
                   ),
                   // Table Rows
-                  ...products.map((p) => pw.TableRow(
-                        children: [
-                          _tableCell(p.poleBarnName ?? 'Item'),
-                          _tableCell(p.cantidad.toString()),
-                          _tableCell(currency.format(p.precioPorUnidad)),
-                          _tableCell(''),
-                          _tableCell(''),
-                          _tableCell(currency.format(p.totalPrice),
-                              pw.TextAlign.right),
-                        ],
-                      )),
+                  ...products.map((p) {
+                    final taxAmount =
+                        p.cantidad * p.precioPorUnidad * p.tax / 100;
+                    return pw.TableRow(
+                      children: [
+                        _tableCell(p.poleBarnName ?? 'Item'),
+                        _tableCell(p.cantidad.toString()),
+                        _tableCell(currency.format(p.precioPorUnidad)),
+                        _tableCell('${p.tax}%'),
+                        _tableCell(currency.format(taxAmount)),
+                        _tableCell(
+                            currency.format(p.totalPrice), pw.TextAlign.right),
+                      ],
+                    );
+                  }),
                 ],
               ),
               pw.SizedBox(height: 20),
@@ -179,8 +175,16 @@ class InvoicePdfGenerator {
                     children: [
                       _summaryLine(
                           'Subtotal:', currency.format(invoice.totalVenta)),
-                      _summaryLine('Tax:', currency.format(0)),
-                      _summaryLine('Past Due Amount:', currency.format(0)),
+                      _summaryLine(
+                          'Tax:',
+                          currency.format(products.fold(
+                              0.0,
+                              (sum, p) =>
+                                  sum +
+                                  (p.cantidad *
+                                      p.precioPorUnidad *
+                                      p.tax /
+                                      100)))),
                       pw.Container(
                         padding: const pw.EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -195,22 +199,30 @@ class InvoicePdfGenerator {
               ),
               pw.SizedBox(height: 40),
 
-              // NOTES SECTION
-              pw.Text('J&P Pole Barn Notes for Invoice',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              _numberedNote(1,
-                  'Prices are based on the approximate square footage detailed above. Any variations will be adjusted accordingly during the project\'s development or upon completion.'),
-              _numberedNote(2,
-                  '50% of the invoice total is due upon delivery of the materials.'),
-              _numberedNote(3,
-                  'All materials used for this project are the property of J&P Pole Barns LLC. Any remaining or unused materials will remain with the company.'),
-              _numberedNote(4,
-                  'Any additional work requested by the client during the project will be documented, and corresponding budget adjustments will be provided.'),
-              pw.SizedBox(height: 20),
-              pw.Text('Notes',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              pw.Text('Thank You For Your Business!'),
+              // NOTES SECTION - Using invoice notes_for_invoice
+              if (invoice.notesForInvoice != null &&
+                  invoice.notesForInvoice!.isNotEmpty) ...[
+                pw.Text('J&P Pole Barn Notes for Invoice',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 10),
+                ...invoice.notesForInvoice!
+                    .split('\n')
+                    .asMap()
+                    .entries
+                    .map((entry) {
+                  final line = entry.value.trim();
+                  if (line.isEmpty) return pw.SizedBox(height: 4);
+                  // Check if line starts with a number followed by a period
+                  final match = RegExp(r'^(\d+)\.\s*(.*)').firstMatch(line);
+                  if (match != null) {
+                    final number = match.group(1)!;
+                    final text = match.group(2)!;
+                    return _numberedNote(int.parse(number), text);
+                  }
+                  return pw.Text(line, style: const pw.TextStyle(fontSize: 9));
+                }),
+                pw.SizedBox(height: 20),
+              ],
 
               pw.Spacer(),
 

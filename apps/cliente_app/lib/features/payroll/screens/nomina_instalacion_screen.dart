@@ -23,11 +23,6 @@ class _NominaInstalacionScreenState
     final repo = ref.watch(payrollRepositoryProvider);
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showEditDialog(context, null),
-        backgroundColor: AppStyles.primaryOrange,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           Padding(

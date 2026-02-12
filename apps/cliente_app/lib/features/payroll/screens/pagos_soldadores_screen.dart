@@ -5,18 +5,18 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
+import '../widgets/pagos_soldadores_form_dialog.dart';
 import '../../settings/repositories/settings_repository.dart';
 
-class DestajoSoldadoresScreen extends ConsumerStatefulWidget {
-  const DestajoSoldadoresScreen({super.key});
+class PagosSoldadoresScreen extends ConsumerStatefulWidget {
+  const PagosSoldadoresScreen({super.key});
 
   @override
-  ConsumerState<DestajoSoldadoresScreen> createState() =>
-      _DestajoSoldadoresScreenState();
+  ConsumerState<PagosSoldadoresScreen> createState() =>
+      _PagosSoldadoresScreenState();
 }
 
-class _DestajoSoldadoresScreenState
-    extends ConsumerState<DestajoSoldadoresScreen> {
+class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
   String _searchQuery = '';
 
   @override
@@ -24,11 +24,6 @@ class _DestajoSoldadoresScreenState
     final repo = ref.watch(payrollRepositoryProvider);
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showEditDialog(context, null),
-        backgroundColor: AppStyles.primaryOrange,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           Padding(
@@ -43,7 +38,7 @@ class _DestajoSoldadoresScreenState
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<NominaDestajoSoldador>>(
+            child: StreamBuilder<List<NominaSoldador>>(
               stream: repo.getSoldadoresStream(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -235,13 +230,13 @@ class _DestajoSoldadoresScreenState
     );
   }
 
-  void _confirmDelete(NominaDestajoSoldador item) async {
+  void _confirmDelete(NominaSoldador item) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('Eliminar Registro'),
         content: const Text(
-            '¿Está seguro de que desea eliminar este registro de soldadura?'),
+            '¿Está seguro de que desea eliminar este registro de pago a soldador?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(c, false),
@@ -258,39 +253,14 @@ class _DestajoSoldadoresScreenState
     }
   }
 
-  void _showEditDialog(BuildContext context, NominaDestajoSoldador? item) {
+  void _showEditDialog(BuildContext context, NominaSoldador? item) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 550),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(item == null ? 'Nuevo Registro' : 'Editar Registro',
-                      style: AppStyles.dialogTitleStyle),
-                  IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Flexible(child: SoldadorForm(item: item)),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => PagosSoldadoresFormDialog(item: item),
     );
   }
 
-  void _showPaymentsDialog(BuildContext context, NominaDestajoSoldador item) {
+  void _showPaymentsDialog(BuildContext context, NominaSoldador item) {
     showDialog(
       context: context,
       builder: (context) =>
@@ -300,7 +270,7 @@ class _DestajoSoldadoresScreenState
 }
 
 class SoldadorForm extends ConsumerStatefulWidget {
-  final NominaDestajoSoldador? item;
+  final NominaSoldador? item;
   const SoldadorForm({super.key, this.item});
 
   @override
@@ -497,7 +467,7 @@ class _SoldadorFormState extends ConsumerState<SoldadorForm> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final newItem = NominaDestajoSoldador(
+        final newItem = NominaSoldador(
           id: widget.item?.id ?? '',
           idEmpleado: _selectedEmployeeId!,
           fecha: _fecha,

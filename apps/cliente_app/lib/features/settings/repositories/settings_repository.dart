@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/provider_model.dart';
 import '../models/payment_method_model.dart';
+import '../models/truss_model.dart';
 
 final settingsRepositoryProvider = Provider((ref) => SettingsRepository());
 
@@ -57,6 +58,38 @@ class SettingsRepository {
   Future<void> deletePaymentMethod(String id) async {
     await _client.from('payment_methods').delete().eq('id', id);
   }
+
+  // Trusses
+  Future<List<Truss>> getTrusses() async {
+    final data = await _client.from('trusses').select().order('name');
+    return (data as List).map((e) => Truss.fromJson(e)).toList();
+  }
+
+  Stream<List<Truss>> getTrussesStream() {
+    return _client
+        .from('trusses')
+        .stream(primaryKey: ['id'])
+        .order('name')
+        .map((data) => (data as List).map((e) => Truss.fromJson(e)).toList());
+  }
+
+  Future<void> createTruss(String name, double cost) async {
+    await _client.from('trusses').insert({
+      'name': name,
+      'cost': cost,
+    });
+  }
+
+  Future<void> updateTruss(Truss truss) async {
+    await _client.from('trusses').update({
+      'name': truss.name,
+      'cost': truss.cost,
+    }).eq('id', truss.id);
+  }
+
+  Future<void> deleteTruss(String id) async {
+    await _client.from('trusses').delete().eq('id', id);
+  }
 }
 
 // Providers for State Management
@@ -69,4 +102,9 @@ final paymentMethodsListProvider =
     FutureProvider<List<PaymentMethodModel>>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
   return repo.getPaymentMethods();
+});
+
+final trussesListProvider = FutureProvider<List<Truss>>((ref) async {
+  final repo = ref.watch(settingsRepositoryProvider);
+  return repo.getTrusses();
 });

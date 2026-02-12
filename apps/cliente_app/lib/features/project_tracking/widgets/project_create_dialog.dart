@@ -17,6 +17,7 @@ class ProjectCreateDialog extends ConsumerStatefulWidget {
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
   final String? initialComments;
+  final String? initialDireccion;
   final List<Map<String, dynamic>>? initialStructures;
 
   const ProjectCreateDialog({
@@ -30,6 +31,7 @@ class ProjectCreateDialog extends ConsumerStatefulWidget {
     this.initialStartDate,
     this.initialEndDate,
     this.initialComments,
+    this.initialDireccion,
     this.initialStructures,
   });
 
@@ -42,7 +44,8 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
   final _formKey = GlobalKey<FormState>();
 
   // Form State
-  final _addressController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _direccionController = TextEditingController();
   String? _selectedClientId;
   String? _selectedResponsable;
   List<String> _selectedGroupUsers = [];
@@ -71,7 +74,10 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
     super.initState();
     _selectedClientId = widget.initialClientId;
     if (widget.initialProjectName != null) {
-      _addressController.text = widget.initialProjectName!;
+      _nameController.text = widget.initialProjectName!;
+    }
+    if (widget.initialDireccion != null) {
+      _direccionController.text = widget.initialDireccion!;
     }
     _selectedResponsable = widget.initialResponsible;
     if (widget.initialGroupId != null) {
@@ -114,7 +120,8 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
           'responsable': _selectedResponsable,
           'estatus': _selectedStatus,
           'grupo_asignado': _selectedGroupUsers.join(', '),
-          'address': _addressController.text,
+          'address': _nameController.text,
+          'direccion': _direccionController.text,
           'fecha_inicio': _startDate.toIso8601String(),
           'fecha_finalizacion': _endDate.toIso8601String(),
           'comments': _commentsController.text,
@@ -141,7 +148,8 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
         responsable: _selectedResponsable ?? 'N/A',
         estatus: _selectedStatus,
         grupoAsignado: _selectedGroupUsers.join(', '),
-        address: _addressController.text,
+        address: _nameController.text,
+        direccion: _direccionController.text,
         fechaInicio: _startDate,
         fechaFinalizacion: _endDate,
         ventaTotal: _totalStructuresPrice,
@@ -209,9 +217,9 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                   const SizedBox(height: 32),
 
                   // Form Fields
-                  _buildTextField(
-                      'Nombre del Proyecto / Dirección', _addressController,
-                      required: true),
+                  _buildTextField('Nombre', _nameController, required: true),
+                  const SizedBox(height: 24),
+                  _buildTextField('Dirección', _direccionController),
                   const SizedBox(height: 24),
 
                   Row(
@@ -256,47 +264,79 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Responsable',
-                                style: AppStyles.labelStyle),
+                            const Text('Grupo', style: AppStyles.labelStyle),
                             const SizedBox(height: 8),
-                            ref.watch(profilesProvider).when(
-                                  data: (profiles) {
-                                    // Map current name to ID if exists
-                                    String? selectedId;
-                                    try {
-                                      selectedId = profiles.firstWhere((p) =>
-                                          p['full_name'] ==
-                                          _selectedResponsable)['id'];
-                                    } catch (_) {}
-
+                            ref.watch(workerGroupsProvider).when(
+                                  data: (groups) {
+                                    final usersAsync =
+                                        ref.watch(allUsersProvider);
                                     return DropdownButtonFormField<String>(
-                                      value: selectedId,
-                                      items: profiles
-                                          .map<DropdownMenuItem<String>>((p) =>
-                                              DropdownMenuItem<String>(
-                                                  value: p['id'] as String,
-                                                  child: Text(
-                                                      (p['full_name']
-                                                              as String?) ??
-                                                          'Unknown',
-                                                      style: const TextStyle(
-                                                          fontSize: 14),
-                                                      overflow: TextOverflow
-                                                          .ellipsis)))
-                                          .toList(),
+                                      value: groups.any((g) =>
+                                              g['name'] ==
+                                              _selectedGroupUsers.join(', '))
+                                          ? _selectedGroupUsers.join(', ')
+                                          : null,
+                                      items: groups
+                                          .map<DropdownMenuItem<String>>((g) {
+                                        final supervisorId =
+                                            g['supervisor_id'] as String?;
+                                        final supervisorName = usersAsync.when(
+                                          data: (users) => users.firstWhere(
+                                            (u) => u['id'] == supervisorId,
+                                            orElse: () => {},
+                                          )['name'] as String?,
+                                          loading: () => '...',
+                                          error: (_, __) => null,
+                                        );
+
+                                        final displayName = supervisorName !=
+                                                null
+                                            ? '${g['name']} (Responsable: $supervisorName)'
+                                            : (g['name'] as String);
+
+                                        return DropdownMenuItem<String>(
+                                          value: g['name'] as String,
+                                          child: Text(displayName,
+                                              style:
+                                                  const TextStyle(fontSize: 14),
+                                              overflow: TextOverflow.ellipsis),
+                                        );
+                                      }).toList(),
                                       onChanged: (val) {
                                         if (val != null) {
-                                          final name = profiles.firstWhere(
-                                                  (p) => p['id'] == val)[
-                                              'full_name'] as String?;
-                                          setState(() =>
-                                              _selectedResponsable = name);
+                                          // Find the supervisor name for this group
+                                          final group = groups.firstWhere(
+                                              (g) => g['name'] == val);
+                                          final supervisorId =
+                                              group['supervisor_id'] as String?;
+                                          final users =
+                                              usersAsync.valueOrNull ?? [];
+                                          final supervisor = users.firstWhere(
+                                            (u) => u['id'] == supervisorId,
+                                            orElse: () => {},
+                                          );
+                                          final supervisorName =
+                                              supervisor['name'] as String?;
+
+                                          setState(() {
+                                            _selectedGroupUsers = [val];
+                                            if (supervisorName != null) {
+                                              _selectedResponsable =
+                                                  supervisorName;
+                                            }
+                                          });
+                                        } else {
+                                          setState(() {
+                                            _selectedGroupUsers = [];
+                                          });
                                         }
                                       },
                                       decoration: AppStyles.inputDecoration(),
                                       isExpanded: true,
                                       icon:
                                           const Icon(Icons.keyboard_arrow_down),
+                                      hint: const Text('Seleccionar Grupo',
+                                          style: TextStyle(fontSize: 14)),
                                     );
                                   },
                                   loading: () =>
@@ -346,56 +386,47 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Grupo', style: AppStyles.labelStyle),
+                            const Text('Responsable',
+                                style: AppStyles.labelStyle),
                             const SizedBox(height: 8),
-                            ref.watch(workerGroupsProvider).when(
-                                  data: (groups) {
-                                    final usersAsync =
-                                        ref.watch(allUsersProvider);
+                            ref.watch(profilesProvider).when(
+                                  data: (profiles) {
+                                    // Map current name to ID if exists
+                                    String? selectedId;
+                                    try {
+                                      selectedId = profiles.firstWhere((p) =>
+                                          p['full_name'] ==
+                                          _selectedResponsable)['id'];
+                                    } catch (_) {}
+
                                     return DropdownButtonFormField<String>(
-                                      value: groups.any((g) =>
-                                              g['name'] ==
-                                              _selectedGroupUsers.join(', '))
-                                          ? _selectedGroupUsers.join(', ')
-                                          : null,
-                                      items: groups
-                                          .map<DropdownMenuItem<String>>((g) {
-                                        final supervisorId =
-                                            g['supervisor_id'] as String?;
-                                        final supervisorName = usersAsync.when(
-                                          data: (users) => users.firstWhere(
-                                            (u) => u['id'] == supervisorId,
-                                            orElse: () => {},
-                                          )['name'] as String?,
-                                          loading: () => '...',
-                                          error: (_, __) => null,
-                                        );
-
-                                        final displayName = supervisorName !=
-                                                null
-                                            ? '${g['name']} (Responsable: $supervisorName)'
-                                            : (g['name'] as String);
-
-                                        return DropdownMenuItem<String>(
-                                          value: g['name'] as String,
-                                          child: Text(displayName,
-                                              style:
-                                                  const TextStyle(fontSize: 14),
-                                              overflow: TextOverflow.ellipsis),
-                                        );
-                                      }).toList(),
+                                      value: selectedId,
+                                      items: profiles
+                                          .map<DropdownMenuItem<String>>((p) =>
+                                              DropdownMenuItem<String>(
+                                                  value: p['id'] as String,
+                                                  child: Text(
+                                                      (p['full_name']
+                                                              as String?) ??
+                                                          'Unknown',
+                                                      style: const TextStyle(
+                                                          fontSize: 14),
+                                                      overflow: TextOverflow
+                                                          .ellipsis)))
+                                          .toList(),
                                       onChanged: (val) {
-                                        setState(() {
-                                          _selectedGroupUsers =
-                                              val != null ? [val] : [];
-                                        });
+                                        if (val != null) {
+                                          final name = profiles.firstWhere(
+                                                  (p) => p['id'] == val)[
+                                              'full_name'] as String?;
+                                          setState(() =>
+                                              _selectedResponsable = name);
+                                        }
                                       },
                                       decoration: AppStyles.inputDecoration(),
                                       isExpanded: true,
                                       icon:
                                           const Icon(Icons.keyboard_arrow_down),
-                                      hint: const Text('Seleccionar Grupo',
-                                          style: TextStyle(fontSize: 14)),
                                     );
                                   },
                                   loading: () =>

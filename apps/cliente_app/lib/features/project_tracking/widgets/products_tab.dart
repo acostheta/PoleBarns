@@ -33,7 +33,7 @@ class ProductsTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Detalles del Proyecto',
+              Text('Detalles de ${project.address ?? "Proyecto"}',
                   style: AppStyles.dialogTitleStyle),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -93,38 +93,45 @@ class ProductsTab extends ConsumerWidget {
                         children: [
                           // Header: Product Title
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.primaryOrange
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.home_work_outlined,
-                                    color: AppStyles.primaryOrange),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Text(
-                                    poleBarn.poleBarnName ?? 'Estructura',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF111827),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppStyles.primaryOrange
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
+                                    child: const Icon(Icons.home_work_outlined,
+                                        color: AppStyles.primaryOrange),
                                   ),
-                                  Text(
-                                    'Precio Venta: ${NumberFormat.simpleCurrency().format(poleBarn.salePrice)}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF6B7280),
-                                    ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        poleBarn.poleBarnName ?? 'Estructura',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF111827),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Precio Venta: ${NumberFormat.simpleCurrency().format(poleBarn.salePrice)}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
+                              _buildProductStatusDropdown(ref, poleBarn),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -191,30 +198,6 @@ class ProductsTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('PROYECTO',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          letterSpacing: 0.5)),
-                  const SizedBox(height: 4),
-                  Text(project.address ?? "Sin Nombre",
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              // Invoice ID removed as requested
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Divider(),
-          const SizedBox(height: 20),
           // Row 1: 3 Columns
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,8 +229,7 @@ class ProductsTab extends ConsumerWidget {
                       Icons.event_available_outlined, 'Fecha Fin', endDate)),
               const SizedBox(width: 16),
               Expanded(
-                  child: _buildInfoRow(
-                      Icons.info_outline, 'Estatus', project.estatus ?? "N/A")),
+                  child: _buildStatusPill('Estatus', project.estatus ?? "N/A")),
             ],
           ),
           const SizedBox(height: 24),
@@ -272,11 +254,11 @@ class ProductsTab extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
               Text(
                 value,
                 style:
-                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
                 maxLines: maxLines,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -348,5 +330,95 @@ class ProductsTab extends ConsumerWidget {
         style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
       ),
     );
+  }
+
+  Widget _buildProductStatusDropdown(
+      WidgetRef ref, ProjectPoleBarnModel poleBarn) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: _getStatusColor(poleBarn.status).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: _getStatusColor(poleBarn.status).withValues(alpha: 0.3)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: poleBarn.status,
+          icon: Icon(Icons.keyboard_arrow_down,
+              size: 18, color: _getStatusColor(poleBarn.status)),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: _getStatusColor(poleBarn.status),
+          ),
+          onChanged: (String? newValue) async {
+            if (newValue != null && newValue != poleBarn.status) {
+              await ref
+                  .read(projectRepositoryProvider)
+                  .updateProjectPoleBarnStatus(
+                      poleBarn.id, newValue, poleBarn.projectId);
+              ref.invalidate(
+                  projectPoleBarnsMaterialsProvider(poleBarn.projectId));
+            }
+          },
+          items: <String>['Pendiente', 'En Proceso', 'Terminado']
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String label, String status) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.info_outline, size: 18, color: Colors.grey),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 4),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(status).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: _getStatusColor(status),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Terminado':
+        return Colors.green;
+      case 'En Proceso':
+        return Colors.blue;
+      case 'Pendiente':
+      default:
+        return Colors.orange;
+    }
   }
 }

@@ -58,6 +58,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                       projectId: project.id,
                       initialClientId: project.refCliente,
                       initialProjectName: project.address,
+                      initialDireccion: project.direccion,
                       initialResponsible: project.responsable,
                       initialGroupId: project.grupoAsignado != null &&
                               project.grupoAsignado!.isNotEmpty

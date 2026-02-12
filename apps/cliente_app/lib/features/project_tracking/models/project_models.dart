@@ -7,6 +7,7 @@ class ProjectModel {
   final DateTime? fechaFinalizacion;
   final String? grupoAsignado;
   final String? address;
+  final String? direccion;
   final double ventaTotal;
   final double costosTotales;
   final double profit;
@@ -22,6 +23,7 @@ class ProjectModel {
     this.fechaFinalizacion,
     this.grupoAsignado,
     this.address,
+    this.direccion,
     this.ventaTotal = 0.0,
     this.costosTotales = 0.0,
     this.profit = 0.0,
@@ -43,6 +45,7 @@ class ProjectModel {
           : null,
       grupoAsignado: json['grupo_asignado'],
       address: json['address'],
+      direccion: json['direccion'],
       ventaTotal: (json['venta_total'] as num?)?.toDouble() ?? 0.0,
       costosTotales: (json['costos_totales'] as num?)?.toDouble() ?? 0.0,
       profit: (json['profit'] as num?)?.toDouble() ?? 0.0,
@@ -60,6 +63,7 @@ class ProjectModel {
     DateTime? fechaFinalizacion,
     String? grupoAsignado,
     String? address,
+    String? direccion,
     double? ventaTotal,
     double? costosTotales,
     double? profit,
@@ -75,6 +79,7 @@ class ProjectModel {
       fechaFinalizacion: fechaFinalizacion ?? this.fechaFinalizacion,
       grupoAsignado: grupoAsignado ?? this.grupoAsignado,
       address: address ?? this.address,
+      direccion: direccion ?? this.direccion,
       ventaTotal: ventaTotal ?? this.ventaTotal,
       costosTotales: costosTotales ?? this.costosTotales,
       profit: profit ?? this.profit,
@@ -94,6 +99,7 @@ class ProjectModel {
       'fecha_finalizacion': fechaFinalizacion?.toIso8601String(),
       'grupo_asignado': grupoAsignado,
       'address': address,
+      'direccion': direccion,
       'venta_total': ventaTotal,
       'costos_totales': costosTotales,
       'comments': comments,
@@ -147,9 +153,10 @@ class ProjectMediaModel {
   final String id;
   final String projectRef;
   final String urlMedia;
-  final String tipo; // 'foto', 'video'
-  final String etiqueta; // 'Antes', 'Durante', 'Después'
+  final DateTime fecha;
+  final String? descripcion;
   final String usuarioCargaRef;
+  final String? usuarioNombre;
   final DateTime createdAt;
 
   final int orderIndex;
@@ -158,9 +165,10 @@ class ProjectMediaModel {
     required this.id,
     required this.projectRef,
     required this.urlMedia,
-    required this.tipo,
-    required this.etiqueta,
+    required this.fecha,
+    this.descripcion,
     required this.usuarioCargaRef,
+    this.usuarioNombre,
     required this.createdAt,
     this.orderIndex = 0,
   });
@@ -170,9 +178,12 @@ class ProjectMediaModel {
       id: json['id'],
       projectRef: json['project_ref'],
       urlMedia: json['url_media'],
-      tipo: json['tipo'],
-      etiqueta: json['etiqueta'],
+      fecha: json['fecha'] != null
+          ? DateTime.parse(json['fecha'])
+          : DateTime.parse(json['created_at']),
+      descripcion: json['descripcion'],
       usuarioCargaRef: json['usuario_carga_ref'],
+      usuarioNombre: json['usuario_nombre'],
       createdAt: DateTime.parse(json['created_at']),
       orderIndex: json['order_index'] ?? 0,
     );
@@ -182,9 +193,10 @@ class ProjectMediaModel {
     String? id,
     String? projectRef,
     String? urlMedia,
-    String? tipo,
-    String? etiqueta,
+    DateTime? fecha,
+    String? descripcion,
     String? usuarioCargaRef,
+    String? usuarioNombre,
     DateTime? createdAt,
     int? orderIndex,
   }) {
@@ -192,9 +204,10 @@ class ProjectMediaModel {
       id: id ?? this.id,
       projectRef: projectRef ?? this.projectRef,
       urlMedia: urlMedia ?? this.urlMedia,
-      tipo: tipo ?? this.tipo,
-      etiqueta: etiqueta ?? this.etiqueta,
+      fecha: fecha ?? this.fecha,
+      descripcion: descripcion ?? this.descripcion,
       usuarioCargaRef: usuarioCargaRef ?? this.usuarioCargaRef,
+      usuarioNombre: usuarioNombre ?? this.usuarioNombre,
       createdAt: createdAt ?? this.createdAt,
       orderIndex: orderIndex ?? this.orderIndex,
     );
@@ -205,9 +218,10 @@ class ProjectMediaModel {
       'id': id,
       'project_ref': projectRef,
       'url_media': urlMedia,
-      'tipo': tipo,
-      'etiqueta': etiqueta,
+      'fecha': fecha.toIso8601String().split('T')[0],
+      'descripcion': descripcion,
       'usuario_carga_ref': usuarioCargaRef,
+      'usuario_nombre': usuarioNombre,
       'created_at': createdAt.toIso8601String(),
       'order_index': orderIndex,
     };
@@ -291,6 +305,7 @@ class ProjectPoleBarnModel {
   final DateTime createdAt;
   // Join fields
   final String? poleBarnName;
+  final String status;
 
   ProjectPoleBarnModel({
     required this.id,
@@ -299,6 +314,7 @@ class ProjectPoleBarnModel {
     required this.salePrice,
     required this.createdAt,
     this.poleBarnName,
+    this.status = 'Pendiente',
   });
 
   factory ProjectPoleBarnModel.fromJson(Map<String, dynamic> json) {
@@ -309,6 +325,7 @@ class ProjectPoleBarnModel {
       salePrice: (json['sale_price'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.parse(json['created_at']),
       poleBarnName: json['PoleBarns']?['name'],
+      status: json['status'] ?? 'Pendiente',
     );
   }
 
@@ -318,6 +335,7 @@ class ProjectPoleBarnModel {
       'project_id': projectId,
       'pole_barn_id': poleBarnId,
       'sale_price': salePrice,
+      'status': status,
     };
   }
 }

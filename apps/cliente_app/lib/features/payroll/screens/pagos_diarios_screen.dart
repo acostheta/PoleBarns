@@ -21,11 +21,6 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
     final repository = ref.watch(payrollRepositoryProvider);
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showEditDialog(context, null),
-        backgroundColor: AppStyles.primaryOrange,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           Padding(

@@ -4,7 +4,7 @@ import '../repositories/payroll_repository.dart';
 class PayrollSummaryData {
   final double totalPagado;
   final double diarioTotal;
-  final double destajoTotal;
+  final double soldadoresTotal;
   final double instalacionTotal;
   final double porHoraTotal;
   final List<PayrollTransaction> recentTransactions;
@@ -12,7 +12,7 @@ class PayrollSummaryData {
   PayrollSummaryData({
     required this.totalPagado,
     required this.diarioTotal,
-    required this.destajoTotal,
+    required this.soldadoresTotal,
     required this.instalacionTotal,
     required this.porHoraTotal,
     required this.recentTransactions,
@@ -24,7 +24,7 @@ class PayrollTransaction {
   final DateTime fecha;
   final String empleadoId;
   final String? empleadoName;
-  final String tipo; // 'Diario', 'Destajo', 'Instalación', 'Por Hora'
+  final String tipo; // 'Diario', 'Soldadores', 'Instalación', 'Por Hora'
   final String? proyectoId;
   final String? proyectoName;
   final double monto;
@@ -54,8 +54,8 @@ final employeesProvider = StreamProvider(
     (ref) => ref.watch(payrollRepositoryProvider).getEmployeesStream());
 final projectsProvider = StreamProvider(
     (ref) => ref.watch(payrollRepositoryProvider).getProjectsStream());
-final paymentsDestajoProvider = StreamProvider(
-    (ref) => ref.watch(payrollRepositoryProvider).getPaymentsDestajoStream());
+final paymentsPayrollProvider = StreamProvider(
+    (ref) => ref.watch(payrollRepositoryProvider).getPaymentsStream());
 
 final combinedPayrollSummaryProvider =
     Provider<AsyncValue<PayrollSummaryData>>((ref) {
@@ -63,7 +63,7 @@ final combinedPayrollSummaryProvider =
   final soldadoresAsync = ref.watch(soldadoresProvider);
   final instalacionAsync = ref.watch(instalacionProvider);
   final choferAsync = ref.watch(choferProvider);
-  final paymentsDestajoAsync = ref.watch(paymentsDestajoProvider);
+  final paymentsPayrollAsync = ref.watch(paymentsPayrollProvider);
   final employeesAsync = ref.watch(employeesProvider);
   final projectsAsync = ref.watch(projectsProvider);
 
@@ -71,7 +71,7 @@ final combinedPayrollSummaryProvider =
       soldadoresAsync is AsyncLoading ||
       instalacionAsync is AsyncLoading ||
       choferAsync is AsyncLoading ||
-      paymentsDestajoAsync is AsyncLoading ||
+      paymentsPayrollAsync is AsyncLoading ||
       employeesAsync is AsyncLoading ||
       projectsAsync is AsyncLoading) {
     return const AsyncValue.loading();
@@ -88,7 +88,7 @@ final combinedPayrollSummaryProvider =
   final soldadoresRaw = soldadoresAsync.value ?? [];
   final instalacionRaw = instalacionAsync.value ?? [];
   final choferRaw = choferAsync.value ?? [];
-  final paymentsDestajoRaw = paymentsDestajoAsync.value ?? [];
+  final paymentsPayrollRaw = paymentsPayrollAsync.value ?? [];
   final employees = employeesAsync.value ?? [];
   final projects = projectsAsync.value ?? [];
 
@@ -113,17 +113,16 @@ final combinedPayrollSummaryProvider =
   double totalChofer =
       choferThisMonth.fold(0, (sum, item) => sum + (item.total ?? 0));
 
-  // 3. Piecework (Destajo Soldadores & Instalación)
-  // We sum records from 'payment_destajo' table as requested.
+  // 3. Piecework (Soldadores & Instalación)
   final paymentsThisMonth =
-      paymentsDestajoRaw.where((p) => isThisMonth(p.createdAt)).toList();
+      paymentsPayrollRaw.where((p) => isThisMonth(p.createdAt)).toList();
 
-  double totalDestajo = 0;
+  double totalSoldadores = 0;
   double totalInstalacion = 0;
 
   for (var p in paymentsThisMonth) {
     if (p.tipo == 'Soldadura') {
-      totalDestajo += p.amount;
+      totalSoldadores += p.amount;
     } else if (p.tipo == 'Instalación') {
       totalInstalacion += p.amount;
     }
@@ -155,7 +154,7 @@ final combinedPayrollSummaryProvider =
   }
 
   // For Soldadura/Instalacion transactions, we can show either the parent record or individual payments.
-  // User image showed "Equipo A - Diario", "Carlos Perez - Destajo".
+  // User image showed "Equipo A - Diario", "Carlos Perez - Soldadores".
   // Let's show the parent records that had activity this month.
   for (var item in soldadoresRaw) {
     if (isThisMonth(item.fecha) && (item.pagoParcial ?? 0) > 0) {
@@ -164,7 +163,7 @@ final combinedPayrollSummaryProvider =
         fecha: item.fecha,
         empleadoId: item.idEmpleado,
         empleadoName: employeesMap[item.idEmpleado],
-        tipo: 'Destajo',
+        tipo: 'Soldadores',
         monto: item.pagoParcial ?? 0,
       ));
     }
@@ -188,9 +187,9 @@ final combinedPayrollSummaryProvider =
   transactions.sort((a, b) => b.fecha.compareTo(a.fecha));
 
   return AsyncValue.data(PayrollSummaryData(
-    totalPagado: totalDiario + totalChofer + totalDestajo + totalInstalacion,
+    totalPagado: totalDiario + totalChofer + totalSoldadores + totalInstalacion,
     diarioTotal: totalDiario,
-    destajoTotal: totalDestajo,
+    soldadoresTotal: totalSoldadores,
     instalacionTotal: totalInstalacion,
     porHoraTotal: totalChofer,
     recentTransactions: transactions.take(10).toList(),

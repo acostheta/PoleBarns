@@ -32,7 +32,7 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
 
     setState(() => _isLoading = true);
     try {
-      final p = PaymentDestajo(
+      final p = NominaPago(
         id: '',
         tipo: widget.type,
         idNominaSoldadura: widget.soldadorId,
@@ -42,7 +42,7 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
         category: _categoryCtrl.text,
         nota: _noteCtrl.text,
       );
-      await ref.read(payrollRepositoryProvider).createPaymentDestajo(p);
+      await ref.read(payrollRepositoryProvider).createPayment(p);
       _amountCtrl.clear();
       _methodCtrl.clear();
       _categoryCtrl.clear();
@@ -94,7 +94,7 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: StreamBuilder<List<PaymentDestajo>>(
+                  child: StreamBuilder<List<NominaPago>>(
                     stream: stream,
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {

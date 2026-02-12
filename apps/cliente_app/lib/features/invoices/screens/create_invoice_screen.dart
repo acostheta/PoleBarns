@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,16 +28,23 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   final _commentController = TextEditingController();
   final _addressController = TextEditingController();
   final _projectController = TextEditingController();
+  final _notesController = TextEditingController(
+      text:
+          '''1. Prices are based on the approximate square footage detailed above. Any variations will be adjusted accordingly during the project's development or upon completion.
+2. 50% of the invoice total is due upon delivery of the materials.
+3. All materials used for this project are the property of J&P Pole Barns LLC. Any remaining or unused materials will remain with the company.
+4. Any additional work requested by the client during the project will be documented, and corresponding budget adjustments will be provided.''');
 
   String? _selectedClientId;
   String _status = 'Pendiente';
   DateTime _selectedDate = DateTime.now();
-  DateTime? _startDate;
-  DateTime? _endDate;
+  DateTime? _startDate = DateTime.now();
+  DateTime? _endDate = DateTime.now().add(const Duration(days: 30));
 
   List<Map<String, dynamic>> _selectedItems = [];
   List<CatalogItemModel> _catalogItems = [];
   bool _isLoading = false;
+  int? _nextInvoiceId;
 
   @override
   void initState() {
@@ -45,11 +52,11 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     _loadData();
   }
 
-  @override
   void dispose() {
     _commentController.dispose();
     _addressController.dispose();
     _projectController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -64,8 +71,14 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       if (widget.invoiceId != null) {
         await _loadExistingInvoice(widget.invoiceId!);
       } else {
+        // Fetch next ID for new invoice pattern
+        final invoices = await service.getInvoices();
+        _nextInvoiceId = invoices.isNotEmpty ? (invoices.first.id + 1) : 1;
+
         if (widget.clientId != null) {
           _selectedClientId = widget.clientId;
+          // Initial load for client data if provided
+          await _updateClientData(_selectedClientId!);
         }
       }
     } catch (e) {
@@ -89,6 +102,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       _selectedClientId = invoice.idCliente;
       _addressController.text = invoice.address ?? '';
       _commentController.text = invoice.comentario ?? '';
+      _notesController.text = invoice.notesForInvoice ?? _notesController.text;
       _selectedDate = invoice.date;
 
       _selectedDate = invoice.date;
@@ -110,6 +124,22 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         };
       }).toList();
     });
+  }
+
+  Future<void> _updateClientData(String clientId) async {
+    try {
+      final clientRepo = ref.read(clientRepositoryProvider);
+      final client = await clientRepo.getClient(clientId);
+      if (client != null) {
+        setState(() {
+          _addressController.text = client.direccion ?? '';
+          final idToDisplay = widget.invoiceId ?? _nextInvoiceId ?? '#';
+          _projectController.text = "$idToDisplay - ${client.nombre}";
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading client data: $e');
+    }
   }
 
   void _addItemsFromCatalog() async {
@@ -161,6 +191,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         date: _selectedDate,
         totalVenta: totalVenta,
         comentario: _commentController.text,
+        notesForInvoice: _notesController.text,
         createdAt: DateTime.now(),
         status: _status,
         startDate: _startDate,
@@ -279,7 +310,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('Información del Proyecto'),
+                  _buildSectionTitle('InformaciÃ³n del Proyecto'),
                   const SizedBox(height: 16),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,13 +325,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   const SizedBox(height: 24),
 
                   // Billing Address - Text Field Plain
-                  const Text('Dirección de Facturación',
+                  const Text('DirecciÃ³n de FacturaciÃ³n',
                       style: AppStyles.labelStyle),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _addressController,
                     decoration: AppStyles.inputDecoration(
-                      hintText: 'Ingrese dirección',
+                      hintText: 'Ingrese direcciÃ³n',
                     ).copyWith(
                       prefixIcon: const Icon(Icons.place, color: Colors.grey),
                       suffixIcon: IconButton(
@@ -320,11 +351,15 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   Row(
                     children: [
                       Expanded(
-                          child: _buildDateSelector('Fecha Inicio', _startDate,
+                          child: _buildDateSelector(
+                              'Fecha estimada de inicio de trabajos',
+                              _startDate,
                               (d) => setState(() => _startDate = d))),
                       const SizedBox(width: 24),
                       Expanded(
-                          child: _buildDateSelector('Fecha Fin', _endDate,
+                          child: _buildDateSelector(
+                              'Fecha estimada de culminaciÃ³n de trabajos',
+                              _endDate,
                               (d) => setState(() => _endDate = d))),
                     ],
                   ),
@@ -333,7 +368,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                     children: [
                       Expanded(
                           child: _buildDateSelector(
-                              'Fecha Factura',
+                              'Fecha de FacturaciÃ³n',
                               _selectedDate,
                               (d) => setState(() => _selectedDate = d))),
                       const SizedBox(width: 24),
@@ -369,7 +404,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       ElevatedButton.icon(
                         onPressed: _addItemsFromCatalog,
                         icon: const Icon(Icons.add),
-                        label: const Text('Agregar del Catálogo'),
+                        label: const Text('Agregar del CatÃ¡logo'),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[800],
                             foregroundColor: Colors.white),
@@ -382,6 +417,10 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   const SizedBox(height: 32),
                   _buildTextField('Comentarios', _commentController,
                       maxLines: 3),
+
+                  const SizedBox(height: 24),
+                  _buildTextField('Notes for Invoice', _notesController,
+                      maxLines: 5),
 
                   const SizedBox(height: 48),
                   SizedBox(
@@ -425,7 +464,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                         child: Text(c.fullName,
                             style: const TextStyle(fontSize: 14))))
                 .toList(),
-            onChanged: (v) => setState(() => _selectedClientId = v),
+            onChanged: (v) {
+              if (v != null) {
+                setState(() => _selectedClientId = v);
+                _updateClientData(v);
+              }
+            },
             validator: (v) => v == null ? 'Requerido' : null,
           ),
           loading: () => const LinearProgressIndicator(),
@@ -502,63 +546,90 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DataTable(
-        columnSpacing: 16,
-        columns: const [
-          DataColumn(label: Text('Item')),
-          DataColumn(label: Text('Precio', textAlign: TextAlign.right)),
-          DataColumn(label: Text('Cant.', textAlign: TextAlign.right)),
-          DataColumn(label: Text('Tax %', textAlign: TextAlign.right)),
-          DataColumn(label: Text('Total', textAlign: TextAlign.right)),
-          DataColumn(label: Text('')),
-        ],
-        rows: _selectedItems.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
-          final price = (item['sale_price'] as num?)?.toDouble() ?? 0.0;
-          final tax = (item['tax'] as num?)?.toDouble() ?? 0.0;
-          final total = qty * price * (1 + tax / 100);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                horizontalMargin: 12,
+                columnSpacing: 10,
+                columns: const [
+                  DataColumn(label: Text('Item')),
+                  DataColumn(label: Text('Precio', textAlign: TextAlign.right)),
+                  DataColumn(label: Text('Cant.', textAlign: TextAlign.right)),
+                  DataColumn(label: Text('Tax %', textAlign: TextAlign.right)),
+                  DataColumn(label: Text('Total', textAlign: TextAlign.right)),
+                  DataColumn(label: Text('')),
+                ],
+                rows: _selectedItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+                  final price = (item['sale_price'] as num?)?.toDouble() ?? 0.0;
+                  final tax = (item['tax'] as num?)?.toDouble() ?? 0.0;
+                  final total = qty * price * (1 + tax / 100);
 
-          return DataRow(cells: [
-            DataCell(Text(item['PoleBarns']['name'] ?? 'Item')),
-            DataCell(TextFormField(
-              initialValue: price.toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (v) => setState(
-                  () => item['sale_price'] = double.tryParse(v) ?? 0.0),
-              decoration: const InputDecoration(
-                  border: InputBorder.none, isDense: true),
-            )),
-            DataCell(TextFormField(
-              initialValue: qty.toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (v) =>
-                  setState(() => item['qty'] = double.tryParse(v) ?? 1.0),
-              decoration: const InputDecoration(
-                  border: InputBorder.none, isDense: true),
-            )),
-            DataCell(TextFormField(
-              initialValue: tax.toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (v) =>
-                  setState(() => item['tax'] = double.tryParse(v) ?? 0.0),
-              decoration: const InputDecoration(
-                  border: InputBorder.none, isDense: true),
-            )),
-            DataCell(Text(NumberFormat.simpleCurrency().format(total))),
-            DataCell(IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-              onPressed: () => setState(() => _selectedItems.removeAt(index)),
-            )),
-          ]);
-        }).toList(),
-      ),
+                  return DataRow(cells: [
+                    DataCell(SizedBox(
+                      width: constraints.maxWidth * 0.3,
+                      child: Text(item['PoleBarns']['name'] ?? 'Item',
+                          overflow: TextOverflow.ellipsis),
+                    )),
+                    DataCell(Container(
+                      width: 80,
+                      child: TextFormField(
+                        initialValue: price.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) => setState(() =>
+                            item['sale_price'] = double.tryParse(v) ?? 0.0),
+                        decoration: const InputDecoration(
+                            border: InputBorder.none, isDense: true),
+                      ),
+                    )),
+                    DataCell(Container(
+                      width: 50,
+                      child: TextFormField(
+                        initialValue: qty.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) => setState(
+                            () => item['qty'] = double.tryParse(v) ?? 1.0),
+                        decoration: const InputDecoration(
+                            border: InputBorder.none, isDense: true),
+                      ),
+                    )),
+                    DataCell(Container(
+                      width: 50,
+                      child: TextFormField(
+                        initialValue: tax.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) => setState(
+                            () => item['tax'] = double.tryParse(v) ?? 0.0),
+                        decoration: const InputDecoration(
+                            border: InputBorder.none, isDense: true),
+                      ),
+                    )),
+                    DataCell(Text(NumberFormat.simpleCurrency().format(total))),
+                    DataCell(IconButton(
+                      icon:
+                          const Icon(Icons.delete, color: Colors.red, size: 20),
+                      onPressed: () =>
+                          setState(() => _selectedItems.removeAt(index)),
+                    )),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -581,7 +652,7 @@ class _CatalogSelectionDialogState extends State<_CatalogSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Seleccionar Items del Catálogo'),
+      title: const Text('Seleccionar Items del CatÃ¡logo'),
       content: SizedBox(
         width: 400,
         height: 500,
