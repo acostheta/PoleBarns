@@ -52,6 +52,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
     _loadData();
   }
 
+  @override
   void dispose() {
     _commentController.dispose();
     _addressController.dispose();
@@ -583,7 +584,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       child: Text(item['PoleBarns']['name'] ?? 'Item',
                           overflow: TextOverflow.ellipsis),
                     )),
-                    DataCell(Container(
+                    DataCell(SizedBox(
                       width: 80,
                       child: TextFormField(
                         initialValue: price.toString(),
@@ -594,7 +595,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                             border: InputBorder.none, isDense: true),
                       ),
                     )),
-                    DataCell(Container(
+                    DataCell(SizedBox(
                       width: 50,
                       child: TextFormField(
                         initialValue: qty.toString(),
@@ -605,7 +606,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                             border: InputBorder.none, isDense: true),
                       ),
                     )),
-                    DataCell(Container(
+                    DataCell(SizedBox(
                       width: 50,
                       child: TextFormField(
                         initialValue: tax.toString(),

@@ -6,6 +6,7 @@ import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
 import '../widgets/pagos_soldadores_form_dialog.dart';
+import 'soldador_detail_screen.dart';
 
 class PagosSoldadoresScreen extends ConsumerStatefulWidget {
   const PagosSoldadoresScreen({super.key});
@@ -120,8 +121,14 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
 
                                           return DataRow(
                                             onSelectChanged: (_) {
-                                              _showPaymentsDialog(
-                                                  context, item);
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      SoldadorDetailScreen(
+                                                          item: item),
+                                                ),
+                                              );
                                             },
                                             cells: [
                                               DataCell(Text(
@@ -260,10 +267,15 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
   }
 
   void _showPaymentsDialog(BuildContext context, NominaSoldador item) {
+    final total = (item.cantidad ?? 0.0) * (item.montoUnitario ?? 0.0);
+    final balance = total - (item.pagoParcial ?? 0.0);
     showDialog(
       context: context,
-      builder: (context) =>
-          PaymentsDialog(soldadorId: item.id, type: 'Soldadura'),
+      builder: (context) => PaymentsDialog(
+        soldadorId: item.id,
+        type: 'Soldadura',
+        initialAmount: balance > 0 ? balance : null,
+      ),
     );
   }
 }

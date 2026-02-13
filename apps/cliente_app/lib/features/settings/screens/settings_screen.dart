@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers_tab.dart';
 import 'payment_methods_tab.dart';
 import 'trusses_tab.dart';
+import 'lean_to_tab.dart';
 import 'package:users/users.dart';
 import 'package:measures/measures.dart';
 
@@ -14,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 6,
+      length: 7,
       initialIndex: initialIndex,
       child: Column(
         children: [
@@ -27,6 +28,7 @@ class SettingsScreen extends ConsumerWidget {
                 Tab(text: 'Proveedores'),
                 Tab(text: 'Métodos de Pago'),
                 Tab(text: 'Trusses'),
+                Tab(text: 'Lean Too'),
                 Tab(text: 'Puestos de Trabajo'),
                 Tab(text: 'Medidas'),
               ],
@@ -39,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
                 ProvidersTab(),
                 PaymentMethodsTab(),
                 TrussesTab(),
+                LeanToTab(),
                 JobPositionsScreen(),
                 MeasuresScreen(),
               ],

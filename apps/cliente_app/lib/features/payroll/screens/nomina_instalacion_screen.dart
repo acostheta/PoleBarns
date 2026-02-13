@@ -5,6 +5,7 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
+import 'instalacion_detail_screen.dart';
 
 class NominaInstalacionScreen extends ConsumerStatefulWidget {
   const NominaInstalacionScreen({super.key});
@@ -113,8 +114,16 @@ class _NominaInstalacionScreenState
                                                         'Desconocido';
                                                 return DataRow(
                                                   onSelectChanged: (_) {
-                                                    _showPaymentsDialog(
-                                                        context, item);
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            InstalacionDetailScreen(
+                                                          item: item,
+                                                          employeeName: empName,
+                                                        ),
+                                                      ),
+                                                    );
                                                   },
                                                   cells: [
                                                     DataCell(Text(empName,
@@ -291,8 +300,11 @@ class _NominaInstalacionScreenState
   void _showPaymentsDialog(BuildContext context, NominaInstalacion item) {
     showDialog(
       context: context,
-      builder: (context) =>
-          PaymentsDialog(instalacionId: item.id, type: 'Instalación'),
+      builder: (context) => PaymentsDialog(
+        instalacionId: item.id,
+        type: 'Instalación',
+        initialAmount: (item.saldo ?? 0.0) > 0 ? item.saldo : null,
+      ),
     );
   }
 }

@@ -12,6 +12,7 @@ class ProjectModel {
   final double costosTotales;
   final double profit;
   final String? comments;
+  final DateTime? fechaUltimaEvidencia;
   final DateTime createdAt;
 
   ProjectModel({
@@ -28,6 +29,7 @@ class ProjectModel {
     this.costosTotales = 0.0,
     this.profit = 0.0,
     this.comments,
+    this.fechaUltimaEvidencia,
     required this.createdAt,
   });
 
@@ -50,6 +52,9 @@ class ProjectModel {
       costosTotales: (json['costos_totales'] as num?)?.toDouble() ?? 0.0,
       profit: (json['profit'] as num?)?.toDouble() ?? 0.0,
       comments: json['comments'],
+      fechaUltimaEvidencia: json['fecha_ultima_evidencia'] != null
+          ? DateTime.parse(json['fecha_ultima_evidencia'])
+          : null,
       createdAt: DateTime.parse(json['created_at']),
     );
   }
@@ -68,6 +73,7 @@ class ProjectModel {
     double? costosTotales,
     double? profit,
     String? comments,
+    DateTime? fechaUltimaEvidencia,
     DateTime? createdAt,
   }) {
     return ProjectModel(
@@ -84,6 +90,7 @@ class ProjectModel {
       costosTotales: costosTotales ?? this.costosTotales,
       profit: profit ?? this.profit,
       comments: comments ?? this.comments,
+      fechaUltimaEvidencia: fechaUltimaEvidencia ?? this.fechaUltimaEvidencia,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -103,6 +110,7 @@ class ProjectModel {
       'venta_total': ventaTotal,
       'costos_totales': costosTotales,
       'comments': comments,
+      'fecha_ultima_evidencia': fechaUltimaEvidencia?.toIso8601String(),
       // profit excluded as it's computed
       'created_at': createdAt.toIso8601String(),
     };

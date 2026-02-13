@@ -445,7 +445,9 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
   Future<void> _uploadAll() async {
     if (_newImageFiles.isEmpty &&
         _currentImages.isEmpty &&
-        _pendingDeletions.isEmpty) return;
+        _pendingDeletions.isEmpty) {
+      return;
+    }
 
     setState(() => _isUploading = true);
 

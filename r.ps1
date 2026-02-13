@@ -1,2 +1,2 @@
 Set-Location "apps/cliente_app"
-flutter run -d chrome
+flutter run -d chrome --web-port 3000

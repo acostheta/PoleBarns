@@ -141,7 +141,7 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Trabajos Realizados (Trusses)',
+                const Text('Trabajos Realizados (Trusses/Lean To)',
                     style: AppStyles.labelStyle),
                 ElevatedButton.icon(
                   onPressed: _addTrussRow,
@@ -254,10 +254,10 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
   }
 
   Widget _buildTrussesTable() {
-    final trussesAsync = ref.watch(trussesListProvider);
+    final productsAsync = ref.watch(allProductsStreamProvider);
 
-    return trussesAsync.when(
-      data: (trusses) {
+    return productsAsync.when(
+      data: (products) {
         if (_trussItems.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(24),
@@ -327,27 +327,31 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
 
                 return TableRow(
                   children: [
-                    // Dropdown for Truss selection
+                    // Dropdown for Product selection
                     Padding(
                       padding: const EdgeInsets.all(8),
                       child: DropdownButtonFormField<String>(
-                        value: item.trussId.isEmpty ? null : item.trussId,
-                        items: trusses.map((truss) {
+                        value: item.trussId.isEmpty ||
+                                !products.any((p) => p.id == item.trussId)
+                            ? null
+                            : item.trussId,
+                        items: products.map((product) {
                           return DropdownMenuItem(
-                            value: truss.id,
-                            child: Text(truss.name,
+                            value: product.id,
+                            child: Text(product.name,
                                 style: const TextStyle(fontSize: 12)),
                           );
                         }).toList(),
-                        onChanged: (trussId) {
-                          final selectedTruss =
-                              trusses.firstWhere((t) => t.id == trussId);
+                        onChanged: (productId) {
+                          if (productId == null) return;
+                          final selectedProduct =
+                              products.firstWhere((p) => p.id == productId);
                           setState(() {
                             _trussItems[index] = TrussLineItem(
-                              trussId: selectedTruss.id,
-                              trussName: selectedTruss.name,
+                              trussId: selectedProduct.id,
+                              trussName: selectedProduct.name,
                               quantity: item.quantity,
-                              unitPrice: selectedTruss.cost,
+                              unitPrice: selectedProduct.cost,
                             );
                             _recalculateTotal();
                           });
@@ -415,13 +419,13 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
                     ),
                   ],
                 );
-              }).toList(),
+              }),
             ],
           ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Text('Error cargando trusses: $e'),
+      error: (e, s) => Text('Error cargando productos: $e'),
     );
   }
 
@@ -453,6 +457,21 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
         if (widget.item == null) {
           soldadorId =
               await ref.read(payrollRepositoryProvider).createSoldador(newItem);
+
+          // If a payment method is selected, record the initial payment
+          if (_selectedFormaPago != null && _totalAmount > 0) {
+            final payment = NominaPago(
+              id: '',
+              tipo: 'Soldadura',
+              idNominaSoldadura: soldadorId,
+              amount: _totalAmount,
+              metodoPago: _selectedFormaPago,
+              category: 'Pago Inicial',
+              nota: 'Generado automáticamente al crear el registro',
+              createdAt: DateTime.now(),
+            );
+            await ref.read(payrollRepositoryProvider).createPayment(payment);
+          }
         } else {
           await ref
               .read(payrollRepositoryProvider)
@@ -480,7 +499,13 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
         if (widget.onSaved != null) {
           widget.onSaved!();
         } else {
-          if (mounted) Navigator.pop(context);
+          if (mounted) {
+            // Success!
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Registro guardado correctamente')),
+            );
+            Navigator.pop(context);
+          }
         }
       } catch (e) {
         if (mounted) {

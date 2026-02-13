@@ -5,6 +5,8 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../../settings/repositories/settings_repository.dart';
+import '../widgets/payments_dialog.dart';
+import 'pago_diario_detail_screen.dart';
 
 class PagosDiariosScreen extends ConsumerStatefulWidget {
   const PagosDiariosScreen({super.key});
@@ -102,6 +104,8 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                                           DataColumn(label: Text('F. PAGO')),
                                           DataColumn(label: Text('DÍAS')),
                                           DataColumn(label: Text('MONTO')),
+                                          DataColumn(label: Text('PAGADO')),
+                                          DataColumn(label: Text('SALDO')),
                                           DataColumn(label: Text('ACCIONES')),
                                         ],
                                         rows: items.map((item) {
@@ -109,6 +113,16 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                                               empMap[item.idEmpleado] ??
                                                   'Desconocido';
                                           return DataRow(
+                                            onSelectChanged: (_) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PagoDiarioDetailScreen(
+                                                          item: item),
+                                                ),
+                                              );
+                                            },
                                             cells: [
                                               DataCell(Text(
                                                   DateFormat('dd/MM/yyyy')
@@ -138,9 +152,40 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.green),
                                               )),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(
+                                                          item.pagoParcial ??
+                                                              0),
+                                                  style: const TextStyle(
+                                                      color: Colors.blue))),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format((item.monto ??
+                                                              0) -
+                                                          (item.pagoParcial ??
+                                                              0)),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
                                               DataCell(Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.payments_outlined,
+                                                        color: Colors.green,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showPaymentsDialog(
+                                                            context, item),
+                                                    tooltip:
+                                                        'Ver/Agregar Pagos',
+                                                  ),
+                                                  const SizedBox(width: 8),
                                                   IconButton(
                                                     icon: const Icon(
                                                         Icons.edit_outlined,
@@ -153,7 +198,7 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                                                         _showEditDialog(
                                                             context, item),
                                                   ),
-                                                  const SizedBox(width: 12),
+                                                  const SizedBox(width: 8),
                                                   IconButton(
                                                     icon: const Icon(
                                                         Icons.delete_outline,
@@ -238,6 +283,16 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showPaymentsDialog(BuildContext context, NominaPagoDiario item) {
+    showDialog(
+      context: context,
+      builder: (context) => PaymentsDialog(
+        pagoDiarioId: item.id,
+        type: 'Pago Diario',
       ),
     );
   }

@@ -88,7 +88,6 @@ final combinedPayrollSummaryProvider =
   final soldadoresRaw = soldadoresAsync.value ?? [];
   final instalacionRaw = instalacionAsync.value ?? [];
   final choferRaw = choferAsync.value ?? [];
-  final paymentsPayrollRaw = paymentsPayrollAsync.value ?? [];
   final employees = employeesAsync.value ?? [];
   final projects = projectsAsync.value ?? [];
 
@@ -114,19 +113,17 @@ final combinedPayrollSummaryProvider =
       choferThisMonth.fold(0, (sum, item) => sum + (item.total ?? 0));
 
   // 3. Piecework (Soldadores & Instalación)
-  final paymentsThisMonth =
-      paymentsPayrollRaw.where((p) => isThisMonth(p.createdAt)).toList();
+  final soldadoresThisMonth =
+      soldadoresRaw.where((i) => isThisMonth(i.fecha)).toList();
+  double totalSoldadores =
+      soldadoresThisMonth.fold(0, (sum, item) => sum + (item.total ?? 0));
 
-  double totalSoldadores = 0;
-  double totalInstalacion = 0;
-
-  for (var p in paymentsThisMonth) {
-    if (p.tipo == 'Soldadura') {
-      totalSoldadores += p.amount;
-    } else if (p.tipo == 'Instalación') {
-      totalInstalacion += p.amount;
-    }
-  }
+  final instalacionThisMonth = instalacionRaw
+      .where(
+          (i) => i.fechaCulminacion != null && isThisMonth(i.fechaCulminacion))
+      .toList();
+  double totalInstalacion = instalacionThisMonth.fold(
+      0, (sum, item) => sum + (item.pagoProyecto ?? 0));
 
   // Transactions list (Recent 10)
   List<PayrollTransaction> transactions = [];
@@ -153,35 +150,28 @@ final combinedPayrollSummaryProvider =
     ));
   }
 
-  // For Soldadura/Instalacion transactions, we can show either the parent record or individual payments.
-  // User image showed "Equipo A - Diario", "Carlos Perez - Soldadores".
-  // Let's show the parent records that had activity this month.
-  for (var item in soldadoresRaw) {
-    if (isThisMonth(item.fecha) && (item.pagoParcial ?? 0) > 0) {
-      transactions.add(PayrollTransaction(
-        id: item.id,
-        fecha: item.fecha,
-        empleadoId: item.idEmpleado,
-        empleadoName: employeesMap[item.idEmpleado],
-        tipo: 'Soldadores',
-        monto: item.pagoParcial ?? 0,
-      ));
-    }
+  for (var item in soldadoresThisMonth) {
+    transactions.add(PayrollTransaction(
+      id: item.id,
+      fecha: item.fecha,
+      empleadoId: item.idEmpleado,
+      empleadoName: employeesMap[item.idEmpleado],
+      tipo: 'Soldadores',
+      monto: item.total ?? 0,
+    ));
   }
 
-  for (var item in instalacionRaw) {
-    if (isThisMonth(item.fechaCulminacion) && (item.pagoParcial ?? 0) > 0) {
-      transactions.add(PayrollTransaction(
-        id: item.id,
-        fecha: item.fechaCulminacion!,
-        empleadoId: item.idEmpleado,
-        empleadoName: employeesMap[item.idEmpleado],
-        tipo: 'Instalación',
-        proyectoId: item.idProyecto,
-        proyectoName: projectsMap[item.idProyecto],
-        monto: item.pagoParcial ?? 0,
-      ));
-    }
+  for (var item in instalacionThisMonth) {
+    transactions.add(PayrollTransaction(
+      id: item.id,
+      fecha: item.fechaCulminacion!,
+      empleadoId: item.idEmpleado,
+      empleadoName: employeesMap[item.idEmpleado],
+      tipo: 'Instalación',
+      proyectoId: item.idProyecto,
+      proyectoName: projectsMap[item.idProyecto],
+      monto: item.pagoProyecto ?? 0,
+    ));
   }
 
   transactions.sort((a, b) => b.fecha.compareTo(a.fecha));

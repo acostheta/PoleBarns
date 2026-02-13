@@ -94,17 +94,28 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                             ),
                           ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.email_outlined,
-                              color: Colors.blue),
+                        TextButton.icon(
                           onPressed: () => _sendEmail(enrichedInvoice),
-                          tooltip: 'Enviar por correo',
+                          icon: const Icon(Icons.email_outlined,
+                              color: Colors.blue, size: 18),
+                          label: const Text('Enviar por Email'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.picture_as_pdf_outlined,
-                              color: Colors.red),
+                        const SizedBox(width: 8),
+                        TextButton.icon(
                           onPressed: () => _generatePDF(enrichedInvoice),
-                          tooltip: 'Generar PDF',
+                          icon: const Icon(Icons.picture_as_pdf_outlined,
+                              color: Colors.red, size: 18),
+                          label: const Text('Imprimir Invoice'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         PopupMenuButton<String>(
                           icon:
@@ -195,17 +206,28 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           ),
                           Row(
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.email_outlined,
-                                    color: Colors.blue),
+                              TextButton.icon(
                                 onPressed: () => _sendEmail(enrichedInvoice),
-                                tooltip: 'Enviar por correo',
+                                icon: const Icon(Icons.email_outlined,
+                                    color: Colors.blue, size: 18),
+                                label: const Text('Enviar por Email'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.blue,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.picture_as_pdf_outlined,
-                                    color: Colors.red),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
                                 onPressed: () => _generatePDF(enrichedInvoice),
-                                tooltip: 'Generar PDF',
+                                icon: const Icon(Icons.picture_as_pdf_outlined,
+                                    color: Colors.red, size: 18),
+                                label: const Text('Imprimir Invoice'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ],
                           ),

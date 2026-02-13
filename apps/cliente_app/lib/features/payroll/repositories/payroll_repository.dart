@@ -33,6 +33,15 @@ class PayrollRepository {
     await _client.from('nomina_pagos_diarios').delete().eq('id', id);
   }
 
+  Stream<NominaPagoDiario?> getPagoDiarioStreamById(String id) {
+    return _client
+        .from('nomina_pagos_diarios')
+        .stream(primaryKey: ['id'])
+        .eq('id', id)
+        .map((data) =>
+            data.isEmpty ? null : NominaPagoDiario.fromJson(data.first));
+  }
+
   // --- Soldadores ---
   Stream<List<NominaSoldador>> getSoldadoresStream() {
     return _client
@@ -63,6 +72,15 @@ class PayrollRepository {
 
   Future<void> deleteSoldador(String id) async {
     await _client.from('nomina_soldadores').delete().eq('id', id);
+  }
+
+  Stream<NominaSoldador?> getSoldadorStream(String id) {
+    return _client
+        .from('nomina_soldadores')
+        .stream(primaryKey: ['id'])
+        .eq('id', id)
+        .map((data) =>
+            data.isEmpty ? null : NominaSoldador.fromJson(data.first));
   }
 
   // --- Instalacion ---
@@ -109,6 +127,23 @@ class PayrollRepository {
     await _client.from('nomina_horas_chofer').delete().eq('id', id);
   }
 
+  Stream<NominaChofer?> getChoferStreamById(String id) {
+    return _client
+        .from('nomina_horas_chofer')
+        .stream(primaryKey: ['id'])
+        .eq('id', id)
+        .map((data) => data.isEmpty ? null : NominaChofer.fromJson(data.first));
+  }
+
+  Stream<NominaInstalacion?> getInstalacionStreamById(String id) {
+    return _client
+        .from('nomina_instalacion')
+        .stream(primaryKey: ['id'])
+        .eq('id', id)
+        .map((data) =>
+            data.isEmpty ? null : NominaInstalacion.fromJson(data.first));
+  }
+
   // --- Employees (Profiles) ---
   Stream<List<Map<String, dynamic>>> getEmployeesStream() {
     return _client
@@ -129,6 +164,10 @@ class PayrollRepository {
     await _client.from('nomina_pagos').insert(item.toJson());
   }
 
+  Future<void> deletePayment(String id) async {
+    await _client.from('nomina_pagos').delete().eq('id', id);
+  }
+
   Stream<List<NominaPago>> getPaymentsForSoldador(String soldadorId) {
     return _client
         .from('nomina_pagos')
@@ -142,6 +181,22 @@ class PayrollRepository {
         .from('nomina_pagos')
         .stream(primaryKey: ['id'])
         .eq('id_nomina_instalacion', instalacionId)
+        .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
+  }
+
+  Stream<List<NominaPago>> getPaymentsForPagoDiario(String pagoDiarioId) {
+    return _client
+        .from('nomina_pagos')
+        .stream(primaryKey: ['id'])
+        .eq('id_nomina_pago_diario', pagoDiarioId)
+        .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
+  }
+
+  Stream<List<NominaPago>> getPaymentsForChofer(String choferId) {
+    return _client
+        .from('nomina_pagos')
+        .stream(primaryKey: ['id'])
+        .eq('id_nomina_chofer', choferId)
         .map((data) => data.map((json) => NominaPago.fromJson(json)).toList());
   }
 

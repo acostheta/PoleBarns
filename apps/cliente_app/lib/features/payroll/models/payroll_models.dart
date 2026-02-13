@@ -7,6 +7,7 @@ class NominaPagoDiario {
   final double? dias;
   final String? formaPago;
   final double? monto;
+  final double? pagoParcial;
   final String? notas;
 
   NominaPagoDiario({
@@ -18,6 +19,7 @@ class NominaPagoDiario {
     this.dias,
     this.formaPago,
     this.monto,
+    this.pagoParcial,
     this.notas,
   });
 
@@ -31,6 +33,9 @@ class NominaPagoDiario {
       dias: json['dias'] != null ? (json['dias'] as num).toDouble() : null,
       formaPago: json['forma_pago'],
       monto: json['monto'] != null ? (json['monto'] as num).toDouble() : null,
+      pagoParcial: json['pago_parcial'] != null
+          ? (json['pago_parcial'] as num).toDouble()
+          : 0,
       notas: json['notas'],
     );
   }
@@ -44,6 +49,7 @@ class NominaPagoDiario {
       'dias': dias,
       'forma_pago': formaPago,
       'monto': monto,
+      'pago_parcial': pagoParcial,
       'notas': notas,
     };
   }
@@ -168,9 +174,11 @@ class NominaInstalacion {
 
 class NominaPago {
   final String id;
-  final String tipo; // 'Instalación' or 'Soldadura'
+  final String tipo; // 'Instalación', 'Soldadura', 'Pago Diario', 'Chofer'
   final String? idNominaSoldadura;
   final String? idNominaInstalacion;
+  final String? idNominaPagoDiario;
+  final String? idNominaChofer;
   final double amount;
   final String? metodoPago;
   final String? category;
@@ -182,6 +190,8 @@ class NominaPago {
     required this.tipo,
     this.idNominaSoldadura,
     this.idNominaInstalacion,
+    this.idNominaPagoDiario,
+    this.idNominaChofer,
     required this.amount,
     this.metodoPago,
     this.category,
@@ -195,6 +205,8 @@ class NominaPago {
       tipo: json['tipo'],
       idNominaSoldadura: json['id_nomina_soldadura'],
       idNominaInstalacion: json['id_nomina_instalacion'],
+      idNominaPagoDiario: json['id_nomina_pago_diario'],
+      idNominaChofer: json['id_nomina_chofer'],
       amount: (json['amount'] as num).toDouble(),
       metodoPago: json['metodo_pago'],
       category: json['category'],
@@ -210,6 +222,8 @@ class NominaPago {
       'tipo': tipo,
       'id_nomina_soldadura': idNominaSoldadura,
       'id_nomina_instalacion': idNominaInstalacion,
+      'id_nomina_pago_diario': idNominaPagoDiario,
+      'id_nomina_chofer': idNominaChofer,
       'amount': amount,
       'metodo_pago': metodoPago,
       'category': category,
@@ -226,6 +240,7 @@ class NominaChofer {
   final double? horas;
   final double? ratePorHora;
   final double? total;
+  final double? pagoParcial;
   final String? notas;
 
   NominaChofer({
@@ -236,6 +251,7 @@ class NominaChofer {
     this.horas,
     this.ratePorHora,
     this.total,
+    this.pagoParcial,
     this.notas,
   });
 
@@ -250,6 +266,9 @@ class NominaChofer {
           ? (json['rate_por_hora'] as num).toDouble()
           : null,
       total: json['total'] != null ? (json['total'] as num).toDouble() : null,
+      pagoParcial: json['pago_parcial'] != null
+          ? (json['pago_parcial'] as num).toDouble()
+          : 0,
       notas: json['notas'],
     );
   }

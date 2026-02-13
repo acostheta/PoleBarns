@@ -3,17 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
+import '../../settings/repositories/settings_repository.dart';
 
 class PaymentsDialog extends ConsumerStatefulWidget {
   final String? soldadorId;
   final String? instalacionId;
-  final String type; // 'Soldadura' or 'Instalación'
+  final String? pagoDiarioId;
+  final String? choferId;
+  final String type; // 'Soldadura', 'Instalación', 'Pago Diario', 'Chofer'
+  final double? initialAmount;
 
   const PaymentsDialog({
     super.key,
     this.soldadorId,
     this.instalacionId,
+    this.pagoDiarioId,
+    this.choferId,
     required this.type,
+    this.initialAmount,
   });
 
   @override
@@ -22,10 +29,18 @@ class PaymentsDialog extends ConsumerStatefulWidget {
 
 class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
   final _amountCtrl = TextEditingController();
-  final _methodCtrl = TextEditingController();
-  final _categoryCtrl = TextEditingController();
+  final _categoryCtrl = TextEditingController(); // Now used for Ref No
   final _noteCtrl = TextEditingController();
+  String? _selectedMethod;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _amountCtrl.text = widget.initialAmount!.toStringAsFixed(2);
+    }
+  }
 
   Future<void> _addPayment() async {
     if (_amountCtrl.text.isEmpty) return;
@@ -37,16 +52,25 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
         tipo: widget.type,
         idNominaSoldadura: widget.soldadorId,
         idNominaInstalacion: widget.instalacionId,
+        idNominaPagoDiario: widget.pagoDiarioId,
+        idNominaChofer: widget.choferId,
         amount: double.tryParse(_amountCtrl.text) ?? 0,
-        metodoPago: _methodCtrl.text,
-        category: _categoryCtrl.text,
+        metodoPago: _selectedMethod,
+        category: _categoryCtrl.text, // Mapped to Nº Ref
         nota: _noteCtrl.text,
       );
       await ref.read(payrollRepositoryProvider).createPayment(p);
       _amountCtrl.clear();
-      _methodCtrl.clear();
       _categoryCtrl.clear();
       _noteCtrl.clear();
+      setState(() {
+        _selectedMethod = null;
+      });
+      if (mounted) {
+        if (widget.initialAmount != null) {
+          // Optional: Close dialog or show success, currently just clearing fields
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -60,9 +84,15 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
-    final stream = widget.type == 'Soldadura'
-        ? repo.getPaymentsForSoldador(widget.soldadorId!)
-        : repo.getPaymentsForInstalacion(widget.instalacionId!);
+    final methodsAsync = ref.watch(paymentMethodsListProvider);
+
+    final stream = switch (widget.type) {
+      'Soldadura' => repo.getPaymentsForSoldador(widget.soldadorId!),
+      'Instalación' => repo.getPaymentsForInstalacion(widget.instalacionId!),
+      'Pago Diario' => repo.getPaymentsForPagoDiario(widget.pagoDiarioId!),
+      'Chofer' => repo.getPaymentsForChofer(widget.choferId!),
+      _ => const Stream<List<NominaPago>>.empty(),
+    };
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -139,7 +169,7 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
                                             fontSize: 16)),
                                     const SizedBox(height: 2),
                                     Text(
-                                        '${p.metodoPago ?? "Efectivo"} • ${p.category ?? "General"}',
+                                        '${p.metodoPago ?? "Efectivo"} • ${p.category ?? "-"}',
                                         style: const TextStyle(
                                             color: Colors.grey, fontSize: 12)),
                                   ],
@@ -172,8 +202,41 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildTextField('Método', _methodCtrl,
-                        hintText: 'Ej: Zelle, Cash'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Método',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey)),
+                        const SizedBox(height: 8),
+                        methodsAsync.when(
+                          data: (methods) => DropdownButtonFormField<String>(
+                            value: _selectedMethod,
+                            items: methods
+                                .map((m) => DropdownMenuItem(
+                                      value: m.name,
+                                      child: Text(m.name,
+                                          style: const TextStyle(fontSize: 14)),
+                                    ))
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedMethod = v),
+                            decoration: AppStyles.inputDecoration(
+                                hintText: 'Seleccionar'),
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                            isExpanded: true,
+                          ),
+                          loading: () => const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2)),
+                          error: (e, s) => const Text('Error',
+                              style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -181,8 +244,8 @@ class _PaymentsDialogState extends ConsumerState<PaymentsDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField('Categoría', _categoryCtrl,
-                        hintText: 'Ej: Abono'),
+                    child: _buildTextField('Nº Ref', _categoryCtrl,
+                        hintText: 'Ej: 12345'),
                   ),
                   const SizedBox(width: 16),
                   Expanded(

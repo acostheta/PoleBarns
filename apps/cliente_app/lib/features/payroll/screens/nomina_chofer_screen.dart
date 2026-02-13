@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
+import '../widgets/payments_dialog.dart';
+import 'chofer_detail_screen.dart';
 
 class NominaChoferScreen extends ConsumerStatefulWidget {
   const NominaChoferScreen({super.key});
@@ -100,6 +102,8 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                                           DataColumn(label: Text('HORAS')),
                                           DataColumn(label: Text('RATE/H')),
                                           DataColumn(label: Text('TOTAL')),
+                                          DataColumn(label: Text('PAGADO')),
+                                          DataColumn(label: Text('SALDO')),
                                           DataColumn(label: Text('ACCIONES')),
                                         ],
                                         rows: items.map((item) {
@@ -110,6 +114,16 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                                                   'Desconocido';
 
                                           return DataRow(
+                                            onSelectChanged: (_) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ChoferDetailScreen(
+                                                          item: item),
+                                                ),
+                                              );
+                                            },
                                             cells: [
                                               DataCell(Text(
                                                   DateFormat('dd/MM/yyyy')
@@ -141,9 +155,39 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       color: Colors.green))),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(
+                                                          item.pagoParcial ??
+                                                              0),
+                                                  style: const TextStyle(
+                                                      color: Colors.blue))),
+                                              DataCell(Text(
+                                                  NumberFormat.simpleCurrency()
+                                                      .format(total -
+                                                          (item.pagoParcial ??
+                                                              0)),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold))),
                                               DataCell(Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                        Icons.payments_outlined,
+                                                        color: Colors.green,
+                                                        size: 20),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                    onPressed: () =>
+                                                        _showPaymentsDialog(
+                                                            context, item),
+                                                    tooltip:
+                                                        'Ver/Agregar Pagos',
+                                                  ),
+                                                  const SizedBox(width: 8),
                                                   IconButton(
                                                     icon: const Icon(
                                                         Icons.edit_outlined,
@@ -242,6 +286,19 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showPaymentsDialog(BuildContext context, NominaChofer item) {
+    final total = (item.horas ?? 0.0) * (item.ratePorHora ?? 0.0);
+    final balance = total - (item.pagoParcial ?? 0.0);
+    showDialog(
+      context: context,
+      builder: (context) => PaymentsDialog(
+        choferId: item.id,
+        type: 'Chofer',
+        initialAmount: balance > 0 ? balance : null,
       ),
     );
   }

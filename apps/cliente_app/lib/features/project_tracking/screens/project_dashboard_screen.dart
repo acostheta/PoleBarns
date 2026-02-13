@@ -45,12 +45,7 @@ class _ProjectDashboardScreenState
             builder: (context, constraints) {
               return Column(
                 children: [
-                  // Stats Row
-                  projectsAsync.when(
-                    data: (list) => _buildStatsHeader(list),
-                    loading: () => const SizedBox(height: 100),
-                    error: (_, __) => const SizedBox(),
-                  ),
+                  // Stats Row removed
 
                   // Toolbar
                   _buildToolbar(context, projectsAsync.valueOrNull),
@@ -141,22 +136,22 @@ class _ProjectDashboardScreenState
                                                 onSort: (i, b) =>
                                                     _sort(i, b, 2)),
                                             DataColumn(
-                                                label: const Text('FECHAS'),
+                                                label:
+                                                    const Text('FECHA INICIO'),
                                                 onSort: (i, b) =>
                                                     _sort(i, b, 3)),
                                             DataColumn(
-                                                label: const Text('VENTA'),
-                                                numeric: true,
+                                                label: const Text('FECHA FIN'),
                                                 onSort: (i, b) =>
                                                     _sort(i, b, 4)),
                                             DataColumn(
-                                                label: const Text('COSTOS'),
-                                                numeric: true,
+                                                label:
+                                                    const Text('RESPONSABLE'),
                                                 onSort: (i, b) =>
                                                     _sort(i, b, 5)),
                                             DataColumn(
-                                                label: const Text('PROFIT'),
-                                                numeric: true,
+                                                label: const Text(
+                                                    'ULTIMA EVIDENCIA'),
                                                 onSort: (i, b) =>
                                                     _sort(i, b, 6)),
                                             const DataColumn(
@@ -249,78 +244,57 @@ class _ProjectDashboardScreenState
                                                           project.id),
                                                 ),
                                                 DataCell(
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Text(
-                                                          project.fechaInicio !=
-                                                                  null
-                                                              ? DateFormat(
-                                                                      'MM/dd/yy')
-                                                                  .format(project
-                                                                      .fechaInicio!)
-                                                              : '-',
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontSize:
-                                                                      12)),
-                                                      if (project
-                                                              .fechaFinalizacion !=
-                                                          null)
-                                                        Text(
-                                                            DateFormat(
-                                                                    'MM/dd/yy')
-                                                                .format(project
-                                                                    .fechaFinalizacion!),
-                                                            style:
-                                                                const TextStyle(
-                                                                    fontSize:
-                                                                        11,
-                                                                    color: Colors
-                                                                        .grey)),
-                                                    ],
-                                                  ),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(NumberFormat
-                                                          .simpleCurrency()
-                                                      .format(
-                                                          project.ventaTotal)),
+                                                  Text(
+                                                      project.fechaInicio !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'MM/dd/yy')
+                                                              .format(project
+                                                                  .fechaInicio!)
+                                                          : '-',
+                                                      style: const TextStyle(
+                                                          fontSize: 12)),
                                                   onTap: () =>
                                                       _navigateToDetail(
                                                           project.id),
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                      NumberFormat
-                                                              .simpleCurrency()
-                                                          .format(project
-                                                              .costosTotales),
+                                                      project.fechaFinalizacion !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'MM/dd/yy')
+                                                              .format(project
+                                                                  .fechaFinalizacion!)
+                                                          : '-',
                                                       style: const TextStyle(
-                                                          color: Colors
-                                                              .redAccent)),
+                                                          fontSize: 12)),
                                                   onTap: () =>
                                                       _navigateToDetail(
                                                           project.id),
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                      NumberFormat
-                                                              .simpleCurrency()
-                                                          .format(
-                                                              project.profit),
+                                                      project.responsable ??
+                                                          '-',
                                                       style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.green)),
+                                                          color: Color(
+                                                              0xFF4B5563))),
+                                                  onTap: () =>
+                                                      _navigateToDetail(
+                                                          project.id),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                      project.fechaUltimaEvidencia !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'MM/dd/yy')
+                                                              .format(project
+                                                                  .fechaUltimaEvidencia!)
+                                                          : '-',
+                                                      style: const TextStyle(
+                                                          fontSize: 12)),
                                                   onTap: () =>
                                                       _navigateToDetail(
                                                           project.id),
@@ -357,58 +331,6 @@ class _ProjectDashboardScreenState
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsHeader(List<ProjectModel> projects) {
-    // Only count active projects for these stats? Or all? Let's do all.
-    final totalVentas =
-        projects.fold<double>(0, (sum, item) => sum + item.ventaTotal);
-    final totalCostos =
-        projects.fold<double>(0, (sum, item) => sum + item.costosTotales);
-    final totalProfit =
-        projects.fold<double>(0, (sum, item) => sum + item.profit);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-      child: Row(
-        children: [
-          _buildStatCard('TOTAL VENDIDO', totalVentas, Colors.black87),
-          const SizedBox(width: 24),
-          _buildStatCard('TOTAL GASTADO', totalCostos, Colors.redAccent),
-          const SizedBox(width: 24),
-          _buildStatCard('GANANCIA ESTIMADA', totalProfit, Color(0xFF059669)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String label, double amount, Color color) {
-    final currency = NumberFormat.simpleCurrency();
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                    letterSpacing: 0.5)),
-            const SizedBox(height: 8),
-            Text(currency.format(amount),
-                style: TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-          ],
         ),
       ),
     );
@@ -666,18 +588,20 @@ class _ProjectDashboardScreenState
         case 2: // Status
           cmp = (a.estatus ?? '').compareTo(b.estatus ?? '');
           break;
-        case 3: // Dates (Start)
-          cmp = (a.fechaInicio ?? DateTime.now())
-              .compareTo(b.fechaInicio ?? DateTime.now());
+        case 3: // Fecha Inicio
+          cmp = (a.fechaInicio ?? DateTime(1900))
+              .compareTo(b.fechaInicio ?? DateTime(1900));
           break;
-        case 4: // Venta
-          cmp = a.ventaTotal.compareTo(b.ventaTotal);
+        case 4: // Fecha Fin
+          cmp = (a.fechaFinalizacion ?? DateTime(1900))
+              .compareTo(b.fechaFinalizacion ?? DateTime(1900));
           break;
-        case 5: // Costos
-          cmp = a.costosTotales.compareTo(b.costosTotales);
+        case 5: // Responsable
+          cmp = (a.responsable ?? '').compareTo(b.responsable ?? '');
           break;
-        case 6: // Profit
-          cmp = a.profit.compareTo(b.profit);
+        case 6: // Ultima Evidencia
+          cmp = (a.fechaUltimaEvidencia ?? DateTime(1900))
+              .compareTo(b.fechaUltimaEvidencia ?? DateTime(1900));
           break;
       }
       return _isAscending ? cmp : -cmp;
