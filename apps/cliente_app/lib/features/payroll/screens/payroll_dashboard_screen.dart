@@ -6,6 +6,7 @@ import 'pagos_diarios_screen.dart';
 import 'pagos_soldadores_screen.dart';
 import 'nomina_instalacion_screen.dart';
 import 'nomina_chofer_screen.dart';
+import '../widgets/pagos_soldadores_form.dart';
 
 class PayrollDashboardScreen extends ConsumerWidget {
   const PayrollDashboardScreen({super.key});
@@ -514,7 +515,7 @@ class UnifiedPayrollDialog extends StatelessWidget {
                   ],
                 ),
               ),
-              const Expanded(
+              Expanded(
                 child: TabBarView(
                   children: [
                     Padding(
@@ -522,8 +523,10 @@ class UnifiedPayrollDialog extends StatelessWidget {
                       child: PagoDiarioForm(),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: SoldadorForm(),
+                      padding: const EdgeInsets.all(24.0),
+                      child: PagosSoldadoresForm(
+                        onSaved: () => Navigator.pop(context),
+                      ),
                     ),
                     Padding(
                       padding: EdgeInsets.all(24.0),
