@@ -205,7 +205,7 @@ class InvoiceService {
     // Assuming 'PoleBarns' is the catalog table
     final response = await _supabase
         .from('PoleBarns')
-        .select('id, name, precio_venta')
+        .select('id, name, precio_venta, cost')
         .order('name');
     return (response as List).map((e) => CatalogItemModel.fromJson(e)).toList();
   }

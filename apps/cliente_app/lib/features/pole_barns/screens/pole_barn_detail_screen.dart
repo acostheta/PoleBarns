@@ -184,6 +184,8 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                               const SizedBox(height: 24),
                               _buildSpecificationsCard(
                                   displayTotal, displayLabour),
+                              const SizedBox(height: 24),
+                              _buildServiceDetailsCard(state),
                             ],
                           ),
                         ),
@@ -202,18 +204,6 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                       ),
                     ),
                   ),
-                  // Bottom Section: Service Details
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(32, 8, 32, 48),
-                    sliver: SliverToBoxAdapter(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: _buildServiceDetailsCard(state),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -225,6 +215,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
 
   Widget _buildServiceDetailsCard(PoleBarnFormState state) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -241,7 +232,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('PRECIO DE VENTA SUGERIDO',
+          const Text('RESUMEN DE PRECIOS',
               style: TextStyle(
                   color: AppStyles.primaryOrange,
                   fontWeight: FontWeight.bold,
@@ -249,16 +240,67 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   letterSpacing: 1.2)),
           const SizedBox(height: 24),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildServiceStat(
-                  'Total Materiales', _currencyFormat.format(state.localTotal)),
+              // 1. Protagonist: Configure Price
+              SizedBox(
+                width: 250,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('CONFIGURE PRECIO DE VENTA',
+                        style: TextStyle(
+                            color: AppStyles.primaryOrange,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                            letterSpacing: 0.5)),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _precioVentaController,
+                      style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
+                      decoration: AppStyles.inputDecoration().copyWith(
+                        prefixIcon: const Icon(Icons.sell,
+                            size: 24, color: AppStyles.primaryOrange),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 20),
+                        fillColor: Colors.orange.shade50,
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*')),
+                      ],
+                      onChanged: (_) => _updatePoleBarnLocal(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // 2. Mano de Obra
+              SizedBox(
+                width: 180,
+                child: _buildNumericField(
+                    _labourController, 'Mano de Obra', Icons.work_outline,
+                    isCurrency: true),
+              ),
               _buildStatSeparator(),
-              _buildServiceStat('Mano de Obra',
-                  _currencyFormat.format(state.poleBarn.labour)),
-              const Spacer(),
-              _buildServiceStat('Precio de Venta Sugerido',
-                  _currencyFormat.format(state.poleBarn.precioVenta),
+              // 3. Price Sugerido
+              _buildServiceStat('Precio Sugerido',
+                  _currencyFormat.format(state.localTotalPrice),
                   isPrimary: true),
+              _buildStatSeparator(),
+              // 4. Total Venta Materiales
+              _buildServiceStat('Total Venta Materiales',
+                  _currencyFormat.format(state.localTotal)),
+              _buildStatSeparator(),
+              // 5. Costo Materiales
+              _buildServiceStat(
+                  'Costo Materiales', _currencyFormat.format(state.localCost)),
             ],
           ),
         ],
@@ -294,7 +336,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     return Container(
       height: 32,
       width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 48),
+      margin: const EdgeInsets.symmetric(horizontal: 32),
       color: Colors.grey.shade300,
     );
   }
@@ -431,7 +473,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       decoration: const InputDecoration(
         hintText: 'Nombre del Producto...',
         border: InputBorder.none,
-        contentPadding: EdgeInsets.zero,
+        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         isDense: true,
       ),
       onChanged: (val) => _updatePoleBarnLocal(),
@@ -604,55 +646,36 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   }
 
   Widget _buildMainForm(double total, double labour) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _buildNumericField(
-                  _anchoController, 'Ancho (ft)', Icons.straighten),
-            ),
-            const SizedBox(width: 32),
-            Expanded(
-              child: _buildNumericField(
-                  _largoController, 'Largo (ft)', Icons.straighten),
-            ),
-            const SizedBox(width: 32),
-            Expanded(
-              child: _buildNumericField(
-                  _altoController, 'Alto (ft)', Icons.height),
-            ),
-          ],
+        Expanded(
+          child:
+              _buildNumericField(_anchoController, 'Ancho', Icons.straighten),
         ),
-        const SizedBox(height: 32),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _buildNumericField(
-                  _spacingController, 'Spacing', Icons.space_bar),
-            ),
-            const SizedBox(width: 32),
-            Expanded(
-              child:
-                  _buildNumericField(_sheetController, 'Sheet', Icons.layers),
-            ),
-            const SizedBox(width: 32),
-            Expanded(
-              child: _buildNumericField(_budgetController, 'Presupuesto Máximo',
-                  Icons.account_balance_wallet_outlined),
-            ),
-          ],
+        const SizedBox(width: 24),
+        Expanded(
+          child:
+              _buildNumericField(_largoController, 'Largo', Icons.straighten),
         ),
-        const SizedBox(height: 48),
-        const Divider(),
-        const SizedBox(height: 48),
-        const SizedBox(height: 32),
-        _buildNumericField(
-            _labourController, 'Mano de Obra (Input)', Icons.work_outline,
-            isCurrency: true),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildNumericField(_altoController, 'Alto', Icons.height),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildNumericField(
+              _spacingController, 'Spacing', Icons.space_bar),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildNumericField(_sheetController, 'Sheet', Icons.layers),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildNumericField(_budgetController, 'Presupuesto Máximo',
+              Icons.account_balance_wallet_outlined),
+        ),
       ],
     );
   }
@@ -671,11 +694,13 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           decoration: AppStyles.inputDecoration().copyWith(
             prefixIcon: Icon(icon, size: 20, color: Colors.grey),
           ),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
           validator: (val) {
             if (val == null || val.isEmpty) return 'Requerido';
-            final n = int.tryParse(val);
+            final n = double.tryParse(val);
             if (n == null) return 'Inválido';
             if (n < 0) return 'No negativo';
             return null;
@@ -901,7 +926,7 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Fila:',
+                      const Text('Total:',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 13)),
                       Text(NumberFormat.currency(symbol: r'$').format(rowTotal),
@@ -963,12 +988,14 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
           style: TextStyle(
               fontSize: 14, color: readOnly ? Colors.grey : Colors.black87),
           keyboardType: isNumberField ? TextInputType.number : keyboardType,
-          inputFormatters:
-              isNumberField ? [FilteringTextInputFormatter.digitsOnly] : null,
+          inputFormatters: isNumberField
+              ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
+              : null,
           validator: required
-              ? (v) => (v == null || (isNumberField && int.tryParse(v) == null))
-                  ? 'Inválido'
-                  : null
+              ? (v) =>
+                  (v == null || (isNumberField && double.tryParse(v) == null))
+                      ? 'Inválido'
+                      : null
               : null,
           decoration: AppStyles.inputDecoration().copyWith(
             prefixText: prefixText,

@@ -375,7 +375,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
               ...transactions.map((tx) {
                 return TableRow(
                   children: [
-                    _buildTableCell(DateFormat('yyyy-MM-dd').format(tx.fecha)),
+                    _buildTableCell(DateFormat('MM/dd/yyyy').format(tx.fecha)),
                     _buildTableCell(tx.empleadoName ?? 'Usuario', isBold: true),
                     _buildTipoPill(tx.tipo),
                     _buildTableCell(formatter.format(tx.monto),

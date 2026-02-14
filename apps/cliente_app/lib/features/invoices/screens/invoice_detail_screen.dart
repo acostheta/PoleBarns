@@ -165,20 +165,23 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           final products = productsAsync.value ?? [];
           final payments = paymentsAsync.value ?? [];
 
-          final calculatedTotalVenta =
+          final grandTotalWithTax =
               products.fold<double>(0, (sum, p) => sum + p.totalPrice);
+          final totalPurchaseCost = products.fold<double>(
+              0, (sum, p) => sum + (p.cantidad * p.unitCost));
+          final calculatedProfit = grandTotalWithTax - totalPurchaseCost;
+
           final calculatedTotalPagado = payments
               .where((p) => p.tipo == 'Abono')
               .fold<double>(0, (sum, p) => sum + p.amount);
           final calculatedReembolsado = payments
               .where((p) => p.tipo == 'Reembolso')
               .fold<double>(0, (sum, p) => sum + p.amount);
-          final calculatedSaldo = calculatedTotalVenta -
-              calculatedTotalPagado +
-              calculatedReembolsado;
+          final calculatedSaldo =
+              grandTotalWithTax - calculatedTotalPagado + calculatedReembolsado;
 
           final enrichedInvoice = invoice.copyWith(
-            totalVenta: calculatedTotalVenta,
+            totalVenta: grandTotalWithTax,
             totalPagado: calculatedTotalPagado,
             reembolsado: calculatedReembolsado,
             saldo: calculatedSaldo,
@@ -239,7 +242,12 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     const SizedBox(height: 16),
                     _buildHeader(enrichedInvoice),
                     const SizedBox(height: 24),
-                    _buildFinancialSummary(enrichedInvoice, totalCosts),
+                    _buildFinancialSummary(
+                      invoice: enrichedInvoice,
+                      totalExpenses: totalCosts,
+                      totalProductCost: totalPurchaseCost,
+                      profit: calculatedProfit,
+                    ),
                     const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -369,10 +377,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
               SizedBox(
                   width: 300,
                   child: _buildReadStatusPill('ESTATUS', invoice.status)),
-              SizedBox(
-                  width: 300,
-                  child: _buildReadFieldSimple(
-                      'PAYMENT TERM', invoice.paymentTerm ?? 'Net 30')),
             ],
           ),
           const SizedBox(height: 24),
@@ -500,7 +504,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   Widget _buildReadFieldWithIcon(String label, DateTime? date, IconData icon,
       {String? customText}) {
     final text = customText ??
-        (date != null ? DateFormat('dd MMM, yyyy').format(date) : '-');
+        (date != null ? DateFormat('MMM d, yyyy').format(date) : '-');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -635,7 +639,12 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     );
   }
 
-  Widget _buildFinancialSummary(InvoiceModel invoice, double totalCosts) {
+  Widget _buildFinancialSummary({
+    required InvoiceModel invoice,
+    required double totalExpenses,
+    required double totalProductCost,
+    required double profit,
+  }) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -643,29 +652,54 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildFinTile('TOTAL VENTA',
-                currency.format(invoice.totalVenta), Colors.blue),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFinTile('TOTAL VENTA',
+                    currency.format(invoice.totalVenta), Colors.blue),
+              ),
+              _buildSeparator(),
+              Expanded(
+                child: _buildFinTile('COSTO TOTAL',
+                    currency.format(totalProductCost), Colors.red.shade700),
+              ),
+              _buildSeparator(),
+              Expanded(
+                child: _buildFinTile('PROFIT', currency.format(profit),
+                    profit >= 0 ? const Color(0xFF059669) : Colors.red,
+                    isHero: true),
+              ),
+            ],
           ),
-          _buildSeparator(),
-          Expanded(
-            child: _buildFinTile(
-                'SALDO CLIENTE',
-                currency.format(invoice.saldo),
-                invoice.saldo > 0 ? Colors.red : Colors.green,
-                isHero: true),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Divider(height: 1),
           ),
-          _buildSeparator(),
-          Expanded(
-            child: _buildFinTile(
-                'COSTOS (GASTOS)', currency.format(totalCosts), Colors.orange),
-          ),
-          _buildSeparator(),
-          Expanded(
-            child: _buildFinTile('PAGADO (INGRESOS)',
-                currency.format(invoice.totalPagado), const Color(0xFF059669)),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFinTile(
+                    'SALDO CLIENTE',
+                    currency.format(invoice.saldo),
+                    invoice.saldo > 0 ? Colors.red : Colors.green),
+              ),
+              _buildSeparator(),
+              Expanded(
+                child: _buildFinTile(
+                    'COSTOS (GASTOS)',
+                    currency.format(totalExpenses + invoice.reembolsado),
+                    Colors.orange),
+              ),
+              _buildSeparator(),
+              Expanded(
+                child: _buildFinTile(
+                    'PAGADO (INGRESOS)',
+                    currency.format(invoice.totalPagado),
+                    const Color(0xFF059669)),
+              ),
+            ],
           ),
         ],
       ),

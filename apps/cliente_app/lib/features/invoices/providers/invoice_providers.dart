@@ -6,15 +6,10 @@ final invoiceServiceProvider = Provider((ref) => InvoiceService());
 
 final selectedInvoiceIdProvider = StateProvider<int?>((ref) => null);
 
-// Using StreamProvider for real-time updates
-final invoicesListProvider = StreamProvider<List<InvoiceModel>>((ref) {
-  return ref.watch(invoiceServiceProvider).watchInvoices();
-});
+// Deprecated: use invoicesStreamProvider instead
+final invoicesListProvider = invoicesStreamProvider;
 
-final invoiceDetailProvider =
-    StreamProvider.family<InvoiceModel, int>((ref, id) {
-  return ref.watch(invoiceServiceProvider).watchInvoice(id);
-});
+final invoiceDetailProvider = invoiceStreamProvider;
 
 final relatedProductsProvider =
     StreamProvider.family<List<RelatedProductModel>, int>((ref, invoiceId) {

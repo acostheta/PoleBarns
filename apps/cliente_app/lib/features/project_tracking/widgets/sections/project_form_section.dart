@@ -597,7 +597,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
   Widget _buildReadFieldWithIcon(String label, DateTime? date, IconData icon,
       {String? customText}) {
     final text = customText ??
-        (date != null ? DateFormat('dd MMM, yyyy').format(date) : '-');
+        (date != null ? DateFormat('MMM d, yyyy').format(date) : '-');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -646,7 +646,7 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
 
   Widget _buildDateField(
       String label, DateTime? date, Function(DateTime) onChanged) {
-    final display = date == null ? '-' : DateFormat('dd/MM/yyyy').format(date);
+    final display = date == null ? '-' : DateFormat('MM/dd/yyyy').format(date);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

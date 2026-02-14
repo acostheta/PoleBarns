@@ -660,6 +660,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
         await ref
             .read(invoiceServiceProvider)
             .deleteInvoices(_selectedIds.toList());
+        ref.invalidate(invoicesStreamProvider);
         setState(() {
           _selectedIds.clear();
         });
@@ -702,6 +703,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
     if (confirm == true) {
       try {
         await ref.read(invoiceServiceProvider).deleteInvoice(invoice.id);
+        ref.invalidate(invoicesStreamProvider);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Factura eliminada correctamente')),

@@ -125,7 +125,7 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                                             },
                                             cells: [
                                               DataCell(Text(
-                                                  DateFormat('dd/MM/yyyy')
+                                                  DateFormat('MM/dd/yyyy')
                                                       .format(item.fecha))),
                                               DataCell(Text(empName,
                                                   style: const TextStyle(

@@ -111,8 +111,6 @@ class InvoicePdfGenerator {
                     children: [
                       _detailRow('Invoice #', invoice.id.toString()),
                       _detailRow('Invoice Date', dateFmt.format(invoice.date)),
-                      _detailRow(
-                          'Payment Term', invoice.paymentTerm ?? 'Net 30'),
                     ],
                   ),
                 ],

@@ -120,6 +120,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
           'tax': p.tax,
           'estatus': p.estatus,
           'PoleBarns': {'name': p.poleBarnName ?? 'Item'},
+          'unit_cost': p.unitCost,
           'is_existing': true,
           'related_product_id': p.id,
         };
@@ -154,6 +155,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               _selectedItems.add({
                 'pole_barn_id': item.id,
                 'sale_price': item.salePrice,
+                'unit_cost': item.cost,
                 'qty': 1.0,
                 'tax': 0.0,
                 'estatus': 'Pendiente',
@@ -209,6 +211,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
           'Cantidad': item['qty'] ?? 1.0,
           'Precio por unidad': item['sale_price'] ?? 0.0,
           'Tax': item['tax'] ?? 0.0,
+          'unit_cost': item['unit_cost'] ?? 0.0,
           if (item['is_existing'] == true) 'id': item['related_product_id'],
         };
       }).toList();
@@ -238,7 +241,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Factura guardada')));
         Navigator.pop(context);
-        ref.invalidate(invoicesListProvider);
+        ref.invalidate(invoicesStreamProvider);
       }
     } catch (e) {
       if (mounted) {
@@ -311,7 +314,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('InformaciÃ³n del Proyecto'),
+                  _buildSectionTitle('Información del Proyecto'),
                   const SizedBox(height: 16),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,13 +329,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   const SizedBox(height: 24),
 
                   // Billing Address - Text Field Plain
-                  const Text('DirecciÃ³n de FacturaciÃ³n',
+                  const Text('Dirección de Facturación',
                       style: AppStyles.labelStyle),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _addressController,
                     decoration: AppStyles.inputDecoration(
-                      hintText: 'Ingrese direcciÃ³n',
+                      hintText: 'Ingrese dirección',
                     ).copyWith(
                       prefixIcon: const Icon(Icons.place, color: Colors.grey),
                       suffixIcon: IconButton(
@@ -359,7 +362,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       const SizedBox(width: 24),
                       Expanded(
                           child: _buildDateSelector(
-                              'Fecha estimada de culminaciÃ³n de trabajos',
+                              'Fecha estimada de culminación de trabajos',
                               _endDate,
                               (d) => setState(() => _endDate = d))),
                     ],
@@ -369,7 +372,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                     children: [
                       Expanded(
                           child: _buildDateSelector(
-                              'Fecha de FacturaciÃ³n',
+                              'Fecha de Facturación',
                               _selectedDate,
                               (d) => setState(() => _selectedDate = d))),
                       const SizedBox(width: 24),
@@ -405,7 +408,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       ElevatedButton.icon(
                         onPressed: _addItemsFromCatalog,
                         icon: const Icon(Icons.add),
-                        label: const Text('Agregar del CatÃ¡logo'),
+                        label: const Text('Agregar del Catálogo'),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[800],
                             foregroundColor: Colors.white),
@@ -653,7 +656,7 @@ class _CatalogSelectionDialogState extends State<_CatalogSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Seleccionar Items del CatÃ¡logo'),
+      title: const Text('Seleccionar Items del Catálogo'),
       content: SizedBox(
         width: 400,
         height: 500,

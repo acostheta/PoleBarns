@@ -153,7 +153,7 @@ class _ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = DateFormat('HH:mm').format(message.createdAt);
+    final time = DateFormat('h:mm a').format(message.createdAt);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

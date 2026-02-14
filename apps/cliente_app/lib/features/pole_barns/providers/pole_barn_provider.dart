@@ -28,6 +28,9 @@ class PoleBarnFormState {
   double get localTotal =>
       relatedMaterials.fold(0, (sum, item) => sum + item.calculatedTotal);
 
+  double get localCost =>
+      relatedMaterials.fold(0, (sum, item) => sum + item.calculatedCost);
+
   double get localTotalPrice => localTotal + poleBarn.labour;
 
   PoleBarnFormState copyWith({
@@ -177,10 +180,17 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
   }
 
   void _autoUpdatePrice() {
-    // Note: Now we check if price was manually edited in this session or previously
+    // Note: Now we also update the cost and price
     if (!state.isPriceManuallyEdited) {
       state = state.copyWith(
-        poleBarn: state.poleBarn.copyWith(precioVenta: state.localTotalPrice),
+        poleBarn: state.poleBarn.copyWith(
+          precioVenta: state.localTotalPrice,
+          cost: state.localCost,
+        ),
+      );
+    } else {
+      state = state.copyWith(
+        poleBarn: state.poleBarn.copyWith(cost: state.localCost),
       );
     }
   }

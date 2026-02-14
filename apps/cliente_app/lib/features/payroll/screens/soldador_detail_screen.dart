@@ -77,7 +77,7 @@ class SoldadorDetailScreen extends ConsumerWidget {
                                 Expanded(
                                   child: _buildDetailItem(
                                       'Fecha del Servicio',
-                                      DateFormat('dd MMMM yyyy', 'es')
+                                      DateFormat('MMMM d, yyyy')
                                           .format(currentItem.fecha)),
                                 ),
                                 Expanded(
@@ -347,7 +347,7 @@ class SoldadorDetailScreen extends ConsumerWidget {
                           rows: payments.map((p) {
                             return DataRow(cells: [
                               DataCell(Text(p.createdAt != null
-                                  ? DateFormat('dd/MM/yyyy')
+                                  ? DateFormat('MM/dd/yyyy')
                                       .format(p.createdAt!)
                                   : '-')),
                               DataCell(Text(

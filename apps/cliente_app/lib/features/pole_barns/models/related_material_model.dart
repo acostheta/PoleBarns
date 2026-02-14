@@ -6,8 +6,9 @@ class RelatedMaterial {
   final double qty;
   final double wastePercent;
   final double pricePorUnidad;
+  final double costPorUnidad; // Added cost
   final double? total;
-  final String? materialName; // Added for display convenience
+  final String? materialName;
 
   RelatedMaterial({
     this.id,
@@ -17,6 +18,7 @@ class RelatedMaterial {
     required this.qty,
     required this.wastePercent,
     required this.pricePorUnidad,
+    this.costPorUnidad = 0,
     this.total,
     this.materialName,
   });
@@ -35,6 +37,8 @@ class RelatedMaterial {
                   json['price_per_unit'] as num?)
               ?.toDouble() ??
           0.0,
+      costPorUnidad:
+          (json['raw_materials']?['cost'] as num?)?.toDouble() ?? 0.0,
       total: (json['Total'] ?? json['total'] as num?)?.toDouble(),
       materialName: json['raw_materials']?['name'],
     );
@@ -60,6 +64,7 @@ class RelatedMaterial {
     double? qty,
     double? wastePercent,
     double? pricePorUnidad,
+    double? costPorUnidad,
     double? total,
     String? materialName,
   }) {
@@ -71,6 +76,7 @@ class RelatedMaterial {
       qty: qty ?? this.qty,
       wastePercent: wastePercent ?? this.wastePercent,
       pricePorUnidad: pricePorUnidad ?? this.pricePorUnidad,
+      costPorUnidad: costPorUnidad ?? this.costPorUnidad,
       total: total ?? this.total,
       materialName: materialName ?? this.materialName,
     );
@@ -78,4 +84,7 @@ class RelatedMaterial {
 
   double get calculatedTotal =>
       (qty * pricePorUnidad) * (1 + (wastePercent / 100));
+
+  double get calculatedCost =>
+      (qty * costPorUnidad) * (1 + (wastePercent / 100));
 }

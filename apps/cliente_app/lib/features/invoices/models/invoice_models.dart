@@ -16,7 +16,6 @@ class InvoiceModel {
   final DateTime? startDate;
   final DateTime? endDate;
   final String? notesForInvoice;
-  final String? paymentTerm;
 
   // Joined fields
   final String? clientName;
@@ -41,7 +40,6 @@ class InvoiceModel {
     this.startDate,
     this.endDate,
     this.notesForInvoice,
-    this.paymentTerm = 'Net 30',
     this.clientName,
     this.projectName,
     this.groupName,
@@ -84,7 +82,6 @@ class InvoiceModel {
                   : json['worker_groups']['supervisor_id'])
               : json['responsible']),
       notesForInvoice: json['notes_for_invoice'],
-      paymentTerm: json['payment_term'] ?? 'Net 30',
     );
   }
 
@@ -132,7 +129,6 @@ class InvoiceModel {
       projectName: projectName ?? this.projectName,
       groupName: groupName ?? this.groupName,
       notesForInvoice: notesForInvoice ?? this.notesForInvoice,
-      paymentTerm: paymentTerm ?? this.paymentTerm,
     );
   }
 
@@ -152,7 +148,6 @@ class InvoiceModel {
       'end_date': endDate?.toIso8601String(),
       'project_name': projectName,
       'notes_for_invoice': notesForInvoice,
-      'payment_term': paymentTerm,
     };
   }
 }
@@ -187,9 +182,14 @@ class CatalogItemModel {
   final int id;
   final String name;
   final double salePrice;
+  final double cost;
 
-  CatalogItemModel(
-      {required this.id, required this.name, required this.salePrice});
+  CatalogItemModel({
+    required this.id,
+    required this.name,
+    required this.salePrice,
+    required this.cost,
+  });
 
   factory CatalogItemModel.fromJson(Map<String, dynamic> json) {
     // Assuming mapping from PoleBarns table
@@ -199,6 +199,7 @@ class CatalogItemModel {
       // Let's assume standard 'name' and 'sale_price' or 'price'.
       name: json['name'] ?? 'Item',
       salePrice: (json['precio_venta'] as num?)?.toDouble() ?? 0.0,
+      cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -213,6 +214,7 @@ class RelatedProductModel {
   final double precioPorUnidad;
   final double tax;
   final double totalPrice;
+  final double unitCost;
   final DateTime createdAt;
 
   // Joined fields
@@ -228,6 +230,7 @@ class RelatedProductModel {
     required this.precioPorUnidad,
     required this.tax,
     required this.totalPrice,
+    required this.unitCost,
     required this.createdAt,
     this.poleBarnName,
   });
@@ -243,6 +246,11 @@ class RelatedProductModel {
       precioPorUnidad: (json['Precio por unidad'] as num?)?.toDouble() ?? 0.0,
       tax: (json['Tax'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (json['Total Price'] as num?)?.toDouble() ?? 0.0,
+      unitCost: (json['unit_cost'] as num?)?.toDouble() ??
+          (json['cost'] as num?)?.toDouble() ??
+          (json['Unit Cost'] as num?)?.toDouble() ??
+          (json['PoleBarns']?['cost'] as num?)?.toDouble() ??
+          0.0,
       createdAt: DateTime.parse(json['created_at']),
       poleBarnName: json['pole_barn_name'] ??
           (json['PoleBarns'] != null ? json['PoleBarns']['name'] : null),
@@ -259,6 +267,7 @@ class RelatedProductModel {
     double? precioPorUnidad,
     double? tax,
     double? totalPrice,
+    double? unitCost,
     DateTime? createdAt,
     String? poleBarnName,
   }) {
@@ -272,6 +281,7 @@ class RelatedProductModel {
       precioPorUnidad: precioPorUnidad ?? this.precioPorUnidad,
       tax: tax ?? this.tax,
       totalPrice: totalPrice ?? this.totalPrice,
+      unitCost: unitCost ?? this.unitCost,
       createdAt: createdAt ?? this.createdAt,
       poleBarnName: poleBarnName ?? this.poleBarnName,
     );
@@ -287,6 +297,7 @@ class RelatedProductModel {
       'Cantidad': cantidad,
       'Precio por unidad': precioPorUnidad,
       'Tax': tax,
+      'unit_cost': unitCost,
     };
   }
 }

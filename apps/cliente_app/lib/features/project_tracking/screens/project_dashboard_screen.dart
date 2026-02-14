@@ -248,7 +248,7 @@ class _ProjectDashboardScreenState
                                                       project.fechaInicio !=
                                                               null
                                                           ? DateFormat(
-                                                                  'MM/dd/yy')
+                                                                  'MM/dd/yyyy')
                                                               .format(project
                                                                   .fechaInicio!)
                                                           : '-',
@@ -263,7 +263,7 @@ class _ProjectDashboardScreenState
                                                       project.fechaFinalizacion !=
                                                               null
                                                           ? DateFormat(
-                                                                  'MM/dd/yy')
+                                                                  'MM/dd/yyyy')
                                                               .format(project
                                                                   .fechaFinalizacion!)
                                                           : '-',
@@ -289,7 +289,7 @@ class _ProjectDashboardScreenState
                                                       project.fechaUltimaEvidencia !=
                                                               null
                                                           ? DateFormat(
-                                                                  'MM/dd/yy')
+                                                                  'MM/dd/yyyy')
                                                               .format(project
                                                                   .fechaUltimaEvidencia!)
                                                           : '-',

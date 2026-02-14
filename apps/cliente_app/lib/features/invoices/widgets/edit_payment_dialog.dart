@@ -36,7 +36,8 @@ class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
         TextEditingController(text: widget.payment.amount.toString());
     _noteController = TextEditingController(text: widget.payment.nota ?? '');
     _tipo = widget.payment.tipo;
-    _selectedMethodId = widget.payment.paymentMethodId?.toString();
+    // Handle both String and potentially int IDs from the model
+    _selectedMethodId = widget.payment.metodoDePagoId?.toString();
   }
 
   @override
@@ -211,10 +212,10 @@ class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
 
     try {
       final updateData = {
-        'amount': amount,
-        'tipo': _tipo,
-        'nota': _noteController.text.isEmpty ? null : _noteController.text,
-        'payment_method_id': int.parse(_selectedMethodId!),
+        'Amount': amount,
+        'Tipo': _tipo,
+        'Nota': _noteController.text.isEmpty ? null : _noteController.text,
+        'Metodo de Pago': _selectedMethodId,
       };
 
       await ref

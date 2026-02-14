@@ -76,7 +76,7 @@ class ChoferDetailScreen extends ConsumerWidget {
                                 Expanded(
                                   child: _buildDetailItem(
                                       'Fecha',
-                                      DateFormat('dd/MM/yyyy')
+                                      DateFormat('MM/dd/yyyy')
                                           .format(currentItem.fecha)),
                                 ),
                                 Expanded(
@@ -224,7 +224,7 @@ class ChoferDetailScreen extends ConsumerWidget {
                           rows: payments.map((p) {
                             return DataRow(cells: [
                               DataCell(Text(p.createdAt != null
-                                  ? DateFormat('dd/MM/yyyy')
+                                  ? DateFormat('MM/dd/yyyy')
                                       .format(p.createdAt!)
                                   : '-')),
                               DataCell(Text(

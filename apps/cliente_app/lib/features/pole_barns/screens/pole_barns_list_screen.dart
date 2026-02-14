@@ -143,6 +143,10 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
                                             const DataColumn(
                                                 label: Text('DIMENSIONES')),
                                             DataColumn(
+                                                label: const Text('COSTO'),
+                                                numeric: true,
+                                                onSort: _sort),
+                                            DataColumn(
                                                 label:
                                                     const Text('PRECIO VENTA'),
                                                 numeric: true,
@@ -201,6 +205,19 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
                                                 DataCell(
                                                     Text(
                                                         '${product.ancho}x${product.largo}x${product.alto}'),
+                                                    onTap: () =>
+                                                        _navigateToDetail(
+                                                            product)),
+                                                DataCell(
+                                                    Text(
+                                                        currency.format(
+                                                            product.cost),
+                                                        style: const TextStyle(
+                                                            color: Color(
+                                                                0xFFDC2626),
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600)),
                                                     onTap: () =>
                                                         _navigateToDetail(
                                                             product)),
@@ -466,13 +483,16 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
         case 1:
           cmp = (a.name ?? '').compareTo(b.name ?? '');
           break;
-        case 3:
+        case 3: // Cost
+          cmp = a.cost.compareTo(b.cost);
+          break;
+        case 4: // Price
           cmp = a.precioVenta.compareTo(b.precioVenta);
           break;
-        case 4:
+        case 5: // Budget
           cmp = a.budgetLimit.compareTo(b.budgetLimit);
           break;
-        case 5:
+        case 6: // Status
           cmp = a.alertStatus.compareTo(b.alertStatus);
           break;
       }

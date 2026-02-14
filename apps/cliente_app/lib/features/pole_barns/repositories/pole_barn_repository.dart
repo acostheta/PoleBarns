@@ -34,7 +34,7 @@ class PoleBarnRepository {
   Future<List<RelatedMaterial>> getRelatedMaterials(int poleBarnId) async {
     final response = await _supabase
         .from('RelatedMaterials')
-        .select('*, raw_materials(name)')
+        .select('*, raw_materials(name, cost)')
         .eq('PoleBarns_Ref', poleBarnId);
 
     return (response as List).map((e) => RelatedMaterial.fromJson(e)).toList();
@@ -98,7 +98,7 @@ class PoleBarnRepository {
   Future<List<Map<String, dynamic>>> getRawMaterials() async {
     final response = await _supabase
         .from('raw_materials')
-        .select('id, name, price, measures(name)')
+        .select('id, name, price, cost, measures(name)')
         .order('name');
     return List<Map<String, dynamic>>.from(response);
   }

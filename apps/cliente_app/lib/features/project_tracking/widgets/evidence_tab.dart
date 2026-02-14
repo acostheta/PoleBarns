@@ -148,7 +148,7 @@ class _DateCarouselCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('EEEE, d MMMM yyyy').format(date),
+                        DateFormat('EEEE, MMMM d, yyyy').format(date),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -610,7 +610,7 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
                         color: AppStyles.primaryOrange),
                     const SizedBox(width: 12),
                     Text(
-                      DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                      DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
                       style: const TextStyle(fontSize: 16),
                     ),
                   ],

@@ -5,18 +5,19 @@ class PoleBarn {
   final double alto;
   final double spacing;
   final double sheet;
-  final double total;
+  final double total; // Sales price related
   final double labour;
+  final double cost; // Purchase cost (materials)
   final double precioVenta;
   final double budgetLimit;
   final String alertStatus;
-  final String? name; // Added name field
+  final String? name;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   PoleBarn({
     this.id,
-    this.name, // Added to constructor
+    this.name,
     required this.largo,
     required this.ancho,
     required this.alto,
@@ -24,6 +25,7 @@ class PoleBarn {
     required this.sheet,
     this.total = 0,
     this.labour = 0,
+    this.cost = 0,
     this.precioVenta = 0,
     this.budgetLimit = 0,
     this.alertStatus = 'OK',
@@ -34,7 +36,7 @@ class PoleBarn {
   factory PoleBarn.fromJson(Map<String, dynamic> json) {
     return PoleBarn(
       id: json['id'],
-      name: json['name'], // Added to fromJson
+      name: json['name'],
       largo: (json['Largo'] as num?)?.toDouble() ?? 0.0,
       ancho: (json['Ancho'] as num?)?.toDouble() ?? 0.0,
       alto: (json['Alto'] as num?)?.toDouble() ?? 0.0,
@@ -42,6 +44,7 @@ class PoleBarn {
       sheet: (json['Sheet'] as num?)?.toDouble() ?? 0.0,
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       labour: (json['labour'] as num?)?.toDouble() ?? 0.0,
+      cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
       precioVenta: (json['precio_venta'] as num?)?.toDouble() ?? 0.0,
       budgetLimit: (json['budget_limit'] as num?)?.toDouble() ?? 0.0,
       alertStatus: json['alert_status'] ?? 'OK',
@@ -57,13 +60,14 @@ class PoleBarn {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'name': name, // Added to toJson
+      'name': name,
       'Largo': largo,
       'Ancho': ancho,
       'Alto': alto,
       'Spacing': spacing,
       'Sheet': sheet,
       'labour': labour,
+      'cost': cost,
       'precio_venta': precioVenta,
       'budget_limit': budgetLimit,
     };
@@ -71,7 +75,7 @@ class PoleBarn {
 
   PoleBarn copyWith({
     int? id,
-    String? name, // Added to copyWith
+    String? name,
     double? largo,
     double? ancho,
     double? alto,
@@ -79,6 +83,7 @@ class PoleBarn {
     double? sheet,
     double? total,
     double? labour,
+    double? cost,
     double? precioVenta,
     double? budgetLimit,
     String? alertStatus,
@@ -87,7 +92,7 @@ class PoleBarn {
   }) {
     return PoleBarn(
       id: id ?? this.id,
-      name: name ?? this.name, // Added to copyWith return
+      name: name ?? this.name,
       largo: largo ?? this.largo,
       ancho: ancho ?? this.ancho,
       alto: alto ?? this.alto,
@@ -95,6 +100,7 @@ class PoleBarn {
       sheet: sheet ?? this.sheet,
       total: total ?? this.total,
       labour: labour ?? this.labour,
+      cost: cost ?? this.cost,
       precioVenta: precioVenta ?? this.precioVenta,
       budgetLimit: budgetLimit ?? this.budgetLimit,
       alertStatus: alertStatus ?? this.alertStatus,

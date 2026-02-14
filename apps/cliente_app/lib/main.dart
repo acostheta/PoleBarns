@@ -8,7 +8,7 @@ import 'config/router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting('es', null);
+  await initializeDateFormatting('en', null);
 
   await Supabase.initialize(
     url: 'https://sclcfqcjcjpthodutpyc.supabase.co',

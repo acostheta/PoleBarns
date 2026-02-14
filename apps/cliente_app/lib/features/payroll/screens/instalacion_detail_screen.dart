@@ -70,7 +70,7 @@ class InstalacionDetailScreen extends ConsumerWidget {
                             child: _buildDetailItem(
                               'Fecha Culminación',
                               currentItem.fechaCulminacion != null
-                                  ? DateFormat('dd/MM/yyyy')
+                                  ? DateFormat('MM/dd/yyyy')
                                       .format(currentItem.fechaCulminacion!)
                                   : 'No definida',
                             ),
@@ -238,7 +238,7 @@ class InstalacionDetailScreen extends ConsumerWidget {
                           rows: payments.map((p) {
                             return DataRow(cells: [
                               DataCell(Text(p.createdAt != null
-                                  ? DateFormat('dd/MM/yyyy')
+                                  ? DateFormat('MM/dd/yyyy')
                                       .format(p.createdAt!)
                                   : '-')),
                               DataCell(Text(
