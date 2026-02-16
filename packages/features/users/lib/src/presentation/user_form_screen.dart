@@ -66,8 +66,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
         }
       } else {
         // Update
-        // Note: Password update is usually separate or requires specific auth API usage.
-        // For now we only update profile fields.
+        // Update profile fields
         await ref.read(usersRepositoryProvider).updateUser(
           widget.userId!,
           {
@@ -77,6 +76,16 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             'is_active': _isActive,
           },
         );
+
+        // Update password if provided
+        final newPassword = _passwordController.text.trim();
+        if (newPassword.isNotEmpty) {
+          await ref.read(usersRepositoryProvider).updatePassword(
+                widget.userId!,
+                newPassword,
+              );
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -101,6 +110,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   Widget build(BuildContext context) {
     final isEditing = widget.userId != null;
     final jobPositionsAsync = ref.watch(jobPositionsProvider);
+    final rolesAsync = ref.watch(appRolesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -174,18 +184,26 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                     ],
                   ),
 
-                  if (!isEditing) ...[
-                    const SizedBox(height: 24),
-                    _buildTextField(
-                      controller: _passwordController,
-                      label: 'Contraseña *',
-                      hint: 'Mínimo 6 caracteres',
-                      isPassword: true,
-                      validator: (v) => (v?.trim().length ?? 0) < 6
-                          ? 'Mínimo 6 caracteres (Obligatorio)'
-                          : null,
-                    ),
-                  ],
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    controller: _passwordController,
+                    label: isEditing
+                        ? 'Nueva Contraseña (Opcional)'
+                        : 'Contraseña *',
+                    hint: isEditing
+                        ? 'Dejar vacío para no cambiar'
+                        : 'Mínimo 6 caracteres',
+                    isPassword: true,
+                    validator: (v) {
+                      if (!isEditing && (v?.trim().length ?? 0) < 6) {
+                        return 'Mínimo 6 caracteres (Obligatorio)';
+                      }
+                      if (isEditing && v!.isNotEmpty && v.trim().length < 6) {
+                        return 'Mínimo 6 caracteres si desea cambiarla';
+                      }
+                      return null;
+                    },
+                  ),
 
                   const SizedBox(height: 32),
                   const Divider(),
@@ -199,11 +217,22 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: _buildDropdown(
-                          label: 'Rol del Sistema',
-                          value: _selectedRole,
-                          items: ['Administrador', 'Trabajador'],
-                          onChanged: (v) => setState(() => _selectedRole = v),
+                        child: rolesAsync.when(
+                          data: (roles) => _buildDropdown(
+                            label: 'Rol del Sistema',
+                            value: roles.contains(_selectedRole)
+                                ? _selectedRole
+                                : null,
+                            items: roles,
+                            onChanged: (v) => setState(() => _selectedRole = v),
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (_, __) => _buildDropdown(
+                            label: 'Rol del Sistema',
+                            value: _selectedRole,
+                            items: ['Administrador', 'Trabajador'],
+                            onChanged: (v) => setState(() => _selectedRole = v),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 24),

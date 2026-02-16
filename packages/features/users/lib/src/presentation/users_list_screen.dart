@@ -4,6 +4,7 @@ import 'package:design_system/design_system.dart';
 import '../infrastructure/users_repository.dart';
 import 'user_detail_screen.dart';
 import 'user_form_screen.dart';
+import 'group_form_dialog.dart';
 import 'dart:async';
 
 enum UsersView { workers, groups }
@@ -659,62 +660,16 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   void _showCreateGroupDialog() {
-    final nameController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Crear Nuevo Grupo'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-              labelText: 'Nombre del Grupo', hintText: 'Ej: Equipo A'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isNotEmpty) {
-                await ref
-                    .read(usersRepositoryProvider)
-                    .createWorkerGroup(nameController.text, null);
-                if (mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Crear'),
-          ),
-        ],
-      ),
+      builder: (context) => const GroupFormDialog(),
     );
   }
 
   Future<void> _showEditGroupDialog(Map<String, dynamic> group) async {
-    final nameController = TextEditingController(text: group['name']);
-    await showDialog(
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Grupo'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Nombre del Grupo'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isNotEmpty) {
-                await ref.read(usersRepositoryProvider).updateWorkerGroup(
-                    group['id'], nameController.text, group['supervisor_id']);
-                if (mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+      builder: (context) => GroupFormDialog(group: group),
     );
   }
 

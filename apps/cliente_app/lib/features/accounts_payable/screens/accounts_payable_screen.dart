@@ -5,7 +5,8 @@ import '../../../config/app_styles.dart';
 import '../providers/accounts_payable_provider.dart';
 import '../models/account_payable_model.dart';
 import '../widgets/add_account_dialog.dart';
-import '../widgets/register_payment_dialog.dart';
+
+import '../widgets/account_payable_detail_view.dart';
 
 class AccountsPayableScreen extends ConsumerStatefulWidget {
   const AccountsPayableScreen({super.key});
@@ -185,8 +186,26 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                                 ],
                                 rows: pagedAccounts.map((account) {
                                   return DataRow(
-                                    onSelectChanged: (_) =>
-                                        _showPaymentDialog(context, account),
+                                    onSelectChanged: (_) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => Scaffold(
+                                            appBar: AppBar(
+                                              title: const Text(
+                                                  'Detalle de Cuenta'),
+                                              backgroundColor: Colors.white,
+                                              foregroundColor: Colors.black,
+                                              elevation: 0.5,
+                                            ),
+                                            backgroundColor:
+                                                const Color(0xFFF9FAFB),
+                                            body: AccountPayableDetailView(
+                                                accountId: account.id),
+                                          ),
+                                        ),
+                                      );
+                                    },
                                     cells: [
                                       DataCell(Text(
                                           account.provider?.name ?? 'S/N',
@@ -668,16 +687,5 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
           style: TextStyle(
               color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
-  }
-
-  void _showPaymentDialog(BuildContext context, AccountPayableModel account) {
-    if (account.currentBalance <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Esta cuenta ya está saldada.')));
-      return;
-    }
-    showDialog(
-        context: context,
-        builder: (_) => RegisterPaymentDialog(account: account));
   }
 }

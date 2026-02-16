@@ -13,11 +13,26 @@ class UsersRepository {
         .from('profiles')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
-        .map((data) => List<Map<String, dynamic>>.from(data));
+        .map((data) => data.map((e) => Map<String, dynamic>.from(e)).toList());
   }
 
   Future<void> updateUser(String userId, Map<String, dynamic> updates) async {
     await _supabase.from('profiles').update(updates).eq('id', userId);
+  }
+
+  Future<void> updatePassword(String userId, String newPassword) async {
+    final response = await _supabase.functions.invoke(
+      'admin-user-management',
+      body: {
+        'userId': userId,
+        'password': newPassword,
+      },
+    );
+
+    if (response.status != 200) {
+      throw Exception(
+          response.data['error'] ?? 'Error al actualizar la contraseña');
+    }
   }
 
   Future<String> registerWorker({
@@ -41,7 +56,6 @@ class UsersRepository {
     }
 
     // 2. Update the profile (trigger might have created it, but we want to set role/jobPosition)
-    // We wait a bit to ensure trigger completed if any, or we use upsert
     await _supabase.from('profiles').update({
       'role': role,
       'job_position_id': jobPositionId,
@@ -53,13 +67,12 @@ class UsersRepository {
 
   // --- Job Positions ---
 
-  // Real-time stream for job positions
   Stream<List<Map<String, dynamic>>> getJobPositions() {
     return _supabase
         .from('job_positions')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: true)
-        .map((data) => List<Map<String, dynamic>>.from(data));
+        .map((data) => data.map((e) => Map<String, dynamic>.from(e)).toList());
   }
 
   Future<void> createJobPosition(String name) async {
@@ -80,14 +93,19 @@ class UsersRepository {
         .from('worker_groups')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: true)
-        .map((data) => List<Map<String, dynamic>>.from(data));
+        .map((data) => data.map((e) => Map<String, dynamic>.from(e)).toList());
   }
 
-  Future<void> createWorkerGroup(String name, String? supervisorId) async {
-    await _supabase.from('worker_groups').insert({
-      'name': name,
-      'supervisor_id': supervisorId,
-    });
+  Future<String> createWorkerGroup(String name, String? supervisorId) async {
+    final response = await _supabase
+        .from('worker_groups')
+        .insert({
+          'name': name,
+          'supervisor_id': supervisorId,
+        })
+        .select()
+        .single();
+    return response['id'] as String;
   }
 
   Future<void> updateWorkerGroup(
@@ -108,7 +126,7 @@ class UsersRepository {
         .from('worker_group_members')
         .stream(primaryKey: ['id'])
         .eq('group_id', groupId)
-        .map((data) => List<Map<String, dynamic>>.from(data));
+        .map((data) => data.map((e) => Map<String, dynamic>.from(e)).toList());
   }
 
   Future<void> addGroupMember(String groupId, String profileId) async {
@@ -125,6 +143,15 @@ class UsersRepository {
         .eq('group_id', groupId)
         .eq('profile_id', profileId);
   }
+
+  // --- App Roles ---
+  Stream<List<String>> getAppRoles() {
+    return _supabase
+        .from('app_roles')
+        .stream(primaryKey: ['id'])
+        .order('name', ascending: true)
+        .map((data) => data.map((e) => e['name'] as String).toList());
+  }
 }
 
 final usersRepositoryProvider = Provider<UsersRepository>((ref) {
@@ -135,7 +162,6 @@ final allUsersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   return ref.watch(usersRepositoryProvider).getAllUsers();
 });
 
-// Changed to StreamProvider for real-time updates
 final jobPositionsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   return ref.watch(usersRepositoryProvider).getJobPositions();
 });
@@ -147,4 +173,8 @@ final workerGroupsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
 final groupMembersProvider =
     StreamProvider.family<List<Map<String, dynamic>>, String>((ref, groupId) {
   return ref.watch(usersRepositoryProvider).getGroupMembers(groupId);
+});
+
+final appRolesProvider = StreamProvider<List<String>>((ref) {
+  return ref.watch(usersRepositoryProvider).getAppRoles();
 });

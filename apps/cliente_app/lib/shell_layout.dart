@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:auth/auth.dart';
 import 'providers/navigation_providers.dart';
+import 'features/settings/repositories/rbac_repository.dart';
 
 class ShellLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -21,6 +22,18 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     final profileAsync = user != null
         ? ref.watch(userProfileProvider(user.id))
         : const AsyncValue<Map<String, dynamic>>.loading();
+
+    final accessAsync = ref.watch(currentUserAccessProvider);
+    final accessMap = accessAsync.valueOrNull ?? {};
+
+    // Check admin status from profile directly to show menu early
+    final profile = profileAsync.valueOrNull;
+    final isAdmin = profile?['role'] == 'Administrador';
+
+    bool canView(String key) {
+      if (isAdmin) return true;
+      return accessMap[key] == true;
+    }
 
     // Determine title based on current route
     final String location = GoRouterState.of(context).uri.toString();
@@ -140,54 +153,63 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                                     height: 1),
                               ),
                       ),
-                      _buildMenuItem(
-                        icon: Icons.person_add,
-                        title: 'Clientes',
-                        path: '/clients',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.receipt_long,
-                        title: 'Invoices',
-                        path: '/invoices',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.construction,
-                        title: 'Proyectos',
-                        path: '/projects',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.architecture,
-                        title: 'Productos',
-                        path: '/pole-barns',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.payments,
-                        title: 'Nómina',
-                        path: '/payroll',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.attach_money,
-                        title: 'Cuentas por Pagar',
-                        path: '/accounts-payable',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.group,
-                        title: 'Usuarios',
-                        path: '/users',
-                        location: location,
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.settings,
-                        title: 'Configuración',
-                        path: '/settings',
-                        location: location,
-                      ),
+                      if (canView('clients'))
+                        _buildMenuItem(
+                          icon: Icons.person_add,
+                          title: 'Clientes',
+                          path: '/clients',
+                          location: location,
+                        ),
+                      if (canView('invoices'))
+                        _buildMenuItem(
+                          icon: Icons.receipt_long,
+                          title: 'Invoices',
+                          path: '/invoices',
+                          location: location,
+                        ),
+                      if (canView('projects'))
+                        _buildMenuItem(
+                          icon: Icons.construction,
+                          title: 'Proyectos',
+                          path: '/projects',
+                          location: location,
+                        ),
+                      if (canView('inventory'))
+                        _buildMenuItem(
+                          icon: Icons.architecture,
+                          title: 'Productos', // Mapped to inventory module
+                          path: '/pole-barns',
+                          location: location,
+                        ),
+                      if (canView('payroll'))
+                        _buildMenuItem(
+                          icon: Icons.payments,
+                          title: 'Nómina',
+                          path: '/payroll',
+                          location: location,
+                        ),
+                      if (canView('accounts_payable'))
+                        _buildMenuItem(
+                          icon: Icons.attach_money,
+                          title: 'Cuentas por Pagar',
+                          path: '/accounts-payable',
+                          location: location,
+                        ),
+                      if (canView('users') ||
+                          isAdmin) // Users usually restricted to admin/manager
+                        _buildMenuItem(
+                          icon: Icons.group,
+                          title: 'Usuarios',
+                          path: '/users',
+                          location: location,
+                        ),
+                      if (canView('settings') || isAdmin)
+                        _buildMenuItem(
+                          icon: Icons.settings,
+                          title: 'Configuración',
+                          path: '/settings',
+                          location: location,
+                        ),
                     ],
                   ),
                 ),

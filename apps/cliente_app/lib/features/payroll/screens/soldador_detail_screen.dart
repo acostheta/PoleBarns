@@ -267,7 +267,7 @@ class SoldadorDetailScreen extends ConsumerWidget {
                                           textAlign: TextAlign.right)),
                                 ],
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),

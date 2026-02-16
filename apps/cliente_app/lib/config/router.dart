@@ -15,7 +15,8 @@ import '../features/payroll/screens/pagos_soldadores_screen.dart';
 import '../features/payroll/screens/nomina_instalacion_screen.dart';
 import '../features/payroll/screens/nomina_chofer_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
-import '../features/accounts_payable/screens/accounts_payable_dashboard.dart';
+
+import '../features/accounts_payable/screens/accounts_payable_screen.dart';
 import '../features/pole_barns/screens/pole_barns_dashboard_screen.dart';
 import '../features/invoices/screens/invoices_dashboard_screen.dart';
 import '../features/invoices/screens/create_invoice_screen.dart';
@@ -60,7 +61,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/accounts-payable',
-            builder: (context, state) => const AccountsPayableDashboard(),
+            builder: (context, state) => const AccountsPayableScreen(),
           ),
           GoRoute(
             path: '/projects',
