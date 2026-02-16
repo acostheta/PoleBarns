@@ -8,6 +8,7 @@ import 'lean_to_tab.dart';
 import 'package:users/users.dart';
 import 'package:measures/measures.dart';
 import 'rbac_tab.dart';
+import 'help_tab.dart';
 
 class SettingsScreen extends ConsumerWidget {
   final int initialIndex;
@@ -16,7 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 8,
+      length: 9,
       initialIndex: initialIndex,
       child: Column(
         children: [
@@ -33,6 +34,7 @@ class SettingsScreen extends ConsumerWidget {
                 Tab(text: 'Puestos de Trabajo'),
                 Tab(text: 'Medidas'),
                 Tab(text: 'Permisos'),
+                Tab(text: 'Ayuda'),
               ],
             ),
           ),
@@ -47,6 +49,7 @@ class SettingsScreen extends ConsumerWidget {
                 JobPositionsScreen(),
                 MeasuresScreen(),
                 RbacTab(),
+                HelpTab(),
               ],
             ),
           ),
