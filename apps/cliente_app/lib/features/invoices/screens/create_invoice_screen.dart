@@ -331,6 +331,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   LocationSelectorButton(
                     label: 'Dirección de Facturación',
                     controller: _addressController,
+                    onChanged: () => setState(() {}),
                   ),
                   const SizedBox(height: 32),
                   _buildSectionTitle('Detalles de la Factura'),

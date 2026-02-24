@@ -225,6 +225,7 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                   LocationSelectorButton(
                     label: 'Dirección',
                     controller: _direccionController,
+                    onChanged: () => setState(() {}),
                   ),
                   const SizedBox(height: 24),
 

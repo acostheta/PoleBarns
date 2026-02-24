@@ -5,11 +5,13 @@ import './location_picker.dart';
 class LocationSelectorButton extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final VoidCallback? onChanged;
 
   const LocationSelectorButton({
     super.key,
     required this.label,
     required this.controller,
+    this.onChanged,
   });
 
   @override
@@ -31,6 +33,7 @@ class LocationSelectorButton extends StatelessWidget {
             );
             if (result != null) {
               controller.text = result;
+              if (onChanged != null) onChanged!();
             }
           },
           child: Container(
