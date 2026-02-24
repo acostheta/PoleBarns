@@ -94,22 +94,18 @@ class AccountsPayableNotifier
 
 // Invoice Accounts Provider
 final invoiceAccountsPayableListProvider =
-    FutureProvider.family<List<AccountPayableModel>, int>(
-        (ref, invoiceId) async {
-  final repository = ref.watch(accountsPayableRepositoryProvider);
-  // Subscribe to changes for this invoice's accounts
-  // We can't easily subscribe to filtered list without a new channel per invoice or simple general listener
-  // For now rely on manual refresh/invalidate
-  return repository.getAccountsByInvoice(invoiceId);
+    Provider.family<AsyncValue<List<AccountPayableModel>>, int>(
+        (ref, invoiceId) {
+  final accountsAsync = ref.watch(accountsPayableListProvider);
+  return accountsAsync.whenData(
+      (accounts) => accounts.where((a) => a.invoiceId == invoiceId).toList());
 });
 
 final invoiceAccountsPayableTotalProvider =
-    FutureProvider.family<double, int>((ref, invoiceId) async {
+    Provider.family<AsyncValue<double>, int>((ref, invoiceId) {
   final accounts = ref.watch(invoiceAccountsPayableListProvider(invoiceId));
-  return accounts.maybeWhen(
-    data: (list) =>
-        list.fold<double>(0.0, (sum, item) => sum + item.totalAmount),
-    orElse: () => 0.0,
+  return accounts.whenData(
+    (list) => list.fold<double>(0.0, (sum, item) => sum + item.totalAmount),
   );
 });
 

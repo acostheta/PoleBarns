@@ -228,7 +228,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeaderCard(client),
+            _buildHeaderCard(context, client),
             const SizedBox(height: 24),
             _buildInvoicesTable(client.id),
           ],
@@ -387,7 +387,9 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     );
   }
 
-  Widget _buildHeaderCard(ClientModel client) {
+  Widget _buildHeaderCard(BuildContext context, ClientModel client) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -403,141 +405,276 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 48,
-            backgroundColor: const Color(0xFFF3F4F6),
-            backgroundImage:
-                client.photoUrl != null ? NetworkImage(client.photoUrl!) : null,
-            child: client.photoUrl == null
-                ? Text(
-                    client.firstName.isNotEmpty
-                        ? client.firstName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF9CA3AF)),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  backgroundImage: client.photoUrl != null
+                      ? NetworkImage(client.photoUrl!)
+                      : null,
+                  child: client.photoUrl == null
+                      ? Text(
+                          client.firstName.isNotEmpty
+                              ? client.firstName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF9CA3AF)),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 16),
                 Text(
                   client.nombre,
                   style: const TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF111827),
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 _buildStatusBadge(true), // Assuming active for now
-              ],
-            ),
-          ),
-          const SizedBox(width: 32),
-          // Column 2: Contact Info
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('CONTACTO',
-                    style: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                        letterSpacing: 0.5)),
-                const SizedBox(height: 12),
-                Row(
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 24),
+                // Column 2: Contact Info
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.phone_outlined,
-                        size: 16, color: Colors.grey[400]),
-                    const SizedBox(width: 12),
-                    Text(client.telefono ?? 'S/N',
-                        style: const TextStyle(
-                            color: Color(0xFF4B5563), fontSize: 14)),
+                    const Text('CONTACTO',
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                            letterSpacing: 0.5)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.phone_outlined,
+                            size: 16, color: Colors.grey[400]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(client.telefono ?? 'S/N',
+                              style: const TextStyle(
+                                  color: Color(0xFF4B5563), fontSize: 14)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.email_outlined,
+                            size: 16, color: Colors.grey[400]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(client.email ?? 'S/N',
+                              style: const TextStyle(
+                                  color: Color(0xFF4B5563), fontSize: 14)),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
+                const SizedBox(height: 24),
+                // Column 3: Address and Notes
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.email_outlined,
-                        size: 16, color: Colors.grey[400]),
-                    const SizedBox(width: 12),
-                    Text(client.email ?? 'S/N',
-                        style: const TextStyle(
-                            color: Color(0xFF4B5563), fontSize: 14)),
+                    if (client.direccion != null &&
+                        client.direccion!.isNotEmpty) ...[
+                      const Text('DIRECCIÓN',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5)),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.location_on_outlined,
+                              size: 18, color: Colors.grey[400]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(client.direccion!,
+                                style: const TextStyle(
+                                    color: Color(0xFF4B5563), fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    if (client.notas != null && client.notas!.isNotEmpty) ...[
+                      const Text('NOTAS',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5)),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.notes_outlined,
+                              size: 18, color: Colors.grey[400]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(client.notas!,
+                                style: const TextStyle(
+                                    color: Color(0xFF4B5563), fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 32),
-          // Column 3: Address and Notes
-          Expanded(
-            flex: 4,
-            child: Column(
+            )
+          : Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (client.direccion != null &&
-                    client.direccion!.isNotEmpty) ...[
-                  const Text('DIRECCIÓN',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          letterSpacing: 0.5)),
-                  const SizedBox(height: 12),
-                  Row(
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  backgroundImage: client.photoUrl != null
+                      ? NetworkImage(client.photoUrl!)
+                      : null,
+                  child: client.photoUrl == null
+                      ? Text(
+                          client.firstName.isNotEmpty
+                              ? client.firstName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF9CA3AF)),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 32),
+                Expanded(
+                  flex: 3,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on_outlined,
-                          size: 18, color: Colors.grey[400]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(client.direccion!,
-                            style: const TextStyle(
-                                color: Color(0xFF4B5563), fontSize: 14)),
+                      Text(
+                        client.nombre,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStatusBadge(true), // Assuming active for now
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 32),
+                // Column 2: Contact Info
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('CONTACTO',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined,
+                              size: 16, color: Colors.grey[400]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(client.telefono ?? 'S/N',
+                                style: const TextStyle(
+                                    color: Color(0xFF4B5563), fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.email_outlined,
+                              size: 16, color: Colors.grey[400]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(client.email ?? 'S/N',
+                                style: const TextStyle(
+                                    color: Color(0xFF4B5563), fontSize: 14)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                ],
-                if (client.notas != null && client.notas!.isNotEmpty) ...[
-                  const Text('NOTAS',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          letterSpacing: 0.5)),
-                  const SizedBox(height: 12),
-                  Row(
+                ),
+                const SizedBox(width: 32),
+                // Column 3: Address and Notes
+                Expanded(
+                  flex: 4,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.notes_outlined,
-                          size: 18, color: Colors.grey[400]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(client.notas!,
-                            style: const TextStyle(
-                                color: Color(0xFF4B5563), fontSize: 14)),
-                      ),
+                      if (client.direccion != null &&
+                          client.direccion!.isNotEmpty) ...[
+                        const Text('DIRECCIÓN',
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                                letterSpacing: 0.5)),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.location_on_outlined,
+                                size: 18, color: Colors.grey[400]),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(client.direccion!,
+                                  style: const TextStyle(
+                                      color: Color(0xFF4B5563), fontSize: 14)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      if (client.notas != null && client.notas!.isNotEmpty) ...[
+                        const Text('NOTAS',
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                                letterSpacing: 0.5)),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.notes_outlined,
+                                size: 18, color: Colors.grey[400]),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(client.notas!,
+                                  style: const TextStyle(
+                                      color: Color(0xFF4B5563), fontSize: 14)),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                ],
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -596,6 +733,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
   Widget _buildEditMode() {
     final isNew = widget.clientId == 'new';
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -686,32 +824,55 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                   const Text('Información del Cliente',
                       style: AppStyles.dialogTitleStyle),
                   const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField('Nombre *', _nombreController,
-                            required: true),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: _buildTextField(
-                            'Apellido *', _apellidoController,
-                            required: true),
-                      ),
-                    ],
-                  ),
+                  isMobile
+                      ? Column(
+                          children: [
+                            _buildTextField('Nombre *', _nombreController,
+                                required: true),
+                            const SizedBox(height: 24),
+                            _buildTextField('Apellido *', _apellidoController,
+                                required: true),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                  'Nombre *', _nombreController,
+                                  required: true),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildTextField(
+                                  'Apellido *', _apellidoController,
+                                  required: true),
+                            ),
+                          ],
+                        ),
                   const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildTextField('Teléfono', _phoneController,
-                              keyboardType: TextInputType.phone)),
-                      const SizedBox(width: 24),
-                      Expanded(
-                          child: _buildTextField('Email', _emailController,
-                              keyboardType: TextInputType.emailAddress)),
-                    ],
-                  ),
+                  isMobile
+                      ? Column(
+                          children: [
+                            _buildTextField('Teléfono', _phoneController,
+                                keyboardType: TextInputType.phone),
+                            const SizedBox(height: 24),
+                            _buildTextField('Email', _emailController,
+                                keyboardType: TextInputType.emailAddress),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                                child: _buildTextField(
+                                    'Teléfono', _phoneController,
+                                    keyboardType: TextInputType.phone)),
+                            const SizedBox(width: 24),
+                            Expanded(
+                                child: _buildTextField(
+                                    'Email', _emailController,
+                                    keyboardType: TextInputType.emailAddress)),
+                          ],
+                        ),
                   const SizedBox(height: 24),
                   _buildTextField('Dirección', _addressController),
                   const SizedBox(height: 24),

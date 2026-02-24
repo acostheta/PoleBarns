@@ -89,182 +89,202 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                   ? filtered.sublist(startIndex, endIndex)
                                   : <ClientModel>[];
 
+                              final isMobile = constraints.maxWidth < 800;
+
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Expanded(
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.vertical,
-                                      child: SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            minWidth: constraints.maxWidth - 48,
-                                          ),
-                                          child: DataTable(
-                                            showCheckboxColumn: true,
-                                            sortColumnIndex: _sortColumnIndex,
-                                            sortAscending: _isAscending,
-                                            headingTextStyle: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                              color: Color(0xFF6B7280),
-                                              letterSpacing: 0.5,
-                                            ),
-                                            dataRowMinHeight: 64,
-                                            dataRowMaxHeight: 64,
-                                            horizontalMargin: 24,
-                                            columnSpacing: 24,
-                                            onSelectAll: (value) {
-                                              setState(() {
-                                                if (value == true) {
-                                                  _selectedIds.addAll(
-                                                      pagedClients
-                                                          .map((e) => e.id));
-                                                } else {
-                                                  _selectedIds.clear();
-                                                }
-                                              });
-                                            },
-                                            columns: [
-                                              const DataColumn(
-                                                  label: Text('AVATAR')),
-                                              DataColumn(
-                                                  label: const Text('NOMBRE'),
-                                                  onSort: _sort),
-                                              const DataColumn(
-                                                  label: Text('CONTACTO')),
-                                              DataColumn(
-                                                  label:
-                                                      const Text('DIRECCIÓN'),
-                                                  onSort: _sort),
-                                              const DataColumn(
-                                                  label: Text('ACCIONES',
-                                                      textAlign:
-                                                          TextAlign.end)),
-                                            ],
-                                            rows: pagedClients.map((client) {
-                                              final isSelected = _selectedIds
-                                                  .contains(client.id);
-                                              return DataRow(
-                                                selected: isSelected,
-                                                onSelectChanged: (val) {
-                                                  setState(() {
-                                                    if (val == true) {
-                                                      _selectedIds
-                                                          .add(client.id);
-                                                    } else {
-                                                      _selectedIds
-                                                          .remove(client.id);
-                                                    }
-                                                  });
-                                                },
-                                                cells: [
-                                                  DataCell(
-                                                    CircleAvatar(
-                                                      radius: 18,
-                                                      backgroundColor:
-                                                          const Color(
-                                                              0xFFF3F4F6),
-                                                      backgroundImage: client
-                                                                  .photoUrl !=
-                                                              null
-                                                          ? NetworkImage(
-                                                              client.photoUrl!)
-                                                          : null,
-                                                      child: client.photoUrl ==
-                                                              null
-                                                          ? Text(
-                                                              client.firstName
-                                                                      .isNotEmpty
-                                                                  ? client
-                                                                      .firstName[
-                                                                          0]
-                                                                      .toUpperCase()
-                                                                  : '?',
-                                                              style: const TextStyle(
-                                                                  color: Color(
-                                                                      0xFF6B7280),
-                                                                  fontSize: 12,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold),
-                                                            )
-                                                          : null,
-                                                    ),
+                                    child: isMobile
+                                        ? _buildMobileList(
+                                            pagedClients, repository)
+                                        : SingleChildScrollView(
+                                            scrollDirection: Axis.vertical,
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              child: ConstrainedBox(
+                                                constraints: BoxConstraints(
+                                                  minWidth:
+                                                      constraints.maxWidth - 48,
+                                                ),
+                                                child: DataTable(
+                                                  showCheckboxColumn: true,
+                                                  sortColumnIndex:
+                                                      _sortColumnIndex,
+                                                  sortAscending: _isAscending,
+                                                  headingTextStyle:
+                                                      const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Color(0xFF6B7280),
+                                                    letterSpacing: 0.5,
                                                   ),
-                                                  DataCell(
-                                                    Text(
-                                                      client.nombre,
-                                                      style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Color(
-                                                              0xFF111827)),
-                                                    ),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            client.id),
-                                                  ),
-                                                  DataCell(
-                                                    Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        if (client.email !=
-                                                            null)
-                                                          Text(
-                                                            client.email!,
-                                                            style: const TextStyle(
-                                                                fontSize: 12,
-                                                                color: Color(
-                                                                    0xFF4B5563)),
+                                                  dataRowMinHeight: 64,
+                                                  dataRowMaxHeight: 64,
+                                                  horizontalMargin: 24,
+                                                  columnSpacing: 24,
+                                                  onSelectAll: (value) {
+                                                    setState(() {
+                                                      if (value == true) {
+                                                        _selectedIds.addAll(
+                                                            pagedClients.map(
+                                                                (e) => e.id));
+                                                      } else {
+                                                        _selectedIds.clear();
+                                                      }
+                                                    });
+                                                  },
+                                                  columns: [
+                                                    const DataColumn(
+                                                        label: Text('AVATAR')),
+                                                    DataColumn(
+                                                        label: const Text(
+                                                            'NOMBRE'),
+                                                        onSort: _sort),
+                                                    const DataColumn(
+                                                        label:
+                                                            Text('CONTACTO')),
+                                                    DataColumn(
+                                                        label: const Text(
+                                                            'DIRECCIÓN'),
+                                                        onSort: _sort),
+                                                    const DataColumn(
+                                                        label: Text('ACCIONES',
+                                                            textAlign:
+                                                                TextAlign.end)),
+                                                  ],
+                                                  rows: pagedClients
+                                                      .map((client) {
+                                                    final isSelected =
+                                                        _selectedIds.contains(
+                                                            client.id);
+                                                    return DataRow(
+                                                      selected: isSelected,
+                                                      onSelectChanged: (val) {
+                                                        setState(() {
+                                                          if (val == true) {
+                                                            _selectedIds
+                                                                .add(client.id);
+                                                          } else {
+                                                            _selectedIds.remove(
+                                                                client.id);
+                                                          }
+                                                        });
+                                                      },
+                                                      cells: [
+                                                        DataCell(
+                                                          CircleAvatar(
+                                                            radius: 18,
+                                                            backgroundColor:
+                                                                const Color(
+                                                                    0xFFF3F4F6),
+                                                            backgroundImage: client
+                                                                        .photoUrl !=
+                                                                    null
+                                                                ? NetworkImage(
+                                                                    client
+                                                                        .photoUrl!)
+                                                                : null,
+                                                            child:
+                                                                client.photoUrl ==
+                                                                        null
+                                                                    ? Text(
+                                                                        client.firstName.isNotEmpty
+                                                                            ? client.firstName[0].toUpperCase()
+                                                                            : '?',
+                                                                        style: const TextStyle(
+                                                                            color: Color(
+                                                                                0xFF6B7280),
+                                                                            fontSize:
+                                                                                12,
+                                                                            fontWeight:
+                                                                                FontWeight.bold),
+                                                                      )
+                                                                    : null,
                                                           ),
-                                                        if (client.telefono !=
-                                                            null)
+                                                        ),
+                                                        DataCell(
                                                           Text(
-                                                            client.telefono!,
+                                                            client.nombre,
                                                             style: const TextStyle(
-                                                                fontSize: 11,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
                                                                 color: Color(
-                                                                    0xFF9CA3AF)),
+                                                                    0xFF111827)),
                                                           ),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  client.id),
+                                                        ),
+                                                        DataCell(
+                                                          Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              if (client
+                                                                      .email !=
+                                                                  null)
+                                                                Text(
+                                                                  client.email!,
+                                                                  style: const TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color: Color(
+                                                                          0xFF4B5563)),
+                                                                ),
+                                                              if (client
+                                                                      .telefono !=
+                                                                  null)
+                                                                Text(
+                                                                  client
+                                                                      .telefono!,
+                                                                  style: const TextStyle(
+                                                                      fontSize:
+                                                                          11,
+                                                                      color: Color(
+                                                                          0xFF9CA3AF)),
+                                                                ),
+                                                            ],
+                                                          ),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  client.id),
+                                                        ),
+                                                        DataCell(
+                                                          Text(
+                                                            client.direccion ??
+                                                                '-',
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  client.id),
+                                                        ),
+                                                        DataCell(
+                                                          Align(
+                                                            alignment: Alignment
+                                                                .centerRight,
+                                                            child:
+                                                                _buildActionMenu(
+                                                                    client,
+                                                                    repository),
+                                                          ),
+                                                        ),
                                                       ],
-                                                    ),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            client.id),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      client.direccion ?? '-',
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            client.id),
-                                                  ),
-                                                  DataCell(
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerRight,
-                                                      child: _buildActionMenu(
-                                                          client, repository),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            }).toList(),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
                                   ),
                                   _buildPaginationFooter(startIndex, endIndex,
                                       totalItems, totalPages),
@@ -287,93 +307,174 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
 
   Widget _buildToolbar(
       BuildContext context, List<ClientModel> clients, dynamic repository) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     if (_selectedIds.isNotEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        height: 56,
+        height: isMobile ? null : 56,
         decoration: BoxDecoration(
           color: AppStyles.primaryOrange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border:
               Border.all(color: AppStyles.primaryOrange.withValues(alpha: 0.3)),
         ),
-        child: Row(
-          children: [
-            Text(
-              '${_selectedIds.length} seleccionados',
-              style: TextStyle(
-                color: AppStyles.primaryOrange,
-                fontWeight: FontWeight.bold,
+        child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_selectedIds.length} seleccionados',
+                        style: const TextStyle(
+                          color: AppStyles.primaryOrange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => setState(() => _selectedIds.clear()),
+                        icon: const Icon(Icons.close,
+                            size: 20, color: AppStyles.primaryOrange),
+                        label: const Text('Cancelar',
+                            style: TextStyle(color: AppStyles.primaryOrange)),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _deleteSelectedClients(repository),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.white),
+                    label: const Text('Eliminar',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Text(
+                    '${_selectedIds.length} seleccionados',
+                    style: const TextStyle(
+                      color: AppStyles.primaryOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _selectedIds.clear()),
+                    icon: const Icon(Icons.close,
+                        size: 20, color: AppStyles.primaryOrange),
+                    label: const Text('Cancelar',
+                        style: TextStyle(color: AppStyles.primaryOrange)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => _deleteSelectedClients(repository),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.white),
+                    label: const Text('Eliminar',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () => setState(() => _selectedIds.clear()),
-              icon: Icon(Icons.close, size: 20, color: AppStyles.primaryOrange),
-              label: Text('Cancelar',
-                  style: TextStyle(color: AppStyles.primaryOrange)),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: () => _deleteSelectedClients(repository),
-              icon: const Icon(Icons.delete_outline,
-                  size: 20, color: Colors.white),
-              label:
-                  const Text('Eliminar', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ],
-        ),
       );
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          // Search
-          Expanded(
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar cliente por nombre, email o teléfono...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Search
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar cliente...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                      prefixIcon: Icon(Icons.search,
+                          color: Colors.grey.shade400, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
+                const SizedBox(height: 16),
+                // New Client Button
+                ElevatedButton.icon(
+                  onPressed: () => context.go('/clients/new'),
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nuevo Cliente',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                // Search
+                Expanded(
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Buscar cliente por nombre, email o teléfono...',
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 13),
+                        prefixIcon: Icon(Icons.search,
+                            color: Colors.grey.shade400, size: 20),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-          // New Client Button
-          ElevatedButton.icon(
-            onPressed: () => context.go('/clients/new'),
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('Nuevo Cliente',
-                style: TextStyle(color: Colors.white)),
-            style: AppStyles.primaryButtonStyle,
-          ),
-        ],
-      ),
+                // New Client Button
+                ElevatedButton.icon(
+                  onPressed: () => context.go('/clients/new'),
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nuevo Cliente',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
+            ),
     );
   }
 
@@ -567,6 +668,133 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMobileList(List<ClientModel> pagedClients, dynamic repository) {
+    if (pagedClients.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No se encontraron clientes.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: pagedClients.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final client = pagedClients[index];
+        final isSelected = _selectedIds.contains(client.id);
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: isSelected ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+                color:
+                    isSelected ? AppStyles.primaryOrange : Colors.grey.shade200,
+                width: isSelected ? 2 : 1),
+          ),
+          child: InkWell(
+            onTap: () {
+              if (_selectedIds.isNotEmpty) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedIds.remove(client.id);
+                  } else {
+                    _selectedIds.add(client.id);
+                  }
+                });
+              } else {
+                _navigateToDetail(client.id);
+              }
+            },
+            onLongPress: () {
+              setState(() {
+                if (!isSelected) _selectedIds.add(client.id);
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFFF3F4F6),
+                        backgroundImage: client.photoUrl != null
+                            ? NetworkImage(client.photoUrl!)
+                            : null,
+                        child: client.photoUrl == null
+                            ? Text(
+                                client.firstName.isNotEmpty
+                                    ? client.firstName[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(client.nombre,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF111827))),
+                            if (client.email != null) ...[
+                              const SizedBox(height: 2),
+                              Text(client.email!,
+                                  style: const TextStyle(
+                                      fontSize: 13, color: Color(0xFF4B5563))),
+                            ],
+                            if (client.telefono != null) ...[
+                              const SizedBox(height: 2),
+                              Text(client.telefono!,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Color(0xFF9CA3AF))),
+                            ],
+                          ],
+                        ),
+                      ),
+                      _buildActionMenu(client, repository),
+                    ],
+                  ),
+                  if (client.direccion != null &&
+                      client.direccion!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                            child: Text(client.direccion!,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Color(0xFF4B5563)))),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

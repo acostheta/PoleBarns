@@ -80,186 +80,214 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
                                 ? filtered.sublist(startIndex, endIndex)
                                 : <PoleBarn>[];
 
+                            final isMobile = constraints.maxWidth < 800;
+
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.vertical,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minWidth: constraints.maxWidth - 48,
-                                        ),
-                                        child: DataTable(
-                                          sortColumnIndex: _sortColumnIndex,
-                                          sortAscending: _isAscending,
-                                          showCheckboxColumn: false,
-                                          headingTextStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: Color(0xFF6B7280),
-                                            letterSpacing: 0.5,
-                                          ),
-                                          dataRowMinHeight: 64,
-                                          dataRowMaxHeight: 64,
-                                          horizontalMargin: 24,
-                                          columnSpacing: 24,
-                                          columns: [
-                                            DataColumn(
-                                              label: Checkbox(
-                                                value: pagedItems.isNotEmpty &&
-                                                    pagedItems.every((item) =>
-                                                        _selectedIds
-                                                            .contains(item.id)),
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    if (val == true) {
-                                                      for (var item
-                                                          in pagedItems) {
-                                                        if (item.id != null) {
-                                                          _selectedIds
-                                                              .add(item.id!);
-                                                        }
-                                                      }
-                                                    } else {
-                                                      for (var item
-                                                          in pagedItems) {
-                                                        _selectedIds
-                                                            .remove(item.id);
-                                                      }
-                                                    }
-                                                  });
-                                                },
+                                  child: isMobile
+                                      ? _buildMobileList(pagedItems, currency)
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.vertical,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                minWidth:
+                                                    constraints.maxWidth - 48,
+                                              ),
+                                              child: DataTable(
+                                                sortColumnIndex:
+                                                    _sortColumnIndex,
+                                                sortAscending: _isAscending,
+                                                showCheckboxColumn: false,
+                                                headingTextStyle:
+                                                    const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Color(0xFF6B7280),
+                                                  letterSpacing: 0.5,
+                                                ),
+                                                dataRowMinHeight: 64,
+                                                dataRowMaxHeight: 64,
+                                                horizontalMargin: 24,
+                                                columnSpacing: 24,
+                                                columns: [
+                                                  DataColumn(
+                                                    label: Checkbox(
+                                                      value: pagedItems
+                                                              .isNotEmpty &&
+                                                          pagedItems.every((item) =>
+                                                              _selectedIds
+                                                                  .contains(
+                                                                      item.id)),
+                                                      onChanged: (val) {
+                                                        setState(() {
+                                                          if (val == true) {
+                                                            for (var item
+                                                                in pagedItems) {
+                                                              if (item.id !=
+                                                                  null) {
+                                                                _selectedIds
+                                                                    .add(item
+                                                                        .id!);
+                                                              }
+                                                            }
+                                                          } else {
+                                                            for (var item
+                                                                in pagedItems) {
+                                                              _selectedIds
+                                                                  .remove(
+                                                                      item.id);
+                                                            }
+                                                          }
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('ID (#)'),
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('NOMBRE'),
+                                                      onSort: _sort),
+                                                  const DataColumn(
+                                                      label:
+                                                          Text('DIMENSIONES')),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('COSTO'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label: const Text(
+                                                          'PRECIO VENTA'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label: const Text(
+                                                          'PRESUPUESTO'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('ESTADO'),
+                                                      onSort: _sort),
+                                                  const DataColumn(
+                                                      label: Text('ACCIONES')),
+                                                ],
+                                                rows: pagedItems.map((product) {
+                                                  final isSelected =
+                                                      _selectedIds
+                                                          .contains(product.id);
+                                                  return DataRow(
+                                                    selected: isSelected,
+                                                    cells: [
+                                                      DataCell(
+                                                        Checkbox(
+                                                          value: isSelected,
+                                                          onChanged: (val) {
+                                                            setState(() {
+                                                              if (val == true) {
+                                                                _selectedIds
+                                                                    .add(product
+                                                                        .id!);
+                                                              } else {
+                                                                _selectedIds
+                                                                    .remove(
+                                                                        product
+                                                                            .id);
+                                                              }
+                                                            });
+                                                          },
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                          Text('#${product.id}',
+                                                              style: const TextStyle(
+                                                                  color: Color(
+                                                                      0xFF4B5563))),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          Text(
+                                                              product.name ??
+                                                                  'S/N',
+                                                              style: const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: Color(
+                                                                      0xFF111827))),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          Text(
+                                                              '${product.ancho}x${product.largo}x${product.alto}'),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          Text(
+                                                              currency.format(
+                                                                  product.cost),
+                                                              style: const TextStyle(
+                                                                  color: Color(
+                                                                      0xFFDC2626),
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600)),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          Text(
+                                                              currency.format(
+                                                                  product
+                                                                      .precioVenta),
+                                                              style: const TextStyle(
+                                                                  color: Color(
+                                                                      0xFF059669),
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600)),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          Text(currency.format(
+                                                              product
+                                                                  .budgetLimit)),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                          _buildStatusBadge(
+                                                              product),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  product)),
+                                                      DataCell(
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child:
+                                                              _buildActionMenu(
+                                                                  product),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                }).toList(),
                                               ),
                                             ),
-                                            DataColumn(
-                                                label: const Text('ID (#)'),
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('NOMBRE'),
-                                                onSort: _sort),
-                                            const DataColumn(
-                                                label: Text('DIMENSIONES')),
-                                            DataColumn(
-                                                label: const Text('COSTO'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label:
-                                                    const Text('PRECIO VENTA'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label:
-                                                    const Text('PRESUPUESTO'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('ESTADO'),
-                                                onSort: _sort),
-                                            const DataColumn(
-                                                label: Text('ACCIONES')),
-                                          ],
-                                          rows: pagedItems.map((product) {
-                                            final isSelected = _selectedIds
-                                                .contains(product.id);
-                                            return DataRow(
-                                              selected: isSelected,
-                                              cells: [
-                                                DataCell(
-                                                  Checkbox(
-                                                    value: isSelected,
-                                                    onChanged: (val) {
-                                                      setState(() {
-                                                        if (val == true) {
-                                                          _selectedIds
-                                                              .add(product.id!);
-                                                        } else {
-                                                          _selectedIds.remove(
-                                                              product.id);
-                                                        }
-                                                      });
-                                                    },
-                                                  ),
-                                                ),
-                                                DataCell(
-                                                    Text('#${product.id}',
-                                                        style: const TextStyle(
-                                                            color: Color(
-                                                                0xFF4B5563))),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    Text(product.name ?? 'S/N',
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Color(
-                                                                0xFF111827))),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    Text(
-                                                        '${product.ancho}x${product.largo}x${product.alto}'),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    Text(
-                                                        currency.format(
-                                                            product.cost),
-                                                        style: const TextStyle(
-                                                            color: Color(
-                                                                0xFFDC2626),
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600)),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    Text(
-                                                        currency.format(product
-                                                            .precioVenta),
-                                                        style: const TextStyle(
-                                                            color: Color(
-                                                                0xFF059669),
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600)),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    Text(currency.format(
-                                                        product.budgetLimit)),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                    _buildStatusBadge(product),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            product)),
-                                                DataCell(
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerRight,
-                                                    child: _buildActionMenu(
-                                                        product),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
                                 ),
                                 _buildPaginationFooter(startIndex, endIndex,
                                     totalItems, totalPages),
@@ -283,78 +311,156 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
   }
 
   Widget _buildToolbar(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     if (_selectedIds.isNotEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        height: 56,
+        height: isMobile ? null : 56,
         decoration: BoxDecoration(
           color: AppStyles.primaryOrange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border:
               Border.all(color: AppStyles.primaryOrange.withValues(alpha: 0.3)),
         ),
-        child: Row(
-          children: [
-            Text(
-              '${_selectedIds.length} seleccionados',
-              style: TextStyle(
-                color: AppStyles.primaryOrange,
-                fontWeight: FontWeight.bold,
+        child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_selectedIds.length} seleccionados',
+                        style: const TextStyle(
+                          color: AppStyles.primaryOrange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => setState(() => _selectedIds.clear()),
+                        icon: const Icon(Icons.close,
+                            size: 20, color: AppStyles.primaryOrange),
+                        label: const Text('Cancelar',
+                            style: TextStyle(color: AppStyles.primaryOrange)),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _deleteSelected,
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.white),
+                    label: const Text('Eliminar Todo',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Text(
+                    '${_selectedIds.length} seleccionados',
+                    style: const TextStyle(
+                      color: AppStyles.primaryOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _selectedIds.clear()),
+                    icon: const Icon(Icons.close,
+                        size: 20, color: AppStyles.primaryOrange),
+                    label: const Text('Cancelar',
+                        style: TextStyle(color: AppStyles.primaryOrange)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: _deleteSelected,
+                  ),
+                ],
               ),
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () => setState(() => _selectedIds.clear()),
-              icon: Icon(Icons.close, size: 20, color: AppStyles.primaryOrange),
-              label: Text('Cancelar',
-                  style: TextStyle(color: AppStyles.primaryOrange)),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: _deleteSelected,
-            ),
-          ],
-        ),
       );
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar por nombre o dimensiones...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por nombre o dimensiones...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                      prefixIcon: Icon(Icons.search,
+                          color: Colors.grey.shade400, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _navigateToDetail(null),
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nuevo Producto',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      decoration: InputDecoration(
+                        hintText: 'Buscar por nombre o dimensiones...',
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 13),
+                        prefixIcon: Icon(Icons.search,
+                            color: Colors.grey.shade400, size: 20),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _navigateToDetail(null),
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nuevo Producto',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: () => _navigateToDetail(null),
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('Nuevo Producto',
-                style: TextStyle(color: Colors.white)),
-            style: AppStyles.primaryButtonStyle,
-          ),
-        ],
-      ),
     );
   }
 
@@ -548,7 +654,7 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
       child: Row(
         children: [
           Text(
-            'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems resultados',
+            'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems',
             style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
           ),
           const Spacer(),
@@ -557,7 +663,7 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
                 _currentPage > 0 ? () => setState(() => _currentPage--) : null,
             icon: const Icon(Icons.chevron_left),
           ),
-          Text('Página ${_currentPage + 1} de $totalPages',
+          Text('${_currentPage + 1}/$totalPages',
               style: const TextStyle(fontSize: 13)),
           IconButton(
             onPressed: _currentPage < totalPages - 1
@@ -567,6 +673,142 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMobileList(List<PoleBarn> pagedItems, NumberFormat currency) {
+    if (pagedItems.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No se encontraron productos.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: pagedItems.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final product = pagedItems[index];
+        final isSelected = _selectedIds.contains(product.id);
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: isSelected ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+                color:
+                    isSelected ? AppStyles.primaryOrange : Colors.grey.shade200,
+                width: isSelected ? 2 : 1),
+          ),
+          child: InkWell(
+            onTap: () {
+              if (_selectedIds.isNotEmpty && product.id != null) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedIds.remove(product.id!);
+                  } else {
+                    _selectedIds.add(product.id!);
+                  }
+                });
+              } else {
+                _navigateToDetail(product);
+              }
+            },
+            onLongPress: () {
+              if (product.id != null) {
+                setState(() {
+                  if (!isSelected) _selectedIds.add(product.id!);
+                });
+              }
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('#${product.id}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4B5563))),
+                          const SizedBox(height: 4),
+                          Text(product.name ?? 'S/N',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                      _buildStatusBadge(product),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                      'Dimensión: ${product.ancho}x${product.largo}x${product.alto}',
+                      style: TextStyle(fontSize: 13, color: Colors.blue[700])),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Costo',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(product.cost),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFDC2626))),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Precio Venta',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(product.precioVenta),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF059669))),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Presupuesto',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(product.budgetLimit),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87)),
+                        ],
+                      ),
+                      _buildActionMenu(product),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

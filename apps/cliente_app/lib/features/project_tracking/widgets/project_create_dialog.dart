@@ -6,6 +6,7 @@ import '../models/project_models.dart';
 import '../providers/project_providers.dart';
 import 'package:users/users.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../shared/widgets/location_selector_button.dart';
 
 class ProjectCreateDialog extends ConsumerStatefulWidget {
   final String? projectId; // If null, create mode.
@@ -68,6 +69,7 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
       0, (sum, item) => sum + (item['precio_venta'] as num).toDouble());
 
   bool get _isEditing => widget.projectId != null;
+  bool _isMobile = false;
 
   @override
   void initState() {
@@ -184,6 +186,7 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
   @override
   Widget build(BuildContext context) {
     final clientsAsync = ref.watch(clientListProvider);
+    _isMobile = MediaQuery.of(context).size.width < 600;
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -219,239 +222,211 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                   // Form Fields
                   _buildTextField('Nombre', _nameController, required: true),
                   const SizedBox(height: 24),
-                  _buildTextField('Dirección', _direccionController),
+                  LocationSelectorButton(
+                    label: 'Dirección',
+                    controller: _direccionController,
+                  ),
                   const SizedBox(height: 24),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Cliente', style: AppStyles.labelStyle),
-                            const SizedBox(height: 8),
-                            clientsAsync.when(
-                              data: (clients) =>
-                                  DropdownButtonFormField<String>(
-                                value: _selectedClientId,
-                                items: clients
-                                    .map<DropdownMenuItem<String>>((c) =>
-                                        DropdownMenuItem<String>(
-                                            value: c.id,
-                                            child: Text(c.fullName,
-                                                style: const TextStyle(
-                                                    fontSize: 14),
-                                                overflow:
-                                                    TextOverflow.ellipsis)))
-                                    .toList(),
-                                onChanged: (val) =>
-                                    setState(() => _selectedClientId = val),
-                                decoration: AppStyles.inputDecoration(),
-                                validator: (v) =>
-                                    v == null ? 'Requerido' : null,
-                                isExpanded: true,
-                                icon: const Icon(Icons.keyboard_arrow_down),
-                              ),
+                  _buildResponsiveRow(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Cliente', style: AppStyles.labelStyle),
+                        const SizedBox(height: 8),
+                        clientsAsync.when(
+                          data: (clients) => DropdownButtonFormField<String>(
+                            value: _selectedClientId,
+                            items: clients
+                                .map<DropdownMenuItem<String>>((c) =>
+                                    DropdownMenuItem<String>(
+                                        value: c.id,
+                                        child: Text(c.fullName,
+                                            style:
+                                                const TextStyle(fontSize: 14),
+                                            overflow: TextOverflow.ellipsis)))
+                                .toList(),
+                            onChanged: (val) =>
+                                setState(() => _selectedClientId = val),
+                            decoration: AppStyles.inputDecoration(),
+                            validator: (v) => v == null ? 'Requerido' : null,
+                            isExpanded: true,
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Error: $e',
+                              style: const TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Grupo', style: AppStyles.labelStyle),
+                        const SizedBox(height: 8),
+                        ref.watch(workerGroupsProvider).when(
+                              data: (groups) {
+                                final usersAsync = ref.watch(allUsersProvider);
+                                return DropdownButtonFormField<String>(
+                                  value: groups.any((g) =>
+                                          g['name'] ==
+                                          _selectedGroupUsers.join(', '))
+                                      ? _selectedGroupUsers.join(', ')
+                                      : null,
+                                  items:
+                                      groups.map<DropdownMenuItem<String>>((g) {
+                                    final supervisorId =
+                                        g['supervisor_id'] as String?;
+                                    final supervisorName = usersAsync.when(
+                                      data: (users) => users.firstWhere(
+                                        (u) => u['id'] == supervisorId,
+                                        orElse: () => {},
+                                      )['name'] as String?,
+                                      loading: () => '...',
+                                      error: (_, __) => null,
+                                    );
+
+                                    final displayName = supervisorName != null
+                                        ? '${g['name']} (Responsable: $supervisorName)'
+                                        : (g['name'] as String);
+
+                                    return DropdownMenuItem<String>(
+                                      value: g['name'] as String,
+                                      child: Text(displayName,
+                                          style: const TextStyle(fontSize: 14),
+                                          overflow: TextOverflow.ellipsis),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      // Find the supervisor name for this group
+                                      final group = groups
+                                          .firstWhere((g) => g['name'] == val);
+                                      final supervisorId =
+                                          group['supervisor_id'] as String?;
+                                      final users =
+                                          usersAsync.valueOrNull ?? [];
+                                      final supervisor = users.firstWhere(
+                                        (u) => u['id'] == supervisorId,
+                                        orElse: () => {},
+                                      );
+                                      final supervisorName =
+                                          supervisor['name'] as String?;
+
+                                      setState(() {
+                                        _selectedGroupUsers = [val];
+                                        if (supervisorName != null) {
+                                          _selectedResponsable = supervisorName;
+                                        }
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _selectedGroupUsers = [];
+                                      });
+                                    }
+                                  },
+                                  decoration: AppStyles.inputDecoration(),
+                                  isExpanded: true,
+                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                  hint: const Text('Seleccionar Grupo',
+                                      style: TextStyle(fontSize: 14)),
+                                );
+                              },
                               loading: () => const LinearProgressIndicator(),
                               error: (e, _) => Text('Error: $e',
                                   style: const TextStyle(color: Colors.red)),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Grupo', style: AppStyles.labelStyle),
-                            const SizedBox(height: 8),
-                            ref.watch(workerGroupsProvider).when(
-                                  data: (groups) {
-                                    final usersAsync =
-                                        ref.watch(allUsersProvider);
-                                    return DropdownButtonFormField<String>(
-                                      value: groups.any((g) =>
-                                              g['name'] ==
-                                              _selectedGroupUsers.join(', '))
-                                          ? _selectedGroupUsers.join(', ')
-                                          : null,
-                                      items: groups
-                                          .map<DropdownMenuItem<String>>((g) {
-                                        final supervisorId =
-                                            g['supervisor_id'] as String?;
-                                        final supervisorName = usersAsync.when(
-                                          data: (users) => users.firstWhere(
-                                            (u) => u['id'] == supervisorId,
-                                            orElse: () => {},
-                                          )['name'] as String?,
-                                          loading: () => '...',
-                                          error: (_, __) => null,
-                                        );
-
-                                        final displayName = supervisorName !=
-                                                null
-                                            ? '${g['name']} (Responsable: $supervisorName)'
-                                            : (g['name'] as String);
-
-                                        return DropdownMenuItem<String>(
-                                          value: g['name'] as String,
-                                          child: Text(displayName,
-                                              style:
-                                                  const TextStyle(fontSize: 14),
-                                              overflow: TextOverflow.ellipsis),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          // Find the supervisor name for this group
-                                          final group = groups.firstWhere(
-                                              (g) => g['name'] == val);
-                                          final supervisorId =
-                                              group['supervisor_id'] as String?;
-                                          final users =
-                                              usersAsync.valueOrNull ?? [];
-                                          final supervisor = users.firstWhere(
-                                            (u) => u['id'] == supervisorId,
-                                            orElse: () => {},
-                                          );
-                                          final supervisorName =
-                                              supervisor['name'] as String?;
-
-                                          setState(() {
-                                            _selectedGroupUsers = [val];
-                                            if (supervisorName != null) {
-                                              _selectedResponsable =
-                                                  supervisorName;
-                                            }
-                                          });
-                                        } else {
-                                          setState(() {
-                                            _selectedGroupUsers = [];
-                                          });
-                                        }
-                                      },
-                                      decoration: AppStyles.inputDecoration(),
-                                      isExpanded: true,
-                                      icon:
-                                          const Icon(Icons.keyboard_arrow_down),
-                                      hint: const Text('Seleccionar Grupo',
-                                          style: TextStyle(fontSize: 14)),
-                                    );
-                                  },
-                                  loading: () =>
-                                      const LinearProgressIndicator(),
-                                  error: (e, _) => Text('Error: $e',
-                                      style:
-                                          const TextStyle(color: Colors.red)),
-                                ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    _isMobile,
                   ),
                   const SizedBox(height: 24),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Estatus', style: AppStyles.labelStyle),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedStatus,
-                              items: _statusOptions
-                                  .map<DropdownMenuItem<String>>((s) =>
-                                      DropdownMenuItem<String>(
-                                          value: s,
-                                          child: Text(s,
-                                              style: const TextStyle(
-                                                  fontSize: 14))))
-                                  .toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedStatus = val);
-                                }
+                  _buildResponsiveRow(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Estatus', style: AppStyles.labelStyle),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedStatus,
+                          items: _statusOptions
+                              .map<DropdownMenuItem<String>>((s) =>
+                                  DropdownMenuItem<String>(
+                                      value: s,
+                                      child: Text(s,
+                                          style:
+                                              const TextStyle(fontSize: 14))))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedStatus = val);
+                            }
+                          },
+                          decoration: AppStyles.inputDecoration(),
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                        )
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Responsable', style: AppStyles.labelStyle),
+                        const SizedBox(height: 8),
+                        ref.watch(profilesProvider).when(
+                              data: (profiles) {
+                                // Map current name to ID if exists
+                                String? selectedId;
+                                try {
+                                  selectedId = profiles.firstWhere((p) =>
+                                      p['full_name'] ==
+                                      _selectedResponsable)['id'];
+                                } catch (_) {}
+
+                                return DropdownButtonFormField<String>(
+                                  value: selectedId,
+                                  items: profiles
+                                      .map<DropdownMenuItem<String>>((p) =>
+                                          DropdownMenuItem<String>(
+                                              value: p['id'] as String,
+                                              child: Text(
+                                                  (p['full_name'] as String?) ??
+                                                      'Unknown',
+                                                  style: const TextStyle(
+                                                      fontSize: 14),
+                                                  overflow:
+                                                      TextOverflow.ellipsis)))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      final name = profiles.firstWhere((p) =>
+                                              p['id'] == val)['full_name']
+                                          as String?;
+                                      setState(
+                                          () => _selectedResponsable = name);
+                                    }
+                                  },
+                                  decoration: AppStyles.inputDecoration(),
+                                  isExpanded: true,
+                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                );
                               },
-                              decoration: AppStyles.inputDecoration(),
-                              icon: const Icon(Icons.keyboard_arrow_down),
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Responsable',
-                                style: AppStyles.labelStyle),
-                            const SizedBox(height: 8),
-                            ref.watch(profilesProvider).when(
-                                  data: (profiles) {
-                                    // Map current name to ID if exists
-                                    String? selectedId;
-                                    try {
-                                      selectedId = profiles.firstWhere((p) =>
-                                          p['full_name'] ==
-                                          _selectedResponsable)['id'];
-                                    } catch (_) {}
-
-                                    return DropdownButtonFormField<String>(
-                                      value: selectedId,
-                                      items: profiles
-                                          .map<DropdownMenuItem<String>>((p) =>
-                                              DropdownMenuItem<String>(
-                                                  value: p['id'] as String,
-                                                  child: Text(
-                                                      (p['full_name']
-                                                              as String?) ??
-                                                          'Unknown',
-                                                      style: const TextStyle(
-                                                          fontSize: 14),
-                                                      overflow: TextOverflow
-                                                          .ellipsis)))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          final name = profiles.firstWhere(
-                                                  (p) => p['id'] == val)[
-                                              'full_name'] as String?;
-                                          setState(() =>
-                                              _selectedResponsable = name);
-                                        }
-                                      },
-                                      decoration: AppStyles.inputDecoration(),
-                                      isExpanded: true,
-                                      icon:
-                                          const Icon(Icons.keyboard_arrow_down),
-                                    );
-                                  },
-                                  loading: () =>
-                                      const LinearProgressIndicator(),
-                                  error: (e, _) => Text('Error: $e',
-                                      style:
-                                          const TextStyle(color: Colors.red)),
-                                ),
-                          ],
-                        ),
-                      ),
-                    ],
+                              loading: () => const LinearProgressIndicator(),
+                              error: (e, _) => Text('Error: $e',
+                                  style: const TextStyle(color: Colors.red)),
+                            ),
+                      ],
+                    ),
+                    _isMobile,
                   ),
                   const SizedBox(height: 24),
 
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildDateField('Fecha Inicio', _startDate,
-                              (d) => setState(() => _startDate = d))),
-                      const SizedBox(width: 16),
-                      Expanded(
-                          child: _buildDateField('Fecha Fin', _endDate,
-                              (d) => setState(() => _endDate = d))),
-                    ],
+                  _buildResponsiveRow(
+                    _buildDateField('Fecha Inicio', _startDate,
+                        (d) => setState(() => _startDate = d)),
+                    _buildDateField('Fecha Fin', _endDate,
+                        (d) => setState(() => _endDate = d)),
+                    _isMobile,
                   ),
                   const SizedBox(height: 24),
                   _buildTextField('Comentarios', _commentsController,
@@ -678,6 +653,27 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildResponsiveRow(Widget child1, Widget child2, bool isMobile) {
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          child1,
+          const SizedBox(height: 24),
+          child2,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: child1),
+        const SizedBox(width: 16),
+        Expanded(child: child2),
+      ],
     );
   }
 }

@@ -26,7 +26,7 @@ final clientListProvider =
   final supabase = Supabase.instance.client;
   final response = await supabase
       .from('clients')
-      .select('id, first_name, last_name, photo_url')
+      .select('id, first_name, last_name, photo_url, phone, address')
       .order('first_name', ascending: true);
 
   final List<dynamic> data = response as List<dynamic>;

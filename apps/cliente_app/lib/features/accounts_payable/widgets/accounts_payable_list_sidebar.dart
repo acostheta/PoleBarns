@@ -14,6 +14,7 @@ class AccountsPayableListSidebar extends ConsumerWidget {
     final accountsAsync = ref.watch(accountsPayableListProvider);
     final stats = ref.watch(dashboardStatsProvider);
     final currency = NumberFormat.simpleCurrency();
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Container(
       color: Colors.white,
@@ -58,20 +59,22 @@ class AccountsPayableListSidebar extends ConsumerWidget {
                   Icons.receipt_long_outlined,
                   Colors.blue,
                 ),
-                const SizedBox(height: 8),
-                _buildStatCard(
-                  'Total Pagado',
-                  currency.format(stats['totalPaid'] ?? 0),
-                  Icons.check_circle_outline,
-                  Colors.green,
-                ),
-                const SizedBox(height: 8),
-                _buildStatCard(
-                  'Saldo Pendiente',
-                  currency.format(stats['pendingBalance'] ?? 0),
-                  Icons.warning_amber_outlined,
-                  Colors.orange,
-                ),
+                if (!isMobile) ...[
+                  const SizedBox(height: 8),
+                  _buildStatCard(
+                    'Total Pagado',
+                    currency.format(stats['totalPaid'] ?? 0),
+                    Icons.check_circle_outline,
+                    Colors.green,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildStatCard(
+                    'Saldo Pendiente',
+                    currency.format(stats['pendingBalance'] ?? 0),
+                    Icons.warning_amber_outlined,
+                    Colors.orange,
+                  ),
+                ],
               ],
             ),
           ),

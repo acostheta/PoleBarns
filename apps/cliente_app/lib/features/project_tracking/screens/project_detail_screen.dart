@@ -6,6 +6,7 @@ import '../widgets/products_tab.dart';
 import '../widgets/evidence_tab.dart';
 import '../widgets/chat_tab.dart';
 import '../widgets/project_create_dialog.dart';
+import '../../../shared/widgets/location_map_card.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
@@ -110,11 +111,24 @@ class ProjectDetailScreen extends ConsumerWidget {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            ProductsTab(projectId: project.id),
-            EvidenceTab(projectId: project.id),
-            ChatTab(projectId: project.id),
+            if ((project.direccion ?? project.address ?? '').isNotEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: LocationMapCard(
+                    address: project.direccion ?? project.address ?? ''),
+              ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ProductsTab(projectId: project.id),
+                  EvidenceTab(projectId: project.id),
+                  ChatTab(projectId: project.id),
+                ],
+              ),
+            ),
           ],
         ),
       ),

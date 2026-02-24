@@ -51,36 +51,73 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
           // Dashboard Cards
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Row(
-              children: [
-                _buildStatCard(
-                  context,
-                  title: 'TOTAL DEUDA',
-                  amount: stats['totalDebt']!,
-                  color: Colors.black87,
-                  isMoney: true,
-                  icon: Icons.receipt_long_outlined,
-                ),
-                const SizedBox(width: 24),
-                _buildStatCard(
-                  context,
-                  title: 'TOTAL PAGADO',
-                  amount: stats['totalPaid']!,
-                  color: const Color(0xFF059669), // Green
-                  isMoney: true,
-                  icon: Icons.check_circle_outline,
-                ),
-                const SizedBox(width: 24),
-                _buildStatCard(
-                  context,
-                  title: 'SALDO PENDIENTE',
-                  amount: stats['pendingBalance']!,
-                  color: Colors.redAccent,
-                  isMoney: true,
-                  icon: Icons.pending_actions,
-                ),
-              ],
-            ),
+            child: MediaQuery.of(context).size.width < 800
+                ? Column(
+                    children: [
+                      _buildStatCard(
+                        context,
+                        title: 'TOTAL DEUDA',
+                        amount: stats['totalDebt']!,
+                        color: Colors.black87,
+                        isMoney: true,
+                        icon: Icons.receipt_long_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildStatCard(
+                        context,
+                        title: 'TOTAL PAGADO',
+                        amount: stats['totalPaid']!,
+                        color: const Color(0xFF059669),
+                        isMoney: true,
+                        icon: Icons.check_circle_outline,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildStatCard(
+                        context,
+                        title: 'SALDO PENDIENTE',
+                        amount: stats['pendingBalance']!,
+                        color: Colors.redAccent,
+                        isMoney: true,
+                        icon: Icons.pending_actions,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'TOTAL DEUDA',
+                          amount: stats['totalDebt']!,
+                          color: Colors.black87,
+                          isMoney: true,
+                          icon: Icons.receipt_long_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'TOTAL PAGADO',
+                          amount: stats['totalPaid']!,
+                          color: const Color(0xFF059669),
+                          isMoney: true,
+                          icon: Icons.check_circle_outline,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          title: 'SALDO PENDIENTE',
+                          amount: stats['pendingBalance']!,
+                          color: Colors.redAccent,
+                          isMoney: true,
+                          icon: Icons.pending_actions,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
 
           // Toolbar
@@ -131,123 +168,139 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                     final pagedAccounts =
                         processedAccounts.sublist(startIndex, endIndex);
 
+                    final isMobile = MediaQuery.of(context).size.width < 800;
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                  minWidth:
-                                      MediaQuery.of(context).size.width - 48),
-                              child: DataTable(
-                                sortColumnIndex: _sortColumnIndex,
-                                sortAscending: _isAscending,
-                                headingRowColor: WidgetStateProperty.all(
-                                    const Color(0xFFF9FAFB)),
-                                headingTextStyle: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Color(0xFF6B7280),
-                                  letterSpacing: 0.5,
+                          child: isMobile
+                              ? _buildMobileList(pagedAccounts)
+                              : SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                        minWidth:
+                                            MediaQuery.of(context).size.width -
+                                                48),
+                                    child: DataTable(
+                                      sortColumnIndex: _sortColumnIndex,
+                                      sortAscending: _isAscending,
+                                      headingRowColor: WidgetStateProperty.all(
+                                          const Color(0xFFF9FAFB)),
+                                      headingTextStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF6B7280),
+                                        letterSpacing: 0.5,
+                                      ),
+                                      dataRowMinHeight: 64,
+                                      dataRowMaxHeight: 64,
+                                      horizontalMargin: 24,
+                                      columnSpacing: 24,
+                                      columns: [
+                                        DataColumn(
+                                            label: const Text('PROVEEDOR'),
+                                            onSort: _sort),
+                                        const DataColumn(
+                                            label: Text('PROYECTO')),
+                                        DataColumn(
+                                            label: const Text('NRO INVOICE'),
+                                            onSort: _sort),
+                                        DataColumn(
+                                            label: const Text('FECHA'),
+                                            onSort: _sort),
+                                        DataColumn(
+                                            label: const Text('MONTO'),
+                                            numeric: true,
+                                            onSort: _sort),
+                                        DataColumn(
+                                            label: const Text('PAGADO'),
+                                            numeric: true,
+                                            onSort: _sort),
+                                        DataColumn(
+                                            label: const Text('SALDO'),
+                                            numeric: true,
+                                            onSort: _sort),
+                                        DataColumn(
+                                            label: const Text('ESTADO'),
+                                            onSort: _sort),
+                                        const DataColumn(
+                                            label: SizedBox(width: 48)),
+                                      ],
+                                      rows: pagedAccounts.map((account) {
+                                        return DataRow(
+                                          onSelectChanged: (_) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => Scaffold(
+                                                  appBar: AppBar(
+                                                    title: const Text(
+                                                        'Detalle de Cuenta'),
+                                                    backgroundColor:
+                                                        Colors.white,
+                                                    foregroundColor:
+                                                        Colors.black,
+                                                    elevation: 0.5,
+                                                  ),
+                                                  backgroundColor:
+                                                      const Color(0xFFF9FAFB),
+                                                  body:
+                                                      AccountPayableDetailView(
+                                                          accountId:
+                                                              account.id),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          cells: [
+                                            DataCell(Text(
+                                                account.provider?.name ?? 'S/N',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF111827)))),
+                                            DataCell(Text(
+                                                account.projectName ?? '-',
+                                                style: TextStyle(
+                                                    color: Colors.blue.shade700,
+                                                    fontSize: 12))),
+                                            DataCell(Text(
+                                                account.invoiceInternRef ?? '-',
+                                                style: const TextStyle(
+                                                    color: Color(0xFF4B5563)))),
+                                            DataCell(Text(
+                                                DateFormat('MM/dd/yyyy').format(
+                                                    account.invoiceDate),
+                                                style: const TextStyle(
+                                                    color: Color(0xFF4B5563)))),
+                                            DataCell(Text(
+                                                NumberFormat.simpleCurrency()
+                                                    .format(
+                                                        account.totalAmount))),
+                                            DataCell(Text(
+                                                NumberFormat.simpleCurrency()
+                                                    .format(account.totalPaid),
+                                                style: const TextStyle(
+                                                    color: Color(0xFF059669)))),
+                                            DataCell(Text(
+                                                NumberFormat.simpleCurrency()
+                                                    .format(
+                                                        account.currentBalance),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF111827)))),
+                                            DataCell(
+                                                _buildStatusBadge(account)),
+                                            DataCell(const Icon(
+                                                Icons.chevron_right,
+                                                color: Colors.grey)),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
                                 ),
-                                dataRowMinHeight: 64,
-                                dataRowMaxHeight: 64,
-                                horizontalMargin: 24,
-                                columnSpacing: 24,
-                                columns: [
-                                  DataColumn(
-                                      label: const Text('PROVEEDOR'),
-                                      onSort: _sort),
-                                  const DataColumn(label: Text('PROYECTO')),
-                                  DataColumn(
-                                      label: const Text('NRO INVOICE'),
-                                      onSort: _sort),
-                                  DataColumn(
-                                      label: const Text('FECHA'),
-                                      onSort: _sort),
-                                  DataColumn(
-                                      label: const Text('MONTO'),
-                                      numeric: true,
-                                      onSort: _sort),
-                                  DataColumn(
-                                      label: const Text('PAGADO'),
-                                      numeric: true,
-                                      onSort: _sort),
-                                  DataColumn(
-                                      label: const Text('SALDO'),
-                                      numeric: true,
-                                      onSort: _sort),
-                                  DataColumn(
-                                      label: const Text('ESTADO'),
-                                      onSort: _sort),
-                                  const DataColumn(label: SizedBox(width: 48)),
-                                ],
-                                rows: pagedAccounts.map((account) {
-                                  return DataRow(
-                                    onSelectChanged: (_) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => Scaffold(
-                                            appBar: AppBar(
-                                              title: const Text(
-                                                  'Detalle de Cuenta'),
-                                              backgroundColor: Colors.white,
-                                              foregroundColor: Colors.black,
-                                              elevation: 0.5,
-                                            ),
-                                            backgroundColor:
-                                                const Color(0xFFF9FAFB),
-                                            body: AccountPayableDetailView(
-                                                accountId: account.id),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    cells: [
-                                      DataCell(Text(
-                                          account.provider?.name ?? 'S/N',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF111827)))),
-                                      DataCell(Text(account.projectName ?? '-',
-                                          style: TextStyle(
-                                              color: Colors.blue.shade700,
-                                              fontSize: 12))),
-                                      DataCell(Text(
-                                          account.invoiceInternRef ?? '-',
-                                          style: const TextStyle(
-                                              color: Color(0xFF4B5563)))),
-                                      DataCell(Text(
-                                          DateFormat('MM/dd/yyyy')
-                                              .format(account.invoiceDate),
-                                          style: const TextStyle(
-                                              color: Color(0xFF4B5563)))),
-                                      DataCell(Text(
-                                          NumberFormat.simpleCurrency()
-                                              .format(account.totalAmount))),
-                                      DataCell(Text(
-                                          NumberFormat.simpleCurrency()
-                                              .format(account.totalPaid),
-                                          style: const TextStyle(
-                                              color: Color(0xFF059669)))),
-                                      DataCell(Text(
-                                          NumberFormat.simpleCurrency()
-                                              .format(account.currentBalance),
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF111827)))),
-                                      DataCell(_buildStatusBadge(account)),
-                                      DataCell(const Icon(Icons.chevron_right,
-                                          color: Colors.grey)),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
                         ),
                         _buildPaginationFooter(
                             startIndex, endIndex, totalItems, totalPages),
@@ -320,42 +373,91 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
 
   Widget _buildToolbar(
       BuildContext context, List<AccountPayableModel>? accounts) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: AppStyles.inputDecoration(
-                      hintText: 'Buscar por proveedor o referencia...')
-                  .copyWith(
-                prefixIcon:
-                    const Icon(Icons.search, size: 20, color: Colors.grey),
-              ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  decoration: AppStyles.inputDecoration(
+                          hintText: 'Buscar por proveedor o referencia...')
+                      .copyWith(
+                    prefixIcon:
+                        const Icon(Icons.search, size: 20, color: Colors.grey),
+                  ),
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _toolbarButton('Filtrar', Icons.filter_list,
+                          () => _showFilterDialog(accounts)),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _toolbarButton('Exportar', Icons.download_outlined,
+                          () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Función de exportar próximamente')));
+                      }),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => const AddAccountDialog()),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                  label: const Text('Nueva Factura'),
+                  style: AppStyles.primaryButtonStyle.copyWith(
+                    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16)),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: AppStyles.inputDecoration(
+                            hintText: 'Buscar por proveedor o referencia...')
+                        .copyWith(
+                      prefixIcon: const Icon(Icons.search,
+                          size: 20, color: Colors.grey),
+                    ),
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                _toolbarButton('Filtrar', Icons.filter_list,
+                    () => _showFilterDialog(accounts)),
+                const SizedBox(width: 8),
+                _toolbarButton('Exportar', Icons.download_outlined, () {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Función de exportar próximamente')));
+                }),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => const AddAccountDialog()),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                  label: const Text('Nueva Factura'),
+                  style: AppStyles.primaryButtonStyle.copyWith(
+                    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16)),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          _toolbarButton(
-              'Filtrar', Icons.filter_list, () => _showFilterDialog(accounts)),
-          const SizedBox(width: 8),
-          _toolbarButton('Exportar', Icons.download_outlined, () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Función de exportar próximamente')));
-          }),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: () => showDialog(
-                context: context, builder: (_) => const AddAccountDialog()),
-            icon: const Icon(Icons.add, color: Colors.white, size: 18),
-            label: const Text('Nueva Factura'),
-            style: AppStyles.primaryButtonStyle.copyWith(
-              padding: WidgetStateProperty.all(
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16)),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -618,48 +720,46 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
       required Color color,
       bool isMoney = false,
       required IconData icon}) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4))
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 24)),
-            const SizedBox(width: 20),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title,
-                  style: const TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                      letterSpacing: 0.5)),
-              const SizedBox(height: 4),
-              Text(
-                  isMoney
-                      ? NumberFormat.simpleCurrency().format(amount)
-                      : amount.toString(),
-                  style: const TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20)),
-            ]),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 24)),
+          const SizedBox(width: 20),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 4),
+            Text(
+                isMoney
+                    ? NumberFormat.simpleCurrency().format(amount)
+                    : amount.toString(),
+                style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20)),
+          ]),
+        ],
       ),
     );
   }
@@ -686,6 +786,141 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
       child: Text(text,
           style: TextStyle(
               color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildMobileList(List<AccountPayableModel> pagedAccounts) {
+    if (pagedAccounts.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No se encontraron cuentas.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    final currency = NumberFormat.simpleCurrency();
+
+    return ListView.builder(
+      itemCount: pagedAccounts.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final account = pagedAccounts[index];
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Detalle de Cuenta'),
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      elevation: 0.5,
+                    ),
+                    backgroundColor: const Color(0xFFF9FAFB),
+                    body: AccountPayableDetailView(accountId: account.id),
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(account.provider?.name ?? 'S/N',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 4),
+                          Text('Ref: ${account.invoiceInternRef ?? "-"}',
+                              style: const TextStyle(
+                                  fontSize: 13, color: Colors.grey)),
+                        ],
+                      ),
+                      _buildStatusBadge(account),
+                    ],
+                  ),
+                  if (account.projectName != null) ...[
+                    const SizedBox(height: 8),
+                    Text(account.projectName!,
+                        style:
+                            TextStyle(fontSize: 13, color: Colors.blue[700])),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(DateFormat('MM/dd/yyyy').format(account.invoiceDate),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Monto',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(account.totalAmount),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Pagado',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(account.totalPaid),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF059669))),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Saldo',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(account.currentBalance),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: account.currentBalance > 0
+                                      ? const Color(0xFFDC2626)
+                                      : const Color(0xFF111827))),
+                        ],
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

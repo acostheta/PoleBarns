@@ -14,6 +14,7 @@ import '../../accounts_payable/providers/accounts_payable_provider.dart';
 import '../../accounts_payable/widgets/add_account_dialog.dart';
 import '../../accounts_payable/models/account_payable_model.dart';
 import '../../project_tracking/widgets/project_create_dialog.dart';
+import '../../../shared/widgets/location_map_card.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   final int invoiceId;
@@ -41,6 +42,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         ref.watch(invoiceAccountsPayableListProvider(widget.invoiceId));
     final apTotalAsync =
         ref.watch(invoiceAccountsPayableTotalProvider(widget.invoiceId));
+
+    final isMobileAppBar = MediaQuery.of(context).size.width < 800;
 
     // We rely on the clientName already joined in the InvoiceModel
 
@@ -79,44 +82,68 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       saldo: calculatedSaldo,
                     );
                     return Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Create Project Button
                         if (invoice.idProyecto == null)
-                          TextButton.icon(
-                            onPressed: () => _showCreateProjectDialog(
-                                context, enrichedInvoice, products),
-                            icon: const Icon(Icons.business_outlined, size: 18),
-                            label: const Text('Crear Proyecto'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.indigo,
-                              textStyle:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        const SizedBox(width: 8),
-                        TextButton.icon(
-                          onPressed: () => _sendEmail(enrichedInvoice),
-                          icon: const Icon(Icons.email_outlined,
-                              color: Colors.blue, size: 18),
-                          label: const Text('Enviar por Email'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton.icon(
-                          onPressed: () => _generatePDF(enrichedInvoice),
-                          icon: const Icon(Icons.picture_as_pdf_outlined,
-                              color: Colors.red, size: 18),
-                          label: const Text('Imprimir Invoice'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
+                          isMobileAppBar
+                              ? IconButton(
+                                  onPressed: () => _showCreateProjectDialog(
+                                      context, enrichedInvoice, products),
+                                  icon: const Icon(Icons.business_outlined,
+                                      color: Colors.indigo),
+                                  tooltip: 'Crear Proyecto',
+                                )
+                              : TextButton.icon(
+                                  onPressed: () => _showCreateProjectDialog(
+                                      context, enrichedInvoice, products),
+                                  icon: const Icon(Icons.business_outlined,
+                                      size: 18),
+                                  label: const Text('Crear Proyecto'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.indigo,
+                                    textStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                        if (!isMobileAppBar) const SizedBox(width: 8),
+                        isMobileAppBar
+                            ? IconButton(
+                                onPressed: () => _sendEmail(enrichedInvoice),
+                                icon: const Icon(Icons.email_outlined,
+                                    color: Colors.blue),
+                                tooltip: 'Enviar por Email',
+                              )
+                            : TextButton.icon(
+                                onPressed: () => _sendEmail(enrichedInvoice),
+                                icon: const Icon(Icons.email_outlined,
+                                    color: Colors.blue, size: 18),
+                                label: const Text('Enviar por Email'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.blue,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                        if (!isMobileAppBar) const SizedBox(width: 8),
+                        isMobileAppBar
+                            ? IconButton(
+                                onPressed: () => _generatePDF(enrichedInvoice),
+                                icon: const Icon(Icons.picture_as_pdf_outlined,
+                                    color: Colors.red),
+                                tooltip: 'Imprimir Invoice',
+                              )
+                            : TextButton.icon(
+                                onPressed: () => _generatePDF(enrichedInvoice),
+                                icon: const Icon(Icons.picture_as_pdf_outlined,
+                                    color: Colors.red, size: 18),
+                                label: const Text('Imprimir Invoice'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
                         PopupMenuButton<String>(
                           icon:
                               const Icon(Icons.more_vert, color: Colors.black),
@@ -196,8 +223,11 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!widget.showAppBar) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 16,
                         children: [
                           Text(
                             'Factura #${widget.invoiceId}',
@@ -207,31 +237,53 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                               color: Color(0xFF111827),
                             ),
                           ),
-                          Row(
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
-                              TextButton.icon(
-                                onPressed: () => _sendEmail(enrichedInvoice),
-                                icon: const Icon(Icons.email_outlined,
-                                    color: Colors.blue, size: 18),
-                                label: const Text('Enviar por Email'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.blue,
-                                  textStyle: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              TextButton.icon(
-                                onPressed: () => _generatePDF(enrichedInvoice),
-                                icon: const Icon(Icons.picture_as_pdf_outlined,
-                                    color: Colors.red, size: 18),
-                                label: const Text('Imprimir Invoice'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  textStyle: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                              isMobileAppBar
+                                  ? IconButton(
+                                      onPressed: () =>
+                                          _sendEmail(enrichedInvoice),
+                                      icon: const Icon(Icons.email_outlined,
+                                          color: Colors.blue),
+                                      tooltip: 'Enviar por Email',
+                                    )
+                                  : TextButton.icon(
+                                      onPressed: () =>
+                                          _sendEmail(enrichedInvoice),
+                                      icon: const Icon(Icons.email_outlined,
+                                          color: Colors.blue, size: 18),
+                                      label: const Text('Enviar por Email'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.blue,
+                                        textStyle: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                              isMobileAppBar
+                                  ? IconButton(
+                                      onPressed: () =>
+                                          _generatePDF(enrichedInvoice),
+                                      icon: const Icon(
+                                          Icons.picture_as_pdf_outlined,
+                                          color: Colors.red),
+                                      tooltip: 'Imprimir Invoice',
+                                    )
+                                  : TextButton.icon(
+                                      onPressed: () =>
+                                          _generatePDF(enrichedInvoice),
+                                      icon: const Icon(
+                                          Icons.picture_as_pdf_outlined,
+                                          color: Colors.red,
+                                          size: 18),
+                                      label: const Text('Imprimir Invoice'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                        textStyle: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
                             ],
                           ),
                         ],
@@ -241,6 +293,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     _buildSummaryBadge(enrichedInvoice),
                     const SizedBox(height: 16),
                     _buildHeader(enrichedInvoice),
+                    if ((enrichedInvoice.address ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      LocationMapCard(address: enrichedInvoice.address ?? ''),
+                    ],
                     const SizedBox(height: 24),
                     _buildFinancialSummary(
                       invoice: enrichedInvoice,
@@ -249,8 +305,11 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       profit: calculatedProfit,
                     ),
                     const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         const Text('Pagos y Reembolsos',
                             style: AppStyles.dialogTitleStyle),
@@ -276,8 +335,11 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     const SizedBox(height: 16),
                     _buildPaymentsList(paymentsAsync),
                     const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         const Text('Estructuras / Productos',
                             style: AppStyles.dialogTitleStyle),
@@ -287,8 +349,11 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     const SizedBox(height: 16),
                     _buildProductsList(productsAsync),
                     const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         const Text('Costos del Proyecto (Factura)',
                             style: AppStyles.dialogTitleStyle),
@@ -726,12 +791,16 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                 color: Colors.grey,
                 letterSpacing: 0.5)),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isHero ? 22 : 18,
-            fontWeight: FontWeight.bold,
-            color: color,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isHero ? 22 : 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ),
       ],

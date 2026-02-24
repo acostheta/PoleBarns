@@ -9,6 +9,7 @@ import '../providers/invoice_providers.dart';
 import '../utils/invoice_pdf_generator.dart';
 import '../../clients/repositories/client_repository.dart';
 import '../../project_tracking/models/project_models.dart';
+import '../../../shared/widgets/location_selector_button.dart';
 
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
   final String? projectId;
@@ -327,27 +328,10 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Billing Address - Text Field Plain
-                  const Text('Dirección de Facturación',
-                      style: AppStyles.labelStyle),
-                  const SizedBox(height: 8),
-                  TextFormField(
+                  LocationSelectorButton(
+                    label: 'Dirección de Facturación',
                     controller: _addressController,
-                    decoration: AppStyles.inputDecoration(
-                      hintText: 'Ingrese dirección',
-                    ).copyWith(
-                      prefixIcon: const Icon(Icons.place, color: Colors.grey),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear,
-                            color: Colors.grey, size: 20),
-                        onPressed: () => _addressController.clear(),
-                      ),
-                    ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Requerido' : null,
                   ),
-
                   const SizedBox(height: 32),
                   _buildSectionTitle('Detalles de la Factura'),
                   const SizedBox(height: 16),
@@ -399,7 +383,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                           ])),
                     ],
                   ),
-
                   const SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -417,15 +400,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildItemsTable(),
-
                   const SizedBox(height: 32),
                   _buildTextField('Comentarios', _commentController,
                       maxLines: 3),
-
                   const SizedBox(height: 24),
                   _buildTextField('Notes for Invoice', _notesController,
                       maxLines: 5),
-
                   const SizedBox(height: 48),
                   SizedBox(
                     width: double.infinity,

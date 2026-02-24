@@ -103,10 +103,21 @@ class _ProjectListSidebarState extends ConsumerState<ProjectListSidebar> {
           Expanded(
             child: projectsAsync.when(
               data: (projects) {
+                final clients = ref.watch(clientListProvider).valueOrNull;
+
                 final filtered = projects.where((p) {
                   final query = _searchQuery.toLowerCase();
+                  final client = clients?.firstWhere(
+                      (c) => c.id == p.refCliente,
+                      orElse: () => ClientSimpleModel(
+                          id: '', firstName: '', lastName: ''));
+
                   return (p.address?.toLowerCase().contains(query) ?? false) ||
-                      (p.refCliente.toLowerCase().contains(query));
+                      (p.direccion?.toLowerCase().contains(query) ?? false) ||
+                      (client?.fullName.toLowerCase().contains(query) ??
+                          false) ||
+                      (client?.phone?.toLowerCase().contains(query) ?? false) ||
+                      (p.id.toLowerCase().contains(query));
                 }).toList();
 
                 if (filtered.isEmpty) {
@@ -176,46 +187,96 @@ class _ProjectListItem extends StatelessWidget {
         ? const Color(0xFFB45309)
         : const Color(0xFF6B7280); // Amber-700 vs Gray-500
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      hoverColor: const Color(0xFFF5F5F4), // Stone-100
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border(
-            left: BorderSide(
-              color: borderColor,
-              width: 4,
+    return Consumer(builder: (context, ref, child) {
+      final clientsAsync = ref.watch(clientListProvider);
+      final client = clientsAsync.valueOrNull?.firstWhere(
+        (c) => c.id == project.refCliente,
+        orElse: () =>
+            ClientSimpleModel(id: '', firstName: 'Unknown', lastName: ''),
+      );
+
+      final displayAddress =
+          (project.direccion != null && project.direccion!.isNotEmpty)
+              ? project.direccion!
+              : (client?.address ?? (project.address ?? 'Sin Dirección'));
+
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        hoverColor: const Color(0xFFF5F5F4), // Stone-100
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border(
+              left: BorderSide(
+                color: borderColor,
+                width: 4,
+              ),
             ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              project.address ?? 'Untitled Project',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: titleColor,
-                fontSize: 15,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                project.address ?? 'Proyecto',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: titleColor,
+                  fontSize: 15,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '#PROJ-${project.id.substring(0, 4).toUpperCase()}',
-              style: TextStyle(
-                color: subtitleColor,
-                fontSize: 13,
+              if (displayAddress != (project.address ?? ''))
+                Text(
+                  displayAddress,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: subtitleColor.withValues(alpha: 0.8),
+                    fontSize: 11,
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      client?.fullName ?? 'Unknown',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '#PROJ-${project.id.substring(0, 4).toUpperCase()}',
+                    style: TextStyle(
+                      color: subtitleColor.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              if (client?.phone != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  client!.phone!,
+                  style: TextStyle(
+                    color: subtitleColor.withValues(alpha: 0.6),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

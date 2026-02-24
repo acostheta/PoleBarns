@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../../settings/repositories/settings_repository.dart';
 import '../../settings/models/provider_model.dart';
-import '../../project_tracking/providers/project_providers.dart';
+import '../../invoices/providers/invoice_providers.dart';
 import '../providers/accounts_payable_provider.dart';
 
 class AddAccountDialog extends ConsumerStatefulWidget {
@@ -79,7 +79,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   @override
   Widget build(BuildContext context) {
     final providersAsync = ref.watch(providersListProvider);
-    final projectsAsync = ref.watch(projectListProvider);
+    final invoicesAsync = ref.watch(invoicesStreamProvider);
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -134,27 +134,35 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 const SizedBox(height: 24),
 
                 // Project Dropdown
-                const Text('Relacionar a Proyecto (Opcional)',
+                const Text('Relacionar a Invoice (Opcional)',
                     style: AppStyles.labelStyle),
                 const SizedBox(height: 8),
-                projectsAsync.when(
-                  data: (projects) => DropdownButtonFormField<String>(
-                    value: _selectedProjectId,
-                    items: projects.map<DropdownMenuItem<String>>((p) {
-                      return DropdownMenuItem<String>(
-                        value: p.id,
-                        child: Text(p.address ?? 'Proyecto',
+                invoicesAsync.when(
+                  data: (invoices) => DropdownButtonFormField<int>(
+                    value: _selectedInvoiceId,
+                    items: invoices.map<DropdownMenuItem<int>>((inv) {
+                      return DropdownMenuItem<int>(
+                        value: inv.id,
+                        child: Text(
+                            'Factura #${inv.id} - ${inv.clientName ?? ''}',
                             style: const TextStyle(fontSize: 14)),
                       );
                     }).toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedProjectId = val),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedInvoiceId = val;
+                        if (val != null) {
+                          final inv = invoices.firstWhere((i) => i.id == val);
+                          _selectedProjectId = inv.idProyecto;
+                        }
+                      });
+                    },
                     decoration: AppStyles.inputDecoration(
-                        hintText: 'Seleccione un proyecto'),
-                    icon: const Icon(Icons.business_outlined),
+                        hintText: 'Seleccione un invoice'),
+                    icon: const Icon(Icons.receipt_outlined),
                   ),
                   loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error al cargar proyectos',
+                  error: (e, _) => Text('Error al cargar invoices',
                       style: const TextStyle(color: Colors.red)),
                 ),
                 const SizedBox(height: 24),

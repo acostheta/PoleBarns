@@ -86,48 +86,87 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   Widget _buildHeader() {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Gestión de Personal',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textLight,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Administra trabajadores, roles y grupos de trabajo.',
-                style: TextStyle(color: AppColors.stone500),
-              ),
-            ],
-          ),
-
-          // View Switcher (Tabs)
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppColors.stone100,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.stone200),
-            ),
-            child: Row(
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildViewTab('Trabajadores', UsersView.workers),
-                const SizedBox(width: 4),
-                _buildViewTab('Grupos', UsersView.groups),
+                const Text(
+                  'Gestión de Personal',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textLight,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Administra trabajadores, roles y grupos de trabajo.',
+                  style: TextStyle(color: AppColors.stone500),
+                ),
+                const SizedBox(height: 16),
+                // View Switcher (Tabs)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.stone100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.stone200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildViewTab('Trabajadores', UsersView.workers),
+                      const SizedBox(width: 4),
+                      _buildViewTab('Grupos', UsersView.groups),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Gestión de Personal',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Administra trabajadores, roles y grupos de trabajo.',
+                      style: TextStyle(color: AppColors.stone500),
+                    ),
+                  ],
+                ),
+
+                // View Switcher (Tabs)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.stone100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.stone200),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildViewTab('Trabajadores', UsersView.workers),
+                      const SizedBox(width: 4),
+                      _buildViewTab('Grupos', UsersView.groups),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -168,6 +207,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   Widget _buildToolbar(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     if (_selectedIds.isNotEmpty && _currentView == UsersView.workers) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -199,43 +240,103 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       );
     }
 
+    final searchField = Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: TextField(
+        onChanged: (v) => setState(() {
+          _searchQuery = v;
+          _currentPage = 0;
+        }),
+        decoration: InputDecoration(
+          hintText: _currentView == UsersView.workers
+              ? 'Buscar por nombre, email...'
+              : 'Buscar grupos...',
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+      ),
+    );
+
+    final actionButton = ElevatedButton.icon(
+      onPressed: () {
+        if (_currentView == UsersView.workers) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const UserFormScreen()));
+        } else {
+          _showCreateGroupDialog();
+        }
+      },
+      icon: const Icon(Icons.add, size: 18, color: Colors.white),
+      label: Text(
+        _currentView == UsersView.workers ? 'Nuevo Trabajador' : 'Nuevo Grupo',
+        style: const TextStyle(color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+
+    if (isMobile) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Column(
+          children: [
+            searchField,
+            const SizedBox(height: 16),
+            if (_currentView == UsersView.workers) ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildFilterButton('Rol: $_roleFilter', () {
+                    setState(() {
+                      _roleFilter = _roleFilter == 'Todos'
+                          ? 'Administrador'
+                          : (_roleFilter == 'Administrador'
+                              ? 'Trabajador'
+                              : 'Todos');
+                      _currentPage = 0;
+                    });
+                  }),
+                  _buildFilterButton('Estado: $_statusFilter', () {
+                    setState(() {
+                      _statusFilter = _statusFilter == 'Todos'
+                          ? 'Activo'
+                          : (_statusFilter == 'Activo' ? 'Inactivo' : 'Todos');
+                      _currentPage = 0;
+                    });
+                  }),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: actionButton,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          // Search
-          Expanded(
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() {
-                  _searchQuery = v;
-                  _currentPage = 0;
-                }),
-                decoration: InputDecoration(
-                  hintText: _currentView == UsersView.workers
-                      ? 'Buscar por nombre, email...'
-                      : 'Buscar grupos...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-          ),
-
+          Expanded(child: searchField),
           if (_currentView == UsersView.workers) ...[
             const SizedBox(width: 16),
             _buildFilterButton('Rol: $_roleFilter', () {
-              // Simple toggle for demo, ideally a popup menu
               setState(() {
                 _roleFilter = _roleFilter == 'Todos'
                     ? 'Administrador'
@@ -253,32 +354,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
               });
             }),
           ],
-
           const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              if (_currentView == UsersView.workers) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const UserFormScreen()));
-              } else {
-                _showCreateGroupDialog();
-              }
-            },
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: Text(
-              _currentView == UsersView.workers
-                  ? 'Nuevo Trabajador'
-                  : 'Nuevo Grupo',
-              style: const TextStyle(color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
+          actionButton,
         ],
       ),
     );
@@ -372,104 +449,108 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                child: DataTable(
-                  showCheckboxColumn: true,
-                  sortColumnIndex: _sortColumnIndex,
-                  sortAscending: _isAscending,
-                  headingTextStyle: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.stone500),
-                  onSelectAll: (val) {
-                    setState(() {
-                      if (val == true) {
-                        _selectedIds.addAll(pagedUsers.map((u) => u['id']));
-                      } else {
-                        _selectedIds.clear();
-                      }
-                    });
-                  },
-                  columns: [
-                    DataColumn(label: const Text('NOMBRE'), onSort: _onSort),
-                    DataColumn(label: const Text('EMAIL'), onSort: _onSort),
-                    DataColumn(label: const Text('ROL'), onSort: _onSort),
-                    const DataColumn(label: Text('ESTADO')),
-                    const DataColumn(label: Text('ACCIONES')),
-                  ],
-                  rows: pagedUsers.map((user) {
-                    final isSelected = _selectedIds.contains(user['id']);
-                    final isActive = user['is_active'] == true;
-                    return DataRow(
-                      selected: isSelected,
-                      onSelectChanged: (val) {
-                        setState(() {
-                          if (val == true)
-                            _selectedIds.add(user['id']);
-                          else
-                            _selectedIds.remove(user['id']);
-                        });
-                      },
-                      cells: [
-                        DataCell(
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppColors.stone200,
-                                backgroundImage: user['picture'] != null
-                                    ? NetworkImage(user['picture'])
-                                    : null,
-                                child: user['picture'] == null
-                                    ? Text(
-                                        ((user['name'] != null &&
-                                                    user['name']
-                                                        .toString()
-                                                        .isNotEmpty)
-                                                ? user['name'][0]
-                                                : 'U')
-                                            .toUpperCase(),
-                                        style: const TextStyle(fontSize: 12))
-                                    : null,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(user['name'] ?? 'Sin Nombre',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w500)),
-                            ],
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    showCheckboxColumn: true,
+                    sortColumnIndex: _sortColumnIndex,
+                    sortAscending: _isAscending,
+                    headingTextStyle: const TextStyle(
+                        fontWeight: FontWeight.bold, color: AppColors.stone500),
+                    onSelectAll: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedIds.addAll(pagedUsers.map((u) => u['id']));
+                        } else {
+                          _selectedIds.clear();
+                        }
+                      });
+                    },
+                    columns: [
+                      DataColumn(label: const Text('NOMBRE'), onSort: _onSort),
+                      DataColumn(label: const Text('EMAIL'), onSort: _onSort),
+                      DataColumn(label: const Text('ROL'), onSort: _onSort),
+                      const DataColumn(label: Text('ESTADO')),
+                      const DataColumn(label: Text('ACCIONES')),
+                    ],
+                    rows: pagedUsers.map((user) {
+                      final isSelected = _selectedIds.contains(user['id']);
+                      final isActive = user['is_active'] == true;
+                      return DataRow(
+                        selected: isSelected,
+                        onSelectChanged: (val) {
+                          setState(() {
+                            if (val == true)
+                              _selectedIds.add(user['id']);
+                            else
+                              _selectedIds.remove(user['id']);
+                          });
+                        },
+                        cells: [
+                          DataCell(
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppColors.stone200,
+                                  backgroundImage: user['picture'] != null
+                                      ? NetworkImage(user['picture'])
+                                      : null,
+                                  child: user['picture'] == null
+                                      ? Text(
+                                          ((user['name'] != null &&
+                                                      user['name']
+                                                          .toString()
+                                                          .isNotEmpty)
+                                                  ? user['name'][0]
+                                                  : 'U')
+                                              .toUpperCase(),
+                                          style: const TextStyle(fontSize: 12))
+                                      : null,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(user['name'] ?? 'Sin Nombre',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                            onTap: () => _navigateToDetail(user['id']),
                           ),
-                          onTap: () => _navigateToDetail(user['id']),
-                        ),
-                        DataCell(
-                          Text(user['email'] ?? '-'),
-                          onTap: () => _navigateToDetail(user['id']),
-                        ),
-                        DataCell(
-                          _buildRoleBadge(user['role'] ?? 'Sin rol'),
-                          onTap: () => _navigateToDetail(user['id']),
-                        ),
-                        DataCell(
-                          _buildStatusBadge(isActive),
-                          onTap: () => _navigateToDetail(user['id']),
-                        ),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined,
-                                    color: AppColors.primary, size: 20),
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => UserFormScreen(
-                                              userId: user['id'],
-                                              userMetadata: user)));
-                                },
-                              ),
-                            ],
+                          DataCell(
+                            Text(user['email'] ?? '-'),
+                            onTap: () => _navigateToDetail(user['id']),
                           ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                          DataCell(
+                            _buildRoleBadge(user['role'] ?? 'Sin rol'),
+                            onTap: () => _navigateToDetail(user['id']),
+                          ),
+                          DataCell(
+                            _buildStatusBadge(isActive),
+                            onTap: () => _navigateToDetail(user['id']),
+                          ),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined,
+                                      color: AppColors.primary, size: 20),
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) => UserFormScreen(
+                                                userId: user['id'],
+                                                userMetadata: user)));
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),
@@ -500,61 +581,66 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                child: DataTable(
-                  headingTextStyle: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.stone500),
-                  columns: const [
-                    DataColumn(label: Text('NOMBRE DEL GRUPO')),
-                    DataColumn(label: Text('RESPONSABLE')),
-                    DataColumn(label: Text('MIEMBROS')), // Could count members?
-                    DataColumn(label: Text('ACCIONES')),
-                  ],
-                  rows: filtered.map((group) {
-                    final supervisorId = group['supervisor_id'];
-                    final supervisorName = users.firstWhere(
-                            (u) => u['id'] == supervisorId,
-                            orElse: () => {})['name'] ??
-                        '-';
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingTextStyle: const TextStyle(
+                        fontWeight: FontWeight.bold, color: AppColors.stone500),
+                    columns: const [
+                      DataColumn(label: Text('NOMBRE DEL GRUPO')),
+                      DataColumn(label: Text('RESPONSABLE')),
+                      DataColumn(
+                          label: Text('MIEMBROS')), // Could count members?
+                      DataColumn(label: Text('ACCIONES')),
+                    ],
+                    rows: filtered.map((group) {
+                      final supervisorId = group['supervisor_id'];
+                      final supervisorName = users.firstWhere(
+                              (u) => u['id'] == supervisorId,
+                              orElse: () => {})['name'] ??
+                          '-';
 
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(group['name'] ?? 'Group',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w500))),
-                        DataCell(Text(supervisorName)),
-                        DataCell(Consumer(builder: (ctx, ref, _) {
-                          final membersAsync =
-                              ref.watch(groupMembersProvider(group['id']));
-                          return membersAsync.when(
-                            data: (m) => Text('${m.length} miembros'),
-                            loading: () => const SizedBox(
-                                width: 10,
-                                height: 10,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2)),
-                            error: (_, __) => const Text('-'),
-                          );
-                        })),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined,
-                                    color: AppColors.primary),
-                                onPressed: () => _showEditGroupDialog(group),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: Colors.red),
-                                onPressed: () =>
-                                    _confirmDeleteGroup(group['id']),
-                              ),
-                            ],
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(group['name'] ?? 'Group',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500))),
+                          DataCell(Text(supervisorName)),
+                          DataCell(Consumer(builder: (ctx, ref, _) {
+                            final membersAsync =
+                                ref.watch(groupMembersProvider(group['id']));
+                            return membersAsync.when(
+                              data: (m) => Text('${m.length} miembros'),
+                              loading: () => const SizedBox(
+                                  width: 10,
+                                  height: 10,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)),
+                              error: (_, __) => const Text('-'),
+                            );
+                          })),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined,
+                                      color: AppColors.primary),
+                                  onPressed: () => _showEditGroupDialog(group),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      _confirmDeleteGroup(group['id']),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),

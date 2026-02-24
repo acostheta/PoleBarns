@@ -196,9 +196,21 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
               ],
             ),
             const SizedBox(height: 24),
-            _buildReadFieldWithIcon(
-                'DIRECCIÓN', null, Icons.location_on_outlined,
-                customText: _direccionController.text),
+            Consumer(builder: (context, ref, child) {
+              final client = clientsAsync.valueOrNull?.firstWhere(
+                  (c) => c.id == _selectedClientId,
+                  orElse: () => ClientSimpleModel(
+                      id: '', firstName: 'Unknown', lastName: ''));
+              final displayAddress = (widget.project.direccion != null &&
+                      widget.project.direccion!.isNotEmpty)
+                  ? widget.project.direccion!
+                  : (client?.address ??
+                      (widget.project.address ?? 'Sin Dirección'));
+
+              return _buildReadFieldWithIcon(
+                  'DIRECCIÓN', null, Icons.location_on_outlined,
+                  customText: displayAddress);
+            }),
             const SizedBox(height: 24),
             _buildReadFieldSimple('COMENTARIOS', _commentsController.text),
           ] else ...[
@@ -283,8 +295,18 @@ class _ProjectFormSectionState extends ConsumerState<ProjectFormSection> {
                 ClientSimpleModel(id: '', firstName: 'Unknown', lastName: ''));
         final name =
             client.id.isEmpty ? (_selectedClientId ?? '-') : client.fullName;
-        return _buildReadFieldWithAvatar('CLIENTE', name, _getInitials(name),
-            imageUrl: client.photoUrl);
+        final phone = client.phone ?? '-';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildReadFieldWithAvatar('CLIENTE', name, _getInitials(name),
+                imageUrl: client.photoUrl),
+            if (client.phone != null) ...[
+              const SizedBox(height: 12),
+              _buildReadFieldSimple('TELÉFONO', phone),
+            ],
+          ],
+        );
       },
       loading: () => _buildReadFieldSimple('CLIENTE', 'Loading...'),
       error: (_, __) => _buildReadFieldSimple('CLIENTE', 'Error'),

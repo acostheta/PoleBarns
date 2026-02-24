@@ -88,196 +88,225 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
                                 ? filtered.sublist(startIndex, endIndex)
                                 : <InvoiceModel>[];
 
+                            final isMobile = constraints.maxWidth < 800;
+
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.vertical,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          // Ensure table takes full width of container if content is smaller
-                                          minWidth: constraints.maxWidth - 48,
-                                        ),
-                                        child: DataTable(
-                                          showCheckboxColumn: true,
-                                          sortColumnIndex: _sortColumnIndex,
-                                          sortAscending: _isAscending,
-                                          headingTextStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: Color(0xFF6B7280),
-                                            letterSpacing: 0.5,
+                                  child: isMobile
+                                      ? _buildMobileList(
+                                          pagedInvoices, currency, dateFormat)
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.vertical,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                // Ensure table takes full width of container if content is smaller
+                                                minWidth:
+                                                    constraints.maxWidth - 48,
+                                              ),
+                                              child: DataTable(
+                                                showCheckboxColumn: true,
+                                                sortColumnIndex:
+                                                    _sortColumnIndex,
+                                                sortAscending: _isAscending,
+                                                headingTextStyle:
+                                                    const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Color(0xFF6B7280),
+                                                  letterSpacing: 0.5,
+                                                ),
+                                                dataRowMinHeight: 64,
+                                                dataRowMaxHeight: 64,
+                                                horizontalMargin: 24,
+                                                columnSpacing: 24,
+                                                // Handle Select All
+                                                onSelectAll: (value) {
+                                                  setState(() {
+                                                    if (value == true) {
+                                                      _selectedIds.addAll(
+                                                          pagedInvoices.map(
+                                                              (e) => e.id));
+                                                    } else {
+                                                      _selectedIds.clear();
+                                                    }
+                                                  });
+                                                },
+                                                columns: [
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('ID (#)'),
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('CLIENTE'),
+                                                      onSort: _sort),
+                                                  const DataColumn(
+                                                      label: Text('PROYECTO')),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('FECHA'),
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('TOTAL'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('PAGADO'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('SALDO'),
+                                                      numeric: true,
+                                                      onSort: _sort),
+                                                  DataColumn(
+                                                      label:
+                                                          const Text('ESTADO'),
+                                                      onSort: _sort),
+                                                  const DataColumn(
+                                                      label: Text('ACCIONES',
+                                                          textAlign:
+                                                              TextAlign.end)),
+                                                ],
+                                                rows: pagedInvoices
+                                                    .map((invoice) {
+                                                  final isSelected =
+                                                      _selectedIds
+                                                          .contains(invoice.id);
+                                                  return DataRow(
+                                                    selected: isSelected,
+                                                    onSelectChanged: (val) {
+                                                      setState(() {
+                                                        if (val == true) {
+                                                          _selectedIds
+                                                              .add(invoice.id);
+                                                        } else {
+                                                          _selectedIds.remove(
+                                                              invoice.id);
+                                                        }
+                                                      });
+                                                    },
+                                                    cells: [
+                                                      DataCell(
+                                                        Text('#${invoice.id}',
+                                                            style: const TextStyle(
+                                                                color: Color(
+                                                                    0xFF4B5563))),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                            invoice.clientName ??
+                                                                'Sin Cliente',
+                                                            style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color(
+                                                                    0xFF111827))),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        SizedBox(
+                                                          width: 180,
+                                                          child: Text(
+                                                              invoice.projectName ??
+                                                                  invoice
+                                                                      .address ??
+                                                                  'Sin Proyecto',
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                          .blue[
+                                                                      700],
+                                                                  fontSize:
+                                                                      12)),
+                                                        ),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        Text(dateFormat.format(
+                                                            invoice.date)),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        Text(currency.format(
+                                                            invoice
+                                                                .totalVenta)),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                            currency.format(
+                                                                invoice
+                                                                    .totalPagado),
+                                                            style: const TextStyle(
+                                                                color: Color(
+                                                                    0xFF059669))),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                            currency.format(
+                                                                invoice.saldo),
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: invoice
+                                                                            .saldo >
+                                                                        0
+                                                                    ? const Color(
+                                                                        0xFFDC2626)
+                                                                    : const Color(
+                                                                        0xFF111827))),
+                                                        onTap: () =>
+                                                            _navigateToDetail(
+                                                                invoice.id),
+                                                      ),
+                                                      DataCell(
+                                                          _buildStatusBadge(
+                                                              invoice),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  invoice.id)),
+                                                      DataCell(
+                                                        // Kebab Menu
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child:
+                                                              _buildActionMenu(
+                                                                  invoice),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
                                           ),
-                                          dataRowMinHeight: 64,
-                                          dataRowMaxHeight: 64,
-                                          horizontalMargin: 24,
-                                          columnSpacing: 24,
-                                          // Handle Select All
-                                          onSelectAll: (value) {
-                                            setState(() {
-                                              if (value == true) {
-                                                _selectedIds.addAll(
-                                                    pagedInvoices
-                                                        .map((e) => e.id));
-                                              } else {
-                                                _selectedIds.clear();
-                                              }
-                                            });
-                                          },
-                                          columns: [
-                                            DataColumn(
-                                                label: const Text('ID (#)'),
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('CLIENTE'),
-                                                onSort: _sort),
-                                            const DataColumn(
-                                                label: Text('PROYECTO')),
-                                            DataColumn(
-                                                label: const Text('FECHA'),
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('TOTAL'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('PAGADO'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('SALDO'),
-                                                numeric: true,
-                                                onSort: _sort),
-                                            DataColumn(
-                                                label: const Text('ESTADO'),
-                                                onSort: _sort),
-                                            const DataColumn(
-                                                label: Text('ACCIONES',
-                                                    textAlign: TextAlign.end)),
-                                          ],
-                                          rows: pagedInvoices.map((invoice) {
-                                            final isSelected = _selectedIds
-                                                .contains(invoice.id);
-                                            return DataRow(
-                                              selected: isSelected,
-                                              onSelectChanged: (val) {
-                                                setState(() {
-                                                  if (val == true) {
-                                                    _selectedIds
-                                                        .add(invoice.id);
-                                                  } else {
-                                                    _selectedIds
-                                                        .remove(invoice.id);
-                                                  }
-                                                });
-                                              },
-                                              cells: [
-                                                DataCell(
-                                                  Text('#${invoice.id}',
-                                                      style: const TextStyle(
-                                                          color: Color(
-                                                              0xFF4B5563))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      invoice.clientName ??
-                                                          'Sin Cliente',
-                                                      style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Color(
-                                                              0xFF111827))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  SizedBox(
-                                                    width: 180,
-                                                    child: Text(
-                                                        invoice.projectName ??
-                                                            invoice.address ??
-                                                            'Sin Proyecto',
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                            color: Colors
-                                                                .blue[700],
-                                                            fontSize: 12)),
-                                                  ),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  Text(dateFormat
-                                                      .format(invoice.date)),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  Text(currency.format(
-                                                      invoice.totalVenta)),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      currency.format(
-                                                          invoice.totalPagado),
-                                                      style: const TextStyle(
-                                                          color: Color(
-                                                              0xFF059669))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      currency.format(
-                                                          invoice.saldo),
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: invoice.saldo >
-                                                                  0
-                                                              ? const Color(
-                                                                  0xFFDC2626)
-                                                              : const Color(
-                                                                  0xFF111827))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          invoice.id),
-                                                ),
-                                                DataCell(
-                                                    _buildStatusBadge(invoice),
-                                                    onTap: () =>
-                                                        _navigateToDetail(
-                                                            invoice.id)),
-                                                DataCell(
-                                                  // Kebab Menu
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerRight,
-                                                    child: _buildActionMenu(
-                                                        invoice),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
                                         ),
-                                      ),
-                                    ),
-                                  ),
                                 ),
                                 _buildPaginationFooter(startIndex, endIndex,
                                     totalItems, totalPages),
@@ -308,15 +337,24 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
     final totalSaldo =
         invoices.fold<double>(0, (sum, item) => sum + item.saldo);
 
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    if (isMobile) return const SizedBox();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
       child: Row(
         children: [
-          _buildStatCard('TOTAL VENTAS', totalVenta, Colors.black87),
+          Expanded(
+              child:
+                  _buildStatCard('TOTAL VENTAS', totalVenta, Colors.black87)),
           const SizedBox(width: 24),
-          _buildStatCard('TOTAL COBRADO', totalPagado, const Color(0xFF059669)),
+          Expanded(
+              child: _buildStatCard(
+                  'TOTAL COBRADO', totalPagado, const Color(0xFF059669))),
           const SizedBox(width: 24),
-          _buildStatCard('SALDO PENDIENTE', totalSaldo, Colors.redAccent),
+          Expanded(
+              child: _buildStatCard(
+                  'SALDO PENDIENTE', totalSaldo, Colors.redAccent)),
         ],
       ),
     );
@@ -324,131 +362,218 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
 
   Widget _buildStatCard(String label, double amount, Color color) {
     final currency = NumberFormat.simpleCurrency();
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                    letterSpacing: 0.5)),
-            const SizedBox(height: 8),
-            Text(currency.format(amount),
-                style: TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 8),
+          Text(currency.format(amount),
+              style: TextStyle(
+                  fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }
 
   Widget _buildToolbar(BuildContext context, List<InvoiceModel>? invoices) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     if (_selectedIds.isNotEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        height: 56,
+        height: isMobile ? null : 56,
         decoration: BoxDecoration(
           color: AppStyles.primaryOrange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border:
               Border.all(color: AppStyles.primaryOrange.withValues(alpha: 0.3)),
         ),
-        child: Row(
-          children: [
-            Text(
-              '${_selectedIds.length} seleccionados',
-              style: TextStyle(
-                color: AppStyles.primaryOrange,
-                fontWeight: FontWeight.bold,
+        child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_selectedIds.length} seleccionados',
+                        style: const TextStyle(
+                          color: AppStyles.primaryOrange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => setState(() => _selectedIds.clear()),
+                        icon: const Icon(Icons.close,
+                            size: 20, color: AppStyles.primaryOrange),
+                        label: const Text('Cancelar',
+                            style: TextStyle(color: AppStyles.primaryOrange)),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _deleteSelectedInvoices,
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.white),
+                    label: const Text('Eliminar',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Text(
+                    '${_selectedIds.length} seleccionados',
+                    style: const TextStyle(
+                      color: AppStyles.primaryOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _selectedIds.clear()),
+                    icon: const Icon(Icons.close,
+                        size: 20, color: AppStyles.primaryOrange),
+                    label: const Text('Cancelar',
+                        style: TextStyle(color: AppStyles.primaryOrange)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _deleteSelectedInvoices,
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.white),
+                    label: const Text('Eliminar',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () => setState(() => _selectedIds.clear()),
-              icon: Icon(Icons.close, size: 20, color: AppStyles.primaryOrange),
-              label: Text('Cancelar',
-                  style: TextStyle(color: AppStyles.primaryOrange)),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _deleteSelectedInvoices,
-              icon: const Icon(Icons.delete_outline,
-                  size: 20, color: Colors.white),
-              label:
-                  const Text('Eliminar', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ],
-        ),
       );
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          // Search
-          Expanded(
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar factura por ID, cliente o dirección...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Search
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar factura...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                      prefixIcon: Icon(Icons.search,
+                          color: Colors.grey.shade400, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                _buildFilterChip(),
+                const SizedBox(height: 16),
+                // New Invoice Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CreateInvoiceScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nueva Factura',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                // Search
+                Expanded(
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Buscar factura por ID, cliente o dirección...',
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 13),
+                        prefixIcon: Icon(Icons.search,
+                            color: Colors.grey.shade400, size: 20),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Filters button
+                _buildFilterChip(),
+                const SizedBox(width: 16),
+
+                // New Invoice Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CreateInvoiceScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nueva Factura',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-
-          // Filters button
-          _buildFilterChip(),
-          const SizedBox(width: 16),
-
-          // New Invoice Button
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const CreateInvoiceScreen()),
-              );
-            },
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('Nueva Factura',
-                style: TextStyle(color: Colors.white)),
-            style: AppStyles.primaryButtonStyle,
-          ),
-        ],
-      ),
     );
   }
 
@@ -729,7 +854,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
       child: Row(
         children: [
           Text(
-            'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems resultados',
+            'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems',
             style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
           ),
           const Spacer(),
@@ -738,7 +863,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
                 _currentPage > 0 ? () => setState(() => _currentPage--) : null,
             icon: const Icon(Icons.chevron_left),
           ),
-          Text('Página ${_currentPage + 1} de $totalPages',
+          Text('${_currentPage + 1}/$totalPages',
               style: const TextStyle(fontSize: 13)),
           IconButton(
             onPressed: _currentPage < totalPages - 1
@@ -748,6 +873,149 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMobileList(List<InvoiceModel> pagedInvoices,
+      NumberFormat currency, DateFormat dateFormat) {
+    if (pagedInvoices.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No se encontraron facturas.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: pagedInvoices.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final invoice = pagedInvoices[index];
+        final isSelected = _selectedIds.contains(invoice.id);
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: isSelected ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+                color:
+                    isSelected ? AppStyles.primaryOrange : Colors.grey.shade200,
+                width: isSelected ? 2 : 1),
+          ),
+          child: InkWell(
+            onTap: () {
+              if (_selectedIds.isNotEmpty) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedIds.remove(invoice.id);
+                  } else {
+                    _selectedIds.add(invoice.id);
+                  }
+                });
+              } else {
+                _navigateToDetail(invoice.id);
+              }
+            },
+            onLongPress: () {
+              setState(() {
+                if (!isSelected) _selectedIds.add(invoice.id);
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('#${invoice.id}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4B5563))),
+                          const SizedBox(height: 4),
+                          Text(dateFormat.format(invoice.date),
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      _buildStatusBadge(invoice),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(invoice.clientName ?? 'Sin Cliente',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  if (invoice.projectName != null ||
+                      invoice.address != null) ...[
+                    const SizedBox(height: 4),
+                    Text(invoice.projectName ?? invoice.address ?? '',
+                        style:
+                            TextStyle(fontSize: 13, color: Colors.blue[700])),
+                  ],
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Total',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(invoice.totalVenta),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Pagado',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(invoice.totalPagado),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF059669))),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Saldo',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(currency.format(invoice.saldo),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: invoice.saldo > 0
+                                      ? const Color(0xFFDC2626)
+                                      : const Color(0xFF111827))),
+                        ],
+                      ),
+                      _buildActionMenu(invoice),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

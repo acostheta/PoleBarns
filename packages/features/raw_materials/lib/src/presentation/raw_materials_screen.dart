@@ -56,6 +56,7 @@ class _RawMaterialsScreenState extends ConsumerState<RawMaterialsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     final rawMaterialsAsync = ref.watch(rawMaterialsProvider);
     final measuresAsync = ref.watch(measuresProvider);
     final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
@@ -82,190 +83,133 @@ class _RawMaterialsScreenState extends ConsumerState<RawMaterialsScreen> {
               // Header
               Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Materia Prima',
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textLight,
-                      ),
-                    ),
-                    measuresAsync.when(
-                      data: (measures) => ElevatedButton.icon(
-                        onPressed: () => _createNewMaterial(measures),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Nueva Materia Prima'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const SizedBox(),
-                    ),
-                  ],
-                ),
-              ),
-
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sidebar List
-                    Container(
-                      width: 350,
-                      margin: const EdgeInsets.only(left: 24, bottom: 24),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.stone200),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
+                child: isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Search Bar
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.stone100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: TextField(
-                                onChanged: (val) {
-                                  setState(() {
-                                    _searchQuery = val;
-                                  });
-                                },
-                                decoration: const InputDecoration(
-                                  prefixIcon: Icon(Icons.search,
-                                      color: AppColors.stone400),
-                                  hintText: 'Buscar materia prima...',
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      EdgeInsets.symmetric(vertical: 14),
+                          const Text(
+                            'Materia Prima',
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          measuresAsync.when(
+                            data: (measures) => SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _createNewMaterial(measures),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Nueva Materia Prima'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
                                 ),
                               ),
                             ),
+                            loading: () => const CircularProgressIndicator(),
+                            error: (_, __) => const SizedBox(),
                           ),
-
-                          // List
-                          Expanded(
-                            child: filteredMaterials.isEmpty
-                                ? const Center(
-                                    child: Text('No se encontraron resultados'))
-                                : ListView.separated(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    itemCount: filteredMaterials.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final material = filteredMaterials[index];
-                                      final isSelected =
-                                          material['id'] == _selectedMaterialId;
-
-                                      return Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () {
-                                            setState(() {
-                                              _selectedMaterialId =
-                                                  material['id'];
-                                            });
-                                          },
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? AppColors.accentGreenLight
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: isSelected
-                                                  ? const Border(
-                                                      left: BorderSide(
-                                                          color: AppColors
-                                                              .accentGreen,
-                                                          width: 4))
-                                                  : Border.all(
-                                                      color:
-                                                          Colors.transparent),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  material['name'] ??
-                                                      'Sin nombre',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: isSelected
-                                                        ? AppColors
-                                                            .accentGreenDark
-                                                        : AppColors.textLight,
-                                                    fontSize: 15,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  '${currencyFormat.format(material['cost'] ?? 0)} - ${currencyFormat.format(material['price'] ?? 0)}',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: isSelected
-                                                        ? AppColors.accentGreen
-                                                        : AppColors.stone500,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Materia Prima',
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                          measuresAsync.when(
+                            data: (measures) => ElevatedButton.icon(
+                              onPressed: () => _createNewMaterial(measures),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Nueva Materia Prima'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                            loading: () => const CircularProgressIndicator(),
+                            error: (_, __) => const SizedBox(),
                           ),
                         ],
                       ),
-                    ),
+              ),
 
-                    // Detail Panel
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: (selectedMaterial != null &&
-                                selectedMaterial.isNotEmpty)
-                            ? RawMaterialDetailPanel(
-                                key: ValueKey(selectedMaterial['id']),
-                                initialData: selectedMaterial,
-                                onDeleted: () {
-                                  setState(() {
-                                    _selectedMaterialId = null;
-                                  });
-                                },
-                              )
-                            : _buildEmptyState(),
+              Expanded(
+                child: isMobile
+                    ? (_selectedMaterialId == null
+                        ? _buildList(filteredMaterials, currencyFormat, true)
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
+                                child: TextButton.icon(
+                                  onPressed: () => setState(
+                                      () => _selectedMaterialId = null),
+                                  icon: const Icon(Icons.arrow_back),
+                                  label: const Text('Volver a la lista'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                                  child: RawMaterialDetailPanel(
+                                    key: ValueKey(selectedMaterial!['id']),
+                                    initialData: selectedMaterial,
+                                    onDeleted: () {
+                                      setState(() {
+                                        _selectedMaterialId = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ))
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildList(filteredMaterials, currencyFormat, false),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                              child: (selectedMaterial != null &&
+                                      selectedMaterial.isNotEmpty)
+                                  ? RawMaterialDetailPanel(
+                                      key: ValueKey(selectedMaterial['id']),
+                                      initialData: selectedMaterial,
+                                      onDeleted: () {
+                                        setState(() {
+                                          _selectedMaterialId = null;
+                                        });
+                                      },
+                                    )
+                                  : _buildEmptyState(),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -273,6 +217,120 @@ class _RawMaterialsScreenState extends ConsumerState<RawMaterialsScreen> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
+    );
+  }
+
+  Widget _buildList(List<dynamic> filteredMaterials,
+      NumberFormat currencyFormat, bool isMobile) {
+    return Container(
+      width: isMobile ? double.infinity : 350,
+      margin: EdgeInsets.only(left: 24, bottom: 24, right: isMobile ? 24 : 0),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.stone200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.stone100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextField(
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search, color: AppColors.stone400),
+                  hintText: 'Buscar materia prima...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ),
+
+          // List
+          Expanded(
+            child: filteredMaterials.isEmpty
+                ? const Center(child: Text('No se encontraron resultados'))
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filteredMaterials.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final material = filteredMaterials[index];
+                      final isSelected = material['id'] == _selectedMaterialId;
+
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedMaterialId = material['id'];
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.accentGreenLight
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: isSelected
+                                  ? const Border(
+                                      left: BorderSide(
+                                          color: AppColors.accentGreen,
+                                          width: 4))
+                                  : Border.all(color: Colors.transparent),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  material['name'] ?? 'Sin nombre',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.accentGreenDark
+                                        : AppColors.textLight,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${currencyFormat.format(material['cost'] ?? 0)} - ${currencyFormat.format(material['price'] ?? 0)}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSelected
+                                        ? AppColors.accentGreen
+                                        : AppColors.stone500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -464,6 +522,7 @@ class _RawMaterialDetailPanelState
   @override
   Widget build(BuildContext context) {
     final measuresAsync = ref.watch(measuresProvider);
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -571,31 +630,50 @@ class _RawMaterialDetailPanelState
             const SizedBox(height: 16),
 
             // Pricing Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _costController,
-                    label: 'Costo',
-                    hint: '\$0.00',
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [CurrencyInputFormatter()],
-                    onChanged: (_) => _onFieldChanged(),
+            if (isMobile) ...[
+              _buildTextField(
+                controller: _costController,
+                label: 'Costo',
+                hint: '\$0.00',
+                keyboardType: TextInputType.number,
+                inputFormatters: [CurrencyInputFormatter()],
+                onChanged: (_) => _onFieldChanged(),
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _priceController,
+                label: 'Precio de venta',
+                hint: '\$0.00',
+                keyboardType: TextInputType.number,
+                inputFormatters: [CurrencyInputFormatter()],
+                onChanged: (_) => _onFieldChanged(),
+              ),
+            ] else
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _costController,
+                      label: 'Costo',
+                      hint: '\$0.00',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [CurrencyInputFormatter()],
+                      onChanged: (_) => _onFieldChanged(),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _priceController,
-                    label: 'Precio de venta',
-                    hint: '\$0.00',
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [CurrencyInputFormatter()],
-                    onChanged: (_) => _onFieldChanged(),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _priceController,
+                      label: 'Precio de venta',
+                      hint: '\$0.00',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [CurrencyInputFormatter()],
+                      onChanged: (_) => _onFieldChanged(),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),

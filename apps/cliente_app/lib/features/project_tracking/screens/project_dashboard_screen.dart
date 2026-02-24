@@ -19,7 +19,7 @@ class ProjectDashboardScreen extends ConsumerStatefulWidget {
 class _ProjectDashboardScreenState
     extends ConsumerState<ProjectDashboardScreen> {
   String _searchQuery = '';
-  int _sortColumnIndex = 0;
+  int? _sortColumnIndex;
   bool _isAscending = false;
   final Set<String> _selectedIds = {}; // Projects use String ID
 
@@ -89,79 +89,92 @@ class _ProjectDashboardScreenState
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.vertical,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minWidth: constraints.maxWidth - 48,
-                                        ),
-                                        child: DataTable(
-                                          showCheckboxColumn: true,
-                                          sortColumnIndex: _sortColumnIndex,
-                                          sortAscending: _isAscending,
-                                          headingTextStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: Color(0xFF6B7280),
-                                            letterSpacing: 0.5,
-                                          ),
-                                          dataRowMinHeight: 64,
-                                          dataRowMaxHeight: 64,
-                                          horizontalMargin: 24,
-                                          columnSpacing: 24,
-                                          onSelectAll: (value) {
-                                            setState(() {
-                                              if (value == true) {
-                                                _selectedIds.addAll(
-                                                    pagedProjects
-                                                        .map((e) => e.id));
-                                              } else {
-                                                _selectedIds.clear();
-                                              }
-                                            });
-                                          },
-                                          columns: [
-                                            DataColumn(
-                                                label: const Text('PROYECTO'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 0)),
-                                            DataColumn(
-                                                label: const Text('CLIENTE'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 1)),
-                                            DataColumn(
-                                                label: const Text('ESTATUS'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 2)),
-                                            DataColumn(
-                                                label:
-                                                    const Text('FECHA INICIO'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 3)),
-                                            DataColumn(
-                                                label: const Text('FECHA FIN'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 4)),
-                                            DataColumn(
-                                                label:
-                                                    const Text('RESPONSABLE'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 5)),
-                                            DataColumn(
-                                                label: const Text(
-                                                    'ULTIMA EVIDENCIA'),
-                                                onSort: (i, b) =>
-                                                    _sort(i, b, 6)),
-                                            const DataColumn(
-                                                label: Text('ACCIONES',
-                                                    textAlign: TextAlign.end)),
-                                          ],
-                                          rows: pagedProjects.map((project) {
-                                            final isSelected = _selectedIds
-                                                .contains(project.id);
-                                            final clientName = clientsAsync
+                                  child: LayoutBuilder(
+                                    builder: (context, tblConstraints) {
+                                      if (tblConstraints.maxWidth < 800) {
+                                        return _buildMobileList(pagedProjects,
+                                            clientsAsync.valueOrNull);
+                                      }
+                                      return SingleChildScrollView(
+                                        scrollDirection: Axis.vertical,
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth:
+                                                  tblConstraints.maxWidth - 48,
+                                            ),
+                                            child: DataTable(
+                                              showCheckboxColumn: true,
+                                              sortColumnIndex: _sortColumnIndex,
+                                              sortAscending: _isAscending,
+                                              headingTextStyle: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                                color: Color(0xFF6B7280),
+                                                letterSpacing: 0.5,
+                                              ),
+                                              dataRowMinHeight: 64,
+                                              dataRowMaxHeight: 64,
+                                              horizontalMargin: 24,
+                                              columnSpacing: 24,
+                                              onSelectAll: (value) {
+                                                setState(() {
+                                                  if (value == true) {
+                                                    _selectedIds.addAll(
+                                                        pagedProjects
+                                                            .map((e) => e.id));
+                                                  } else {
+                                                    _selectedIds.clear();
+                                                  }
+                                                });
+                                              },
+                                              columns: [
+                                                DataColumn(
+                                                    label:
+                                                        const Text('PROYECTO'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 0)),
+                                                DataColumn(
+                                                    label:
+                                                        const Text('CLIENTE'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 1)),
+                                                DataColumn(
+                                                    label:
+                                                        const Text('ESTATUS'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 2)),
+                                                DataColumn(
+                                                    label: const Text(
+                                                        'FECHA INICIO'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 3)),
+                                                DataColumn(
+                                                    label:
+                                                        const Text('FECHA FIN'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 4)),
+                                                DataColumn(
+                                                    label: const Text(
+                                                        'RESPONSABLE'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 5)),
+                                                DataColumn(
+                                                    label: const Text(
+                                                        'ULTIMA EVIDENCIA'),
+                                                    onSort: (i, b) =>
+                                                        _sort(i, b, 6)),
+                                                const DataColumn(
+                                                    label: Text('ACCIONES',
+                                                        textAlign:
+                                                            TextAlign.end)),
+                                              ],
+                                              rows:
+                                                  pagedProjects.map((project) {
+                                                final isSelected = _selectedIds
+                                                    .contains(project.id);
+                                                final client = clientsAsync
                                                     .valueOrNull
                                                     ?.firstWhere(
                                                         (c) =>
@@ -172,147 +185,198 @@ class _ProjectDashboardScreenState
                                                                 id: '',
                                                                 firstName:
                                                                     'Unknown',
-                                                                lastName: ''))
-                                                    .fullName ??
-                                                'Unknown';
+                                                                lastName: ''));
+                                                final clientName =
+                                                    client?.fullName ??
+                                                        'Unknown';
 
-                                            return DataRow(
-                                              selected: isSelected,
-                                              onSelectChanged: (val) {
-                                                setState(() {
-                                                  if (val == true) {
-                                                    _selectedIds
-                                                        .add(project.id);
-                                                  } else {
-                                                    _selectedIds
-                                                        .remove(project.id);
-                                                  }
-                                                });
-                                              },
-                                              cells: [
-                                                DataCell(
-                                                  SizedBox(
-                                                    width: 200,
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Text(
-                                                            project.address ??
-                                                                'Sin Nombre',
-                                                            style: const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Color(
-                                                                    0xFF111827)),
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis),
-                                                        Text(
-                                                            '#${project.id.substring(0, 8)}...',
-                                                            style:
-                                                                const TextStyle(
+                                                final displayAddress = (project
+                                                                .direccion !=
+                                                            null &&
+                                                        project.direccion!
+                                                            .isNotEmpty)
+                                                    ? project.direccion!
+                                                    : (client?.address ??
+                                                        (project.address ??
+                                                            'Sin Dirección'));
+
+                                                return DataRow(
+                                                  selected: isSelected,
+                                                  onSelectChanged: (val) {
+                                                    setState(() {
+                                                      if (val == true) {
+                                                        _selectedIds
+                                                            .add(project.id);
+                                                      } else {
+                                                        _selectedIds
+                                                            .remove(project.id);
+                                                      }
+                                                    });
+                                                  },
+                                                  cells: [
+                                                    DataCell(
+                                                      SizedBox(
+                                                        width: 200,
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Text(
+                                                                project.address ??
+                                                                    'Proyecto',
+                                                                style: const TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: Color(
+                                                                        0xFF111827)),
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis),
+                                                            if (displayAddress !=
+                                                                (project.address ??
+                                                                    ''))
+                                                              Text(
+                                                                  displayAddress,
+                                                                  style: const TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color: Color(
+                                                                          0xFF4B5563)),
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis),
+                                                            Text(
+                                                                '#${project.id.substring(0, 8)}...',
+                                                                style: const TextStyle(
                                                                     fontSize:
                                                                         11,
                                                                     color: Colors
                                                                         .grey)),
-                                                      ],
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
                                                     ),
-                                                  ),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(clientName,
-                                                      style: const TextStyle(
-                                                          color: Color(
-                                                              0xFF4B5563))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  _buildStatusBadge(project),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      project.fechaInicio !=
-                                                              null
-                                                          ? DateFormat(
-                                                                  'MM/dd/yyyy')
-                                                              .format(project
-                                                                  .fechaInicio!)
-                                                          : '-',
-                                                      style: const TextStyle(
-                                                          fontSize: 12)),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      project.fechaFinalizacion !=
-                                                              null
-                                                          ? DateFormat(
-                                                                  'MM/dd/yyyy')
-                                                              .format(project
-                                                                  .fechaFinalizacion!)
-                                                          : '-',
-                                                      style: const TextStyle(
-                                                          fontSize: 12)),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      project.responsable ??
-                                                          '-',
-                                                      style: const TextStyle(
-                                                          color: Color(
-                                                              0xFF4B5563))),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                      project.fechaUltimaEvidencia !=
-                                                              null
-                                                          ? DateFormat(
-                                                                  'MM/dd/yyyy')
-                                                              .format(project
-                                                                  .fechaUltimaEvidencia!)
-                                                          : '-',
-                                                      style: const TextStyle(
-                                                          fontSize: 12)),
-                                                  onTap: () =>
-                                                      _navigateToDetail(
-                                                          project.id),
-                                                ),
-                                                DataCell(
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerRight,
-                                                    child: _buildActionMenu(
-                                                        project),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
+                                                    DataCell(
+                                                      Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Text(clientName,
+                                                              style: const TextStyle(
+                                                                  color: Color(
+                                                                      0xFF4B5563))),
+                                                          if (client?.phone !=
+                                                              null)
+                                                            Text(client!.phone!,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        11,
+                                                                    color: Colors
+                                                                        .grey
+                                                                        .shade500)),
+                                                        ],
+                                                      ),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      _buildStatusBadge(
+                                                          project),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                          project.fechaInicio !=
+                                                                  null
+                                                              ? DateFormat(
+                                                                      'MM/dd/yyyy')
+                                                                  .format(project
+                                                                      .fechaInicio!)
+                                                              : '-',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize:
+                                                                      12)),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                          project.fechaFinalizacion !=
+                                                                  null
+                                                              ? DateFormat(
+                                                                      'MM/dd/yyyy')
+                                                                  .format(project
+                                                                      .fechaFinalizacion!)
+                                                              : '-',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize:
+                                                                      12)),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                          project.responsable ??
+                                                              '-',
+                                                          style: const TextStyle(
+                                                              color: Color(
+                                                                  0xFF4B5563))),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                          project.fechaUltimaEvidencia !=
+                                                                  null
+                                                              ? DateFormat(
+                                                                      'MM/dd/yyyy')
+                                                                  .format(project
+                                                                      .fechaUltimaEvidencia!)
+                                                              : '-',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize:
+                                                                      12)),
+                                                      onTap: () =>
+                                                          _navigateToDetail(
+                                                              project.id),
+                                                    ),
+                                                    DataCell(
+                                                      Align(
+                                                        alignment: Alignment
+                                                            .centerRight,
+                                                        child: _buildActionMenu(
+                                                            project),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ),
                                 _buildPaginationFooter(startIndex, endIndex,
@@ -373,54 +437,107 @@ class _ProjectDashboardScreenState
       );
     }
 
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          // Search
-          Expanded(
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar proyecto...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Search
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar proyecto...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                      prefixIcon: Icon(Icons.search,
+                          color: Colors.grey.shade400, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _buildFilterChip()),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => const ProjectCreateDialog(),
+                          );
+                        },
+                        icon: const Icon(Icons.add,
+                            size: 18, color: Colors.white),
+                        label: const Text('Nuevo',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 13)),
+                        style: AppStyles.primaryButtonStyle,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                // Search
+                Expanded(
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      decoration: InputDecoration(
+                        hintText: 'Buscar proyecto...',
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 13),
+                        prefixIcon: Icon(Icons.search,
+                            color: Colors.grey.shade400, size: 20),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Filters
+                _buildFilterChip(),
+                const SizedBox(width: 16),
+
+                // New Project Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => const ProjectCreateDialog(),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: const Text('Nuevo Proyecto',
+                      style: TextStyle(color: Colors.white)),
+                  style: AppStyles.primaryButtonStyle,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-
-          // Filters
-          _buildFilterChip(),
-          const SizedBox(width: 16),
-
-          // New Project Button
-          ElevatedButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => const ProjectCreateDialog(),
-              );
-            },
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('Nuevo Proyecto',
-                style: TextStyle(color: Colors.white)),
-            style: AppStyles.primaryButtonStyle,
-          ),
-        ],
-      ),
     );
   }
 
@@ -543,17 +660,20 @@ class _ProjectDashboardScreenState
     var filtered = all.where((p) {
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
-        // Resolve client name
-        final cName = clients
-                ?.firstWhere((c) => c.id == p.refCliente,
-                    orElse: () =>
-                        ClientSimpleModel(id: '', firstName: '', lastName: ''))
-                .fullName
-                .toLowerCase() ??
-            '';
+        final client = clients?.firstWhere((c) => c.id == p.refCliente,
+            orElse: () =>
+                ClientSimpleModel(id: '', firstName: '', lastName: ''));
+        final cName = client?.fullName.toLowerCase() ?? '';
+        final cPhone = client?.phone?.toLowerCase() ?? '';
+        final cAddr = client?.address?.toLowerCase() ?? '';
+        final pName = p.address?.toLowerCase() ?? '';
+        final pAddr = p.direccion?.toLowerCase() ?? '';
 
-        final match = (p.address?.toLowerCase().contains(q) ?? false) ||
-            cName.contains(q);
+        final match = pName.contains(q) ||
+            pAddr.contains(q) ||
+            cName.contains(q) ||
+            cPhone.contains(q) ||
+            cAddr.contains(q);
         if (!match) return false;
       }
       if (_statusFilter != 'Todos') {
@@ -564,23 +684,24 @@ class _ProjectDashboardScreenState
 
     filtered.sort((a, b) {
       int cmp = 0;
-      // Resolve client name for sorting
-      final cNameA = clients
-              ?.firstWhere((c) => c.id == a.refCliente,
-                  orElse: () =>
-                      ClientSimpleModel(id: '', firstName: '', lastName: ''))
-              .fullName ??
-          '';
-      final cNameB = clients
-              ?.firstWhere((c) => c.id == b.refCliente,
-                  orElse: () =>
-                      ClientSimpleModel(id: '', firstName: '', lastName: ''))
-              .fullName ??
-          '';
+      final clientA = clients?.firstWhere((c) => c.id == a.refCliente,
+          orElse: () => ClientSimpleModel(id: '', firstName: '', lastName: ''));
+      final clientB = clients?.firstWhere((c) => c.id == b.refCliente,
+          orElse: () => ClientSimpleModel(id: '', firstName: '', lastName: ''));
+
+      final cNameA = clientA?.fullName ?? '';
+      final cNameB = clientB?.fullName ?? '';
+
+      final addrA = (a.direccion != null && a.direccion!.isNotEmpty)
+          ? a.direccion!
+          : (clientA?.address ?? (a.address ?? ''));
+      final addrB = (b.direccion != null && b.direccion!.isNotEmpty)
+          ? b.direccion!
+          : (clientB?.address ?? (b.address ?? ''));
 
       switch (_sortColumnIndex) {
         case 0: // Project Name
-          cmp = (a.address ?? '').compareTo(b.address ?? '');
+          cmp = addrA.compareTo(addrB);
           break;
         case 1: // Client
           cmp = cNameA.compareTo(cNameB);
@@ -603,6 +724,9 @@ class _ProjectDashboardScreenState
           cmp = (a.fechaUltimaEvidencia ?? DateTime(1900))
               .compareTo(b.fechaUltimaEvidencia ?? DateTime(1900));
           break;
+        default:
+          cmp = b.createdAt.compareTo(a.createdAt); // Newest first
+          return cmp; // Ignore _isAscending for default sort
       }
       return _isAscending ? cmp : -cmp;
     });
@@ -675,17 +799,20 @@ class _ProjectDashboardScreenState
       ),
       child: Row(
         children: [
-          Text(
-            'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems resultados',
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          Expanded(
+            child: Text(
+              'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems',
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          const Spacer(),
           IconButton(
             onPressed:
                 _currentPage > 0 ? () => setState(() => _currentPage--) : null,
             icon: const Icon(Icons.chevron_left),
           ),
-          Text('Página ${_currentPage + 1} de $totalPages',
+          Text('${_currentPage + 1}/$totalPages',
               style: const TextStyle(fontSize: 13)),
           IconButton(
             onPressed: _currentPage < totalPages - 1
@@ -695,6 +822,125 @@ class _ProjectDashboardScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMobileList(
+      List<ProjectModel> pagedProjects, List<ClientSimpleModel>? clients) {
+    if (pagedProjects.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No se encontraron proyectos.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: pagedProjects.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final project = pagedProjects[index];
+        final isSelected = _selectedIds.contains(project.id);
+        final client = clients?.firstWhere((c) => c.id == project.refCliente,
+            orElse: () =>
+                ClientSimpleModel(id: '', firstName: 'Unknown', lastName: ''));
+        final clientName = client?.fullName ?? 'Unknown';
+        final displayAddress =
+            (project.direccion != null && project.direccion!.isNotEmpty)
+                ? project.direccion!
+                : (client?.address ?? (project.address ?? 'Sin Dirección'));
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: isSelected ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+                color:
+                    isSelected ? AppStyles.primaryOrange : Colors.grey.shade200,
+                width: isSelected ? 2 : 1),
+          ),
+          child: InkWell(
+            onTap: () {
+              if (_selectedIds.isNotEmpty) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedIds.remove(project.id);
+                  } else {
+                    _selectedIds.add(project.id);
+                  }
+                });
+              } else {
+                _navigateToDetail(project.id);
+              }
+            },
+            onLongPress: () {
+              setState(() {
+                if (!isSelected) _selectedIds.add(project.id);
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(project.address ?? 'Proyecto',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF111827))),
+                            const SizedBox(height: 4),
+                            Text(displayAddress,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Color(0xFF4B5563))),
+                          ],
+                        ),
+                      ),
+                      _buildStatusBadge(project),
+                      const SizedBox(width: 8),
+                      _buildActionMenu(project),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline,
+                          size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                          child: Text(clientName,
+                              style: const TextStyle(
+                                  fontSize: 13, color: Color(0xFF4B5563)))),
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        project.fechaInicio != null
+                            ? DateFormat('MM/dd/yyyy')
+                                .format(project.fechaInicio!)
+                            : '-',
+                        style: const TextStyle(
+                            fontSize: 13, color: Color(0xFF4B5563)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

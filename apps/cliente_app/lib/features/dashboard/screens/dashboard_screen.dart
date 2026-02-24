@@ -63,32 +63,57 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 32),
 
               // Recent Activity Sections
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Recent Projects
-                  Expanded(
-                    child: _buildSection(
-                      title: 'Proyectos Recientes',
-                      icon: Icons.assignment_outlined,
-                      color: Colors.blue,
-                      child: _buildRecentProjectsList(context, projectsAsync),
-                      onViewAll: () => context.go('/projects'),
+              MediaQuery.of(context).size.width < 800
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSection(
+                          title: 'Proyectos Recientes',
+                          icon: Icons.assignment_outlined,
+                          color: Colors.blue,
+                          child: _buildRecentProjectsList(
+                              context, projectsAsync, clientsAsync),
+                          onViewAll: () => context.go('/projects'),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSection(
+                          title: 'Facturas Recientes',
+                          icon: Icons.receipt_long_outlined,
+                          color: Colors.orange,
+                          child:
+                              _buildRecentInvoicesList(context, invoicesAsync),
+                          onViewAll: () => context.go('/invoices'),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Recent Projects
+                        Expanded(
+                          child: _buildSection(
+                            title: 'Proyectos Recientes',
+                            icon: Icons.assignment_outlined,
+                            color: Colors.blue,
+                            child: _buildRecentProjectsList(
+                                context, projectsAsync, clientsAsync),
+                            onViewAll: () => context.go('/projects'),
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        // Pending Invoices or Recent Invoices
+                        Expanded(
+                          child: _buildSection(
+                            title: 'Facturas Recientes',
+                            icon: Icons.receipt_long_outlined,
+                            color: Colors.orange,
+                            child: _buildRecentInvoicesList(
+                                context, invoicesAsync),
+                            onViewAll: () => context.go('/invoices'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 24),
-                  // Pending Invoices or Recent Invoices
-                  Expanded(
-                    child: _buildSection(
-                      title: 'Facturas Recientes',
-                      icon: Icons.receipt_long_outlined,
-                      color: Colors.orange,
-                      child: _buildRecentInvoicesList(context, invoicesAsync),
-                      onViewAll: () => context.go('/invoices'),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -122,8 +147,104 @@ class DashboardScreen extends ConsumerWidget {
               ?.fold(0.0, (sum, ap) => sum + ap.currentBalance) ??
           0.0;
 
-      // Use Wrap or GridView, but Row with Expanded is cleaner for 4 items if width allows
-      // For responsiveness, using Wrap is safer if on smaller screens, but Dashboard implies desktop/tablet often
+      final width = MediaQuery.of(context).size.width;
+
+      if (width < 600) {
+        return Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: _StatCard(
+                title: 'Proyectos Activos',
+                value: activeProjectsCount.toString(),
+                icon: Icons.construction,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: _StatCard(
+                title: 'Clientes',
+                value: totalClientsCount.toString(),
+                icon: Icons.people_outline,
+                color: Colors.purple,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: _StatCard(
+                title: 'Por Cobrar',
+                value: NumberFormat.simpleCurrency()
+                    .format(pendingInvoicesBalance),
+                icon: Icons.attach_money,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: _StatCard(
+                title: 'Por Pagar',
+                value: NumberFormat.simpleCurrency().format(pendingAPBalance),
+                icon: Icons.money_off,
+                color: Colors.redAccent,
+              ),
+            ),
+          ],
+        );
+      } else if (width < 1200) {
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    title: 'Proyectos Activos',
+                    value: activeProjectsCount.toString(),
+                    icon: Icons.construction,
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _StatCard(
+                    title: 'Clientes',
+                    value: totalClientsCount.toString(),
+                    icon: Icons.people_outline,
+                    color: Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    title: 'Por Cobrar',
+                    value: NumberFormat.simpleCurrency()
+                        .format(pendingInvoicesBalance),
+                    icon: Icons.attach_money,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _StatCard(
+                    title: 'Por Pagar',
+                    value:
+                        NumberFormat.simpleCurrency().format(pendingAPBalance),
+                    icon: Icons.money_off,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      }
 
       return Row(
         children: [
@@ -176,7 +297,7 @@ class DashboardScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -189,26 +310,32 @@ class DashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(icon, color: color, size: 20),
                     ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               TextButton(
                 onPressed: onViewAll,
@@ -224,7 +351,9 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentProjectsList(
-      BuildContext context, AsyncValue<List<ProjectModel>> projectsAsync) {
+      BuildContext context,
+      AsyncValue<List<ProjectModel>> projectsAsync,
+      AsyncValue<List<ClientSimpleModel>> clientsAsync) {
     return projectsAsync.when(
       data: (projects) {
         if (projects.isEmpty) return const Text('Sin proyectos recientes.');
@@ -235,24 +364,40 @@ class DashboardScreen extends ConsumerWidget {
         final recent = sorted.take(5).toList();
 
         return Column(
-          children: recent
-              .map((p) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFE0F2FE),
-                      child: Icon(Icons.folder_outlined,
-                          color: Colors.blue, size: 20),
-                    ),
-                    title: Text(p.estatus ?? 'Proyecto',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(p.address ?? 'Sin dirección',
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    trailing: const Icon(Icons.chevron_right,
-                        size: 16, color: Colors.grey),
-                    onTap: () => context.go('/projects/${p.id}'),
-                  ))
-              .toList(),
+          children: recent.map((p) {
+            final client = clientsAsync.valueOrNull?.firstWhere(
+                (c) => c.id == p.refCliente,
+                orElse: () => ClientSimpleModel(
+                    id: '', firstName: '', lastName: 'Unknown'));
+
+            final displayAddress =
+                (p.direccion != null && p.direccion!.isNotEmpty)
+                    ? p.direccion!
+                    : (client?.address ?? (p.address ?? 'Sin dirección'));
+
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFE0F2FE),
+                child:
+                    Icon(Icons.folder_outlined, color: Colors.blue, size: 20),
+              ),
+              title: Text(p.address ?? 'Proyecto',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                '${client?.fullName ?? "N/A"} - $displayAddress',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing:
+                  const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+              onTap: () => context.go('/projects/${p.id}'),
+            );
+          }).toList(),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -286,14 +431,23 @@ class DashboardScreen extends ConsumerWidget {
                           size: 20),
                     ),
                     title: Text(inv.clientName ?? 'Cliente',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     subtitle: Text(
-                        'Factura #${inv.id} - ${DateFormat('MM/dd').format(inv.date)}'),
-                    trailing: Text(
-                      currency.format(inv.totalVenta),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
+                      'Factura #${inv.id} - ${DateFormat('MM/dd').format(inv.date)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        currency.format(inv.totalVenta),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     ),
                     onTap: () {
                       // Navigation logic might differ, assuming invoices detail route exists or edit
@@ -332,7 +486,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -344,7 +498,7 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -359,12 +513,16 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

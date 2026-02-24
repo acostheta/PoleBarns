@@ -285,12 +285,16 @@ class ClientSimpleModel {
   final String firstName;
   final String lastName;
   final String? photoUrl;
+  final String? phone;
+  final String? address;
 
   ClientSimpleModel({
     required this.id,
     required this.firstName,
     required this.lastName,
     this.photoUrl,
+    this.phone,
+    this.address,
   });
 
   String get fullName => '$firstName $lastName';
@@ -301,6 +305,8 @@ class ClientSimpleModel {
       firstName: json['first_name'] as String? ?? '',
       lastName: json['last_name'] as String? ?? '',
       photoUrl: json['photo_url'] as String?,
+      phone: json['phone'] as String?,
+      address: json['address'] as String?,
     );
   }
 }
