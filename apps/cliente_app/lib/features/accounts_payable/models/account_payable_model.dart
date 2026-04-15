@@ -33,23 +33,31 @@ class AccountPayableModel {
   });
 
   factory AccountPayableModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return AccountPayableModel(
-      id: json['id'] as String,
-      providerId: json['provider_id'] as String,
-      invoiceDate: DateTime.parse(json['invoice_date'] as String),
-      invoiceInternRef: json['invoice_intern_ref'] as String?,
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      projectId: json['project_id'] as String?,
-      invoiceId: json['invoice_id'] as int?,
-      totalPaid: (json['total_paid'] as num?)?.toDouble() ?? 0.0,
-      currentBalance: (json['current_balance'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
+      id: (json['id'] ?? '').toString(),
+      providerId: (json['provider_id'] ?? '').toString(),
+      invoiceDate: DateTime.tryParse(json['invoice_date']?.toString() ?? '') ??
+          DateTime.now(),
+      invoiceInternRef: json['invoice_intern_ref']?.toString(),
+      totalAmount: parseDouble(json['total_amount']),
+      projectId: json['project_id']?.toString(),
+      invoiceId: json['invoice_id'] is int
+          ? json['invoice_id']
+          : int.tryParse(json['invoice_id']?.toString() ?? ''),
+      totalPaid: parseDouble(json['total_paid']),
+      currentBalance: parseDouble(json['current_balance']),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       provider: json['providers'] != null
           ? ProviderModel.fromJson(json['providers'] as Map<String, dynamic>)
           : null,
-      projectName: json['project_name'],
+      projectName: json['project_name']?.toString(),
     );
   }
 

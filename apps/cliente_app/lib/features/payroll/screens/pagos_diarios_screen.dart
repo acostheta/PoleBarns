@@ -1,11 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../../settings/repositories/settings_repository.dart';
+import 'package:users/users.dart';
 import '../widgets/payments_dialog.dart';
+import '../providers/payroll_summary_provider.dart';
 import 'pago_diario_detail_screen.dart';
 
 class PagosDiariosScreen extends ConsumerStatefulWidget {
@@ -21,6 +23,7 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
   @override
   Widget build(BuildContext context) {
     final repository = ref.watch(payrollRepositoryProvider);
+    final periodFilter = ref.watch(payrollPeriodFilterProvider);
 
     return Scaffold(
       body: Column(
@@ -58,6 +61,8 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
                       };
 
                       final items = snapshot.data!.where((item) {
+                        if (!isDateInFilterRange(item.fecha, periodFilter)) return false;
+                        
                         final empName =
                             empMap[item.idEmpleado]?.toLowerCase() ?? '';
                         final concept =
@@ -339,8 +344,6 @@ class _PagoDiarioFormState extends ConsumerState<PagoDiarioForm> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(payrollRepositoryProvider);
-
     return SingleChildScrollView(
       child: Form(
         key: _formKey,
@@ -350,24 +353,53 @@ class _PagoDiarioFormState extends ConsumerState<PagoDiarioForm> {
           children: [
             const Text('Empleado', style: AppStyles.labelStyle),
             const SizedBox(height: 8),
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: repo.getEmployeesStream(),
-              builder: (context, snapshot) {
-                final employees = snapshot.data ?? [];
-                return DropdownButtonFormField<String>(
-                  value: _selectedEmployeeId,
-                  items: employees.map<DropdownMenuItem<String>>((e) {
-                    return DropdownMenuItem<String>(
-                      value: e['id'].toString(),
-                      child: Text(
-                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
-                          style: const TextStyle(fontSize: 14)),
+            Consumer(
+              builder: (context, ref, _) {
+                final usersAsync = ref.watch(allUsersProvider);
+                final positionsAsync = ref.watch(jobPositionsProvider);
+
+                return usersAsync.when(
+                  data: (users) {
+                    final positions = positionsAsync.value ?? [];
+                    final filteredEmployees = users.where((u) {
+                      final posId = u['job_position_id'];
+                      if (posId == null) {
+                        return true; // Include if no position? Or exclude? Let's include.
+                      }
+
+                      final pos = positions.firstWhere(
+                        (p) => p['id'] == posId,
+                        orElse: () => {},
+                      );
+                      if (pos.isEmpty) return true;
+
+                      final posName = (pos['name'] as String).toLowerCase();
+                      return !posName.contains('chofer') &&
+                          !posName.contains('soldador') &&
+                          !posName.contains('instalador');
+                    }).toList();
+
+                    return DropdownButtonFormField<String>(
+                      value: _selectedEmployeeId,
+                      items:
+                          filteredEmployees.map<DropdownMenuItem<String>>((e) {
+                        return DropdownMenuItem<String>(
+                          value: e['id'].toString(),
+                          child: Text(
+                              (e['full_name'] ?? e['name'])?.toString() ??
+                                  'S/N',
+                              style: const TextStyle(fontSize: 14)),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                      validator: (v) => v == null ? 'Requerido' : null,
+                      decoration: AppStyles.inputDecoration(),
+                      icon: const Icon(Icons.keyboard_arrow_down),
                     );
-                  }).toList(),
-                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                  validator: (v) => v == null ? 'Requerido' : null,
-                  decoration: AppStyles.inputDecoration(),
-                  icon: const Icon(Icons.keyboard_arrow_down),
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, s) => Text('Error: $e'),
                 );
               },
             ),
@@ -376,13 +408,13 @@ class _PagoDiarioFormState extends ConsumerState<PagoDiarioForm> {
             const SizedBox(height: 24),
             _buildTextField('Concepto / Periodo', _conceptoCtrl),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(child: Consumer(builder: (context, ref, _) {
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                final field1 = Consumer(builder: (context, ref, _) {
                   final methodsAsync = ref.watch(paymentMethodsListProvider);
                   return methodsAsync.when(
                     data: (methods) {
-                      // Ensure selected value exists in list or is null
                       if (_selectedFormaPago != null &&
                           !methods.any((m) => m.name == _selectedFormaPago)) {
                         _selectedFormaPago = null;
@@ -424,25 +456,58 @@ class _PagoDiarioFormState extends ConsumerState<PagoDiarioForm> {
                     ),
                     error: (e, s) => const Text('Error cargando métodos'),
                   );
-                })),
-                const SizedBox(width: 16),
-                Expanded(child: _buildTextField('Nro Referencia', _chequeCtrl)),
-              ],
+                });
+                final field2 = _buildTextField('Nro Referencia', _chequeCtrl);
+
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      field1,
+                      const SizedBox(height: 24),
+                      field2,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: field1),
+                    const SizedBox(width: 16),
+                    Expanded(child: field2),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                    child: _buildTextField('Días', _diasCtrl,
-                        keyboardType: TextInputType.number)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildTextField('Monto', _montoCtrl,
-                        required: true,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        prefixText: '\$ ')),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                final field1 = _buildTextField('Días', _diasCtrl,
+                    keyboardType: TextInputType.number);
+                final field2 = _buildTextField('Monto', _montoCtrl,
+                    required: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    prefixText: '\$ ');
+
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      field1,
+                      const SizedBox(height: 24),
+                      field2,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: field1),
+                    const SizedBox(width: 16),
+                    Expanded(child: field2),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             _buildTextField('Notas', _notasCtrl, maxLines: 2),

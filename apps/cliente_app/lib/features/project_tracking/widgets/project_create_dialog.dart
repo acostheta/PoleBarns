@@ -70,10 +70,28 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
 
   bool get _isEditing => widget.projectId != null;
   bool _isMobile = false;
+  bool _isSaved = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.projectId == null) {
+      final draft = ref.read(projectDraftProvider);
+      if (draft.projectName.isNotEmpty || draft.clientId != null || draft.structures.isNotEmpty || draft.address.isNotEmpty) {
+        _nameController.text = draft.projectName;
+        _direccionController.text = draft.address;
+        _selectedClientId = draft.clientId;
+        _selectedResponsable = draft.responsible;
+        _selectedGroupUsers = List.from(draft.groupUsers);
+        _selectedStatus = draft.status;
+        _startDate = draft.startDate;
+        _endDate = draft.endDate;
+        _commentsController.text = draft.comments;
+        _selectedStructures.addAll(draft.structures);
+        return;
+      }
+    }
+
     _selectedClientId = widget.initialClientId;
     if (widget.initialProjectName != null) {
       _nameController.text = widget.initialProjectName!;
@@ -102,6 +120,33 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
     if (widget.initialStructures != null) {
       _selectedStructures.addAll(widget.initialStructures!);
     }
+  }
+
+  @override
+  void deactivate() {
+    if (widget.projectId == null && !_isSaved) {
+      ref.read(projectDraftProvider.notifier).updateDraft(ProjectDraft(
+            projectName: _nameController.text,
+            address: _direccionController.text,
+            clientId: _selectedClientId,
+            responsible: _selectedResponsable,
+            groupUsers: List.from(_selectedGroupUsers),
+            status: _selectedStatus,
+            startDate: _startDate,
+            endDate: _endDate,
+            comments: _commentsController.text,
+            structures: List.from(_selectedStructures),
+          ));
+    }
+    super.deactivate();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _direccionController.dispose();
+    _commentsController.dispose();
+    super.dispose();
   }
 
   Future<void> _submit() async {
@@ -172,6 +217,9 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
             (struct['precio_venta'] as num).toDouble(),
           );
         }
+
+        _isSaved = true;
+        ref.read(projectDraftProvider.notifier).clearDraft();
 
         if (mounted) Navigator.of(context).pop(true);
       } catch (e) {

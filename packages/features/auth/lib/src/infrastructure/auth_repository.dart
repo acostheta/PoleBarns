@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class AuthRepository {
   final SupabaseClient _supabase;
 
@@ -13,6 +14,14 @@ class AuthRepository {
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
   Future<AuthResponse> signInWithEmailAndPassword(String email, String password) async {
+    // Clear any stale cached data before signing in so the navbar
+    // always shows fresh data from the server on the first load.
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) =>
+        k.startsWith('profile_map_') || k.startsWith('access_map_')).toList();
+    for (final k in keys) {
+      await prefs.remove(k);
+    }
     return await _supabase.auth.signInWithPassword(email: email, password: password);
   }
 
@@ -25,17 +34,24 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
+    // Clear cached profile & access so the next user starts with a blank slate.
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) =>
+        k.startsWith('profile_map_') || k.startsWith('access_map_')).toList();
+    for (final k in keys) {
+      await prefs.remove(k);
+    }
     await _supabase.auth.signOut();
   }
 
   // Profile Management
   
-  Stream<Map<String, dynamic>?> getUserProfile(String userId) {
-    return _supabase
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    return await _supabase
         .from('profiles')
-        .stream(primaryKey: ['id'])
+        .select()
         .eq('id', userId)
-        .map((data) => data.isNotEmpty ? data.first : null);
+        .maybeSingle();
   }
 
   Future<void> updateUserProfile({
@@ -50,7 +66,7 @@ class AuthRepository {
       'updated_at': DateTime.now().toIso8601String(),
       if (name != null) 'name': name,
       if (picture != null) 'picture': picture,
-      if (role != null) 'role': role,
+      if (role != null) 'user_level': role,
       if (isActive != null) 'is_active': isActive,
       if (jobPositionId != null) 'job_position_id': jobPositionId,
     };
@@ -89,9 +105,31 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-// Changed to StreamProvider
-final userProfileProvider = StreamProvider.family<Map<String, dynamic>?, String>((ref, userId) {
-  return ref.watch(authRepositoryProvider).getUserProfile(userId);
+// Reactive to auth state so it re-fetches on login / logout
+final userProfileProvider = StreamProvider.family<Map<String, dynamic>?, String>((ref, userId) async* {
+  // ── Watch auth state so this provider re-runs on login/logout ──
+  ref.watch(authStateProvider);
+
+  final prefs = await SharedPreferences.getInstance();
+  final cacheKey = 'profile_map_$userId';
+  final cached = prefs.getString(cacheKey);
+  
+  if (cached != null) {
+    try {
+      yield jsonDecode(cached) as Map<String, dynamic>;
+    } catch (_) {}
+  }
+
+  try {
+    final data = await ref.watch(authRepositoryProvider).getUserProfile(userId);
+    if (data != null) {
+      prefs.setString(cacheKey, jsonEncode(data));
+    }
+    yield data;
+  } catch (e) {
+    // On network/token error, just keep the cached value (or null).
+    if (cached == null) yield null;
+  }
 });
 
 // Note: jobPositionsProvider in this file is likely deprecated/duplicates the one in users_repository.

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
+import '../providers/payroll_summary_provider.dart';
 import '../widgets/payments_dialog.dart';
 import '../widgets/pagos_soldadores_form_dialog.dart';
 import 'soldador_detail_screen.dart';
@@ -22,6 +23,7 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
+    final periodFilter = ref.watch(payrollPeriodFilterProvider);
 
     return Scaffold(
       body: Column(
@@ -59,6 +61,8 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
                       };
 
                       final items = snapshot.data!.where((item) {
+                        if (!isDateInFilterRange(item.fecha, periodFilter)) return false;
+                        
                         final empName =
                             empMap[item.idEmpleado]?.toLowerCase() ?? '';
                         return empName.contains(_searchQuery);

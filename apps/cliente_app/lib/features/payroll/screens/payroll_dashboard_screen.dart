@@ -75,9 +75,10 @@ class PayrollDashboardScreen extends ConsumerWidget {
       BuildContext context, PayrollSummaryData data, WidgetRef ref) {
     final currencyFormatter =
         NumberFormat.currency(symbol: r'$', decimalDigits: 2);
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32.0),
+      padding: EdgeInsets.all(isMobile ? 16.0 : 32.0),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -86,95 +87,163 @@ class PayrollDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Resumen General de Nómina',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
-                            ),
+              if (isMobile) ...[
+                Text(
+                  'Resumen General de Nómina',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E293B),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Vista general de todos los pagos de nómina.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF64748B),
-                            ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Vista general de todos los pagos de nómina.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF64748B),
+                      ),
+                ),
+                const SizedBox(height: 16),
+                _buildPeriodDropdown(ref),
+              ] else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Resumen General de Nómina',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1E293B),
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Vista general de todos los pagos de nómina.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: const Color(0xFF64748B),
+                              ),
+                        ),
+                      ],
+                    ),
+                    _buildPeriodDropdown(ref),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 32),
+
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildMainTotalCard(
+                        context, data.totalPagado, currencyFormatter),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      'Diario',
+                      data.diarioTotal,
+                      Icons.calendar_today_outlined,
+                      const Color(0xFFFFF7ED),
+                      const Color(0xFFEA580C),
+                      () => DefaultTabController.of(context).animateTo(1),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      'Soldadores',
+                      data.soldadoresTotal,
+                      Icons.inventory_2_outlined,
+                      const Color(0xFFF0FDF4),
+                      const Color(0xFF16A34A),
+                      () => DefaultTabController.of(context).animateTo(2),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      'Instalación',
+                      data.instalacionTotal,
+                      Icons.build_outlined,
+                      const Color(0xFFEFF6FF),
+                      const Color(0xFF2563EB),
+                      () => DefaultTabController.of(context).animateTo(3),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      'Por Hora',
+                      data.porHoraTotal,
+                      Icons.access_time_outlined,
+                      const Color(0xFFF5F3FF),
+                      const Color(0xFF7C3AED),
+                      () => DefaultTabController.of(context).animateTo(4),
+                    ),
+                  ],
+                )
+              else
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _buildMainTotalCard(
+                            context, data.totalPagado, currencyFormatter),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildCategoryCard(
+                          context,
+                          'Diario',
+                          data.diarioTotal,
+                          Icons.calendar_today_outlined,
+                          const Color(0xFFFFF7ED),
+                          const Color(0xFFEA580C),
+                          () => DefaultTabController.of(context).animateTo(1),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildCategoryCard(
+                          context,
+                          'Soldadores',
+                          data.soldadoresTotal,
+                          Icons.inventory_2_outlined,
+                          const Color(0xFFF0FDF4),
+                          const Color(0xFF16A34A),
+                          () => DefaultTabController.of(context).animateTo(2),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildCategoryCard(
+                          context,
+                          'Instalación',
+                          data.instalacionTotal,
+                          Icons.build_outlined,
+                          const Color(0xFFEFF6FF),
+                          const Color(0xFF2563EB),
+                          () => DefaultTabController.of(context).animateTo(3),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildCategoryCard(
+                          context,
+                          'Por Hora',
+                          data.porHoraTotal,
+                          Icons.access_time_outlined,
+                          const Color(0xFFF5F3FF),
+                          const Color(0xFF7C3AED),
+                          () => DefaultTabController.of(context).animateTo(4),
+                        ),
                       ),
                     ],
                   ),
-                  _buildPeriodDropdown(),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _buildMainTotalCard(
-                          context, data.totalPagado, currencyFormatter),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildCategoryCard(
-                        context,
-                        'Diario',
-                        data.diarioTotal,
-                        Icons.calendar_today_outlined,
-                        const Color(0xFFFFF7ED),
-                        const Color(0xFFEA580C),
-                        () => DefaultTabController.of(context).animateTo(1),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildCategoryCard(
-                        context,
-                        'Soldadores',
-                        data.soldadoresTotal,
-                        Icons.inventory_2_outlined,
-                        const Color(0xFFF0FDF4),
-                        const Color(0xFF16A34A),
-                        () => DefaultTabController.of(context).animateTo(2),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildCategoryCard(
-                        context,
-                        'Instalación',
-                        data.instalacionTotal,
-                        Icons.build_outlined,
-                        const Color(0xFFEFF6FF),
-                        const Color(0xFF2563EB),
-                        () => DefaultTabController.of(context).animateTo(3),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildCategoryCard(
-                        context,
-                        'Por Hora',
-                        data.porHoraTotal,
-                        Icons.access_time_outlined,
-                        const Color(0xFFF5F3FF),
-                        const Color(0xFF7C3AED),
-                        () => DefaultTabController.of(context).animateTo(4),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
 
               const SizedBox(height: 32),
 
@@ -294,7 +363,9 @@ class PayrollDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPeriodDropdown() {
+  Widget _buildPeriodDropdown(WidgetRef ref) {
+    final currentFilter = ref.watch(payrollPeriodFilterProvider);
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -304,13 +375,17 @@ class PayrollDashboardScreen extends ConsumerWidget {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: 'Este Mes',
+          value: currentFilter,
           items: const [
             DropdownMenuItem(value: 'Este Mes', child: Text('Este Mes')),
-            DropdownMenuItem(value: 'Hoy', child: Text('Hoy')),
             DropdownMenuItem(value: 'Esta Semana', child: Text('Esta Semana')),
+            DropdownMenuItem(value: 'Hoy', child: Text('Hoy')),
           ],
-          onChanged: (v) {},
+          onChanged: (v) {
+            if (v != null) {
+              ref.read(payrollPeriodFilterProvider.notifier).state = v;
+            }
+          },
         ),
       ),
     );
@@ -345,13 +420,20 @@ class PayrollDashboardScreen extends ConsumerWidget {
             ),
           ),
           const Divider(height: 1),
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(1.2), // Fecha
-              1: FlexColumnWidth(2), // Empleado
-              2: FlexColumnWidth(1.5), // Tipo
-              3: FlexColumnWidth(1.2), // Monto
-            },
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  minWidth: MediaQuery.of(context).size.width > 800
+                      ? MediaQuery.of(context).size.width - 150
+                      : 800),
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(1.2), // Fecha
+                  1: FlexColumnWidth(2), // Empleado
+                  2: FlexColumnWidth(1.5), // Tipo
+                  3: FlexColumnWidth(1.2), // Monto
+                },
             children: [
               // Header
               TableRow(
@@ -384,6 +466,8 @@ class PayrollDashboardScreen extends ConsumerWidget {
                 );
               }),
             ],
+          ),
+            ),
           ),
           if (transactions.isEmpty)
             const Padding(

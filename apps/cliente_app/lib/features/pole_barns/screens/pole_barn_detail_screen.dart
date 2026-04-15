@@ -24,6 +24,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   late TextEditingController _altoController;
   late TextEditingController _spacingController;
   late TextEditingController _sheetController;
+  late TextEditingController _tamanoController;
   late TextEditingController _precioVentaController;
   late TextEditingController _budgetController;
   late TextEditingController _nameController;
@@ -41,6 +42,8 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     _spacingController =
         TextEditingController(text: pb?.spacing.toString() ?? '0');
     _sheetController = TextEditingController(text: pb?.sheet.toString() ?? '0');
+    _tamanoController =
+        TextEditingController(text: pb?.tamano.toString() ?? '0');
     _precioVentaController =
         TextEditingController(text: pb?.precioVenta.toString() ?? '0');
     _budgetController =
@@ -57,6 +60,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     _altoController.dispose();
     _spacingController.dispose();
     _sheetController.dispose();
+    _tamanoController.dispose();
     _precioVentaController.dispose();
     _budgetController.dispose();
     _nameController.dispose();
@@ -83,6 +87,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       alto: alto,
       spacing: double.tryParse(_spacingController.text) ?? currentState.spacing,
       sheet: double.tryParse(_sheetController.text) ?? currentState.sheet,
+      tamano: _tamanoController.text,
       precioVenta: double.tryParse(_precioVentaController.text) ??
           currentState.precioVenta,
       budgetLimit:
@@ -561,83 +566,174 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       );
     }
 
+    const double colNum = 40;
+    const double colMat = 250;
+    const double colCant = 90;
+    const double colMed = 90;
+    const double colPrc = 100;
+    const double colDes = 100;
+    const double colTot = 100;
+    const double colAcc = 90;
+    const double totalWidth = colNum +
+        colMat +
+        colCant +
+        colMed +
+        colPrc +
+        colDes +
+        colTot +
+        colAcc +
+        60;
+
+    const headerStyle = TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF6B7280),
+        fontSize: 11,
+        letterSpacing: 0.5);
+
     return LayoutBuilder(builder: (context, constraints) {
+      final double containerWidth =
+          totalWidth > constraints.maxWidth ? totalWidth : constraints.maxWidth;
       return Scrollbar(
         thumbVisibility: true,
         child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: DataTable(
-                headingTextStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF6B7280),
-                    fontSize: 11,
-                    letterSpacing: 0.5),
-                horizontalMargin: 20,
-                columnSpacing: 16,
-                dataRowMinHeight: 56,
-                dataRowMaxHeight: 56,
-                columns: const [
-                  DataColumn(label: Text('MATERIAL')),
-                  DataColumn(label: Text('CANTIDAD'), numeric: true),
-                  DataColumn(label: Text('MEDIDA')),
-                  DataColumn(label: Text('PRECIO UNIT.'), numeric: true),
-                  DataColumn(label: Text('DESPERDICIO'), numeric: true),
-                  DataColumn(label: Text('TOTAL'), numeric: true),
-                  DataColumn(label: Text('ACCIONES')),
-                ],
-                rows: materials.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final m = entry.value;
-                  return DataRow(
-                    cells: [
-                      DataCell(
-                        SizedBox(
-                          width: 250,
-                          child: Text(
-                            m.materialName ?? 'N/A',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Color(0xFF1E293B)),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: containerWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Encabezados
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: const BoxDecoration(
+                    border:
+                        Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                          width: colNum, child: Text('#', style: headerStyle)),
+                      const SizedBox(
+                          width: colMat,
+                          child: Text('MATERIAL', style: headerStyle)),
+                      const SizedBox(
+                          width: colCant,
+                          child: Text('CANTIDAD', style: headerStyle)),
+                      const SizedBox(
+                          width: colMed,
+                          child: Text('MEDIDA', style: headerStyle)),
+                      const SizedBox(
+                          width: colPrc,
+                          child: Text('PRECIO UNIT.', style: headerStyle)),
+                      const SizedBox(
+                          width: colDes,
+                          child: Text('DESPERDICIO', style: headerStyle)),
+                      const SizedBox(
+                          width: colTot,
+                          child: Text('TOTAL', style: headerStyle)),
+                      const SizedBox(
+                          width: colAcc,
+                          child: Text('ACCIONES', style: headerStyle)),
+                    ],
+                  ),
+                ),
+                // Cuerpo
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  buildDefaultDragHandles: false,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: materials.length,
+                  onReorder: (oldIndex, newIndex) {
+                    notifier.reorderMaterial(oldIndex, newIndex);
+                  },
+                  itemBuilder: (context, index) {
+                    final m = materials[index];
+                    return ReorderableDragStartListener(
+                      key: ValueKey('${m.id}_${m.materialId}_$index'),
+                      index: index,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                                bottom: BorderSide(color: Color(0xFFF3F4F6))),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 20),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                  width: colNum,
+                                  child: Text('${index + 1}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF9CA3AF),
+                                          fontSize: 13))),
+                              SizedBox(
+                                width: colMat,
+                                child: Text(
+                                  m.materialName ?? 'N/A',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Color(0xFF1E293B)),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SizedBox(
+                                  width: colCant,
+                                  child: Text(m.qty.toString(),
+                                      style: const TextStyle(fontSize: 13))),
+                              SizedBox(
+                                  width: colMed,
+                                  child: Text(m.medida ?? '-',
+                                      style: const TextStyle(fontSize: 13))),
+                              SizedBox(
+                                  width: colPrc,
+                                  child: Text(
+                                      _currencyFormat.format(m.pricePorUnidad),
+                                      style: const TextStyle(fontSize: 13))),
+                              SizedBox(
+                                  width: colDes,
+                                  child: Text('${m.wastePercent}%',
+                                      style: const TextStyle(fontSize: 13))),
+                              SizedBox(
+                                  width: colTot,
+                                  child: Text(
+                                      _currencyFormat.format(m.calculatedTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: Colors.indigo))),
+                              SizedBox(
+                                width: colAcc,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                        icon: const Icon(Icons.edit_outlined,
+                                            size: 16, color: Colors.blueGrey),
+                                        onPressed: () =>
+                                            _showMaterialDialog(index)),
+                                    IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            size: 16, color: Colors.red),
+                                        onPressed: () =>
+                                            notifier.removeMaterial(index)),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      DataCell(Text(m.qty.toString(),
-                          style: const TextStyle(fontSize: 13))),
-                      DataCell(Text(m.medida ?? '-',
-                          style: const TextStyle(fontSize: 13))),
-                      DataCell(Text(_currencyFormat.format(m.pricePorUnidad),
-                          style: const TextStyle(fontSize: 13))),
-                      DataCell(Text('${m.wastePercent}%',
-                          style: const TextStyle(fontSize: 13))),
-                      DataCell(Text(_currencyFormat.format(m.calculatedTotal),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Colors.indigo))),
-                      DataCell(Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                              icon: const Icon(Icons.edit_outlined,
-                                  size: 16, color: Colors.blueGrey),
-                              onPressed: () => _showMaterialDialog(index)),
-                          IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 16, color: Colors.red),
-                              onPressed: () => notifier.removeMaterial(index)),
-                        ],
-                      )),
-                    ],
-                  );
-                }).toList(),
-              ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -673,7 +769,13 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         ),
         const SizedBox(width: 24),
         Expanded(
-          child: _buildNumericField(_budgetController, 'Presupuesto Máximo',
+          child: _buildNumericField(
+              _tamanoController, 'Tamaño', Icons.aspect_ratio,
+              isText: true),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildNumericField(_budgetController, 'Presupuesto Max.',
               Icons.account_balance_wallet_outlined),
         ),
       ],
@@ -682,7 +784,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
 
   Widget _buildNumericField(
       TextEditingController controller, String label, IconData icon,
-      {bool isCurrency = false}) {
+      {bool isCurrency = false, bool isText = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -694,12 +796,17 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           decoration: AppStyles.inputDecoration().copyWith(
             prefixIcon: Icon(icon, size: 20, color: Colors.grey),
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-          ],
+          keyboardType: isText
+              ? TextInputType.text
+              : const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: isText
+              ? []
+              : [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
           validator: (val) {
             if (val == null || val.isEmpty) return 'Requerido';
+            if (isText) return null;
             final n = double.tryParse(val);
             if (n == null) return 'Inválido';
             if (n < 0) return 'No negativo';

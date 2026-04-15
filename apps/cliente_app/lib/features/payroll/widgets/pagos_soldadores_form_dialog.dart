@@ -23,11 +23,13 @@ class PagosSoldadoresFormDialog extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                    item == null
-                        ? 'Nuevo Pago a Soldador'
-                        : 'Editar Pago a Soldador',
-                    style: AppStyles.dialogTitleStyle),
+                Expanded(
+                  child: Text(
+                      item == null
+                          ? 'Nuevo Pago a Soldador'
+                          : 'Editar Pago a Soldador',
+                      style: AppStyles.dialogTitleStyle),
+                ),
                 IconButton(
                     icon: const Icon(Icons.close, color: Colors.grey),
                     onPressed: () => Navigator.pop(context)),

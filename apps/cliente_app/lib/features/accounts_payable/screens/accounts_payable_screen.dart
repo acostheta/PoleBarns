@@ -50,37 +50,49 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
         children: [
           // Dashboard Cards
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: MediaQuery.of(context).size.width < 800
-                ? Column(
-                    children: [
-                      _buildStatCard(
-                        context,
-                        title: 'TOTAL DEUDA',
-                        amount: stats['totalDebt']!,
-                        color: Colors.black87,
-                        isMoney: true,
-                        icon: Icons.receipt_long_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildStatCard(
-                        context,
-                        title: 'TOTAL PAGADO',
-                        amount: stats['totalPaid']!,
-                        color: const Color(0xFF059669),
-                        isMoney: true,
-                        icon: Icons.check_circle_outline,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildStatCard(
-                        context,
-                        title: 'SALDO PENDIENTE',
-                        amount: stats['pendingBalance']!,
-                        color: Colors.redAccent,
-                        isMoney: true,
-                        icon: Icons.pending_actions,
-                      ),
-                    ],
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 220,
+                          child: _buildStatCard(
+                            context,
+                            title: 'TOTAL DEUDA',
+                            amount: stats['totalDebt']!,
+                            color: Colors.black87,
+                            isMoney: true,
+                            icon: Icons.receipt_long_outlined,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 220,
+                          child: _buildStatCard(
+                            context,
+                            title: 'TOTAL PAGADO',
+                            amount: stats['totalPaid']!,
+                            color: const Color(0xFF059669),
+                            isMoney: true,
+                            icon: Icons.check_circle_outline,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 220,
+                          child: _buildStatCard(
+                            context,
+                            title: 'SALDO PENDIENTE',
+                            amount: stats['pendingBalance']!,
+                            color: Colors.redAccent,
+                            isMoney: true,
+                            icon: Icons.pending_actions,
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 : Row(
                     children: [
@@ -721,7 +733,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
       bool isMoney = false,
       required IconData icon}) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 800 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -734,6 +746,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
         ],
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
               padding: const EdgeInsets.all(12),
@@ -741,7 +754,7 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: color, size: 24)),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title,
                 style: const TextStyle(
@@ -754,10 +767,10 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                 isMoney
                     ? NumberFormat.simpleCurrency().format(amount)
                     : amount.toString(),
-                style: const TextStyle(
-                    color: Color(0xFF111827),
+                style: TextStyle(
+                    color: const Color(0xFF111827),
                     fontWeight: FontWeight.bold,
-                    fontSize: 20)),
+                    fontSize: MediaQuery.of(context).size.width < 800 ? 18 : 20)),
           ]),
         ],
       ),

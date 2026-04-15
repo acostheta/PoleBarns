@@ -26,7 +26,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.read(authRepositoryProvider).currentUser;
     if (user != null) {
       final profile =
-          await ref.read(authRepositoryProvider).getUserProfile(user.id).first;
+          await ref.read(authRepositoryProvider).getUserProfile(user.id);
       if (profile != null) {
         setState(() {
           _nameController.text = profile['name'] ?? '';

@@ -57,6 +57,30 @@ final projectsProvider = StreamProvider(
 final paymentsPayrollProvider = StreamProvider(
     (ref) => ref.watch(payrollRepositoryProvider).getPaymentsStream());
 
+final payrollPeriodFilterProvider = StateProvider<String>((ref) => 'Este Mes');
+
+bool isDateInFilterRange(DateTime? date, String periodFilter) {
+  if (date == null) return false;
+
+  final now = DateTime.now();
+
+  if (periodFilter == 'Hoy') {
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  } else if (periodFilter == 'Esta Semana') {
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeekDate =
+        DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+    final endOfWeekDate = startOfWeekDate.add(const Duration(days: 7));
+    return date.isAfter(startOfWeekDate.subtract(const Duration(milliseconds: 1))) &&
+           date.isBefore(endOfWeekDate);
+  } else {
+    // Este Mes
+    return date.year == now.year && date.month == now.month;
+  }
+}
+
 final combinedPayrollSummaryProvider =
     Provider<AsyncValue<PayrollSummaryData>>((ref) {
   final diarioAsync = ref.watch(pagosDiariosProvider);
@@ -77,11 +101,7 @@ final combinedPayrollSummaryProvider =
     return const AsyncValue.loading();
   }
 
-  final now = DateTime.now();
-  bool isThisMonth(DateTime? date) {
-    if (date == null) return false;
-    return date.year == now.year && date.month == now.month;
-  }
+  final periodFilter = ref.watch(payrollPeriodFilterProvider);
 
   // Data
   final diarioRaw = diarioAsync.value ?? [];
@@ -103,24 +123,24 @@ final combinedPayrollSummaryProvider =
   // --- Calculations (Filtered by Month) ---
 
   // 1. Diario
-  final diarioThisMonth = diarioRaw.where((i) => isThisMonth(i.fecha)).toList();
+  final diarioThisMonth = diarioRaw.where((i) => isDateInFilterRange(i.fecha, periodFilter)).toList();
   double totalDiario =
       diarioThisMonth.fold(0, (sum, item) => sum + (item.monto ?? 0));
 
   // 2. Choferes
-  final choferThisMonth = choferRaw.where((i) => isThisMonth(i.fecha)).toList();
+  final choferThisMonth = choferRaw.where((i) => isDateInFilterRange(i.fecha, periodFilter)).toList();
   double totalChofer =
       choferThisMonth.fold(0, (sum, item) => sum + (item.total ?? 0));
 
   // 3. Piecework (Soldadores & Instalación)
   final soldadoresThisMonth =
-      soldadoresRaw.where((i) => isThisMonth(i.fecha)).toList();
+      soldadoresRaw.where((i) => isDateInFilterRange(i.fecha, periodFilter)).toList();
   double totalSoldadores =
       soldadoresThisMonth.fold(0, (sum, item) => sum + (item.total ?? 0));
 
   final instalacionThisMonth = instalacionRaw
       .where(
-          (i) => i.fechaCulminacion != null && isThisMonth(i.fechaCulminacion))
+          (i) => i.fechaCulminacion != null && isDateInFilterRange(i.fechaCulminacion, periodFilter))
       .toList();
   double totalInstalacion = instalacionThisMonth.fold(
       0, (sum, item) => sum + (item.pagoProyecto ?? 0));

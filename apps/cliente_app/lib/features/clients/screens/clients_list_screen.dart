@@ -287,7 +287,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                           ),
                                   ),
                                   _buildPaginationFooter(startIndex, endIndex,
-                                      totalItems, totalPages),
+                                      totalItems, totalPages, isMobile),
                                 ],
                               );
                             }),
@@ -640,13 +640,43 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
   }
 
   Widget _buildPaginationFooter(
-      int startIndex, int endIndex, int totalItems, int totalPages) {
+      int startIndex, int endIndex, int totalItems, int totalPages, bool isMobile) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
       ),
-      child: Row(
+      child: isMobile
+          ? Column(
+              children: [
+                Text(
+                  'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems resultados',
+                  style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0
+                          ? () => setState(() => _currentPage--)
+                          : null,
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    Text('Página ${_currentPage + 1} de $totalPages',
+                        style: const TextStyle(fontSize: 13)),
+                    IconButton(
+                      onPressed: _currentPage < totalPages - 1
+                          ? () => setState(() => _currentPage++)
+                          : null,
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
         children: [
           Text(
             'Mostrando ${totalItems == 0 ? 0 : startIndex + 1} a $endIndex de $totalItems resultados',

@@ -9,6 +9,7 @@ class RelatedMaterial {
   final double costPorUnidad; // Added cost
   final double? total;
   final String? materialName;
+  final int sortOrder;
 
   RelatedMaterial({
     this.id,
@@ -21,6 +22,7 @@ class RelatedMaterial {
     this.costPorUnidad = 0,
     this.total,
     this.materialName,
+    this.sortOrder = 0,
   });
 
   factory RelatedMaterial.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class RelatedMaterial {
           (json['raw_materials']?['cost'] as num?)?.toDouble() ?? 0.0,
       total: (json['Total'] ?? json['total'] as num?)?.toDouble(),
       materialName: json['raw_materials']?['name'],
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -53,6 +56,7 @@ class RelatedMaterial {
       'Qty': qty,
       'Waste %': wastePercent,
       'Price por unidad': pricePorUnidad,
+      'sort_order': sortOrder,
     };
   }
 
@@ -67,6 +71,7 @@ class RelatedMaterial {
     double? costPorUnidad,
     double? total,
     String? materialName,
+    int? sortOrder,
   }) {
     return RelatedMaterial(
       id: id ?? this.id,
@@ -79,6 +84,7 @@ class RelatedMaterial {
       costPorUnidad: costPorUnidad ?? this.costPorUnidad,
       total: total ?? this.total,
       materialName: materialName ?? this.materialName,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 

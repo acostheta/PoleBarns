@@ -20,6 +20,35 @@ class _AccountsPayableDashboardState
   Widget build(BuildContext context) {
     const bgLight = Color(0xFFFDFBF7);
 
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    final selectedId = ref.watch(selectedAccountPayableIdProvider);
+
+    if (isMobile) {
+      if (selectedId != null) {
+        return Scaffold(
+          backgroundColor: bgLight,
+          appBar: AppBar(
+            leading: BackButton(
+              onPressed: () {
+                ref.read(selectedAccountPayableIdProvider.notifier).state =
+                    null;
+              },
+            ),
+            title: const Text('Detalle de Cuenta'),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 1,
+          ),
+          body: AccountPayableDetailView(accountId: selectedId),
+        );
+      } else {
+        return Scaffold(
+          backgroundColor: bgLight,
+          body: const AccountsPayableListSidebar(),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: bgLight,
       body: Row(
@@ -64,20 +93,14 @@ class _AccountsPayableDashboardState
 
           // Right Content (Account Details)
           Expanded(
-            child: Consumer(
-              builder: (context, ref, child) {
-                final selectedId = ref.watch(selectedAccountPayableIdProvider);
-                if (selectedId == null) {
-                  return const Center(
+            child: selectedId == null
+                ? const Center(
                     child: Text(
                       'Selecciona una cuenta por pagar para ver los detalles',
                       style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
-                  );
-                }
-                return AccountPayableDetailView(accountId: selectedId);
-              },
-            ),
+                  )
+                : AccountPayableDetailView(accountId: selectedId),
           ),
         ],
       ),

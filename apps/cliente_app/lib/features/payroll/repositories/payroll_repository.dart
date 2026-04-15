@@ -168,6 +168,16 @@ class PayrollRepository {
     await _client.from('nomina_pagos').delete().eq('id', id);
   }
 
+  Future<void> updatePayment(String id, NominaPago item) async {
+    await _client.from('nomina_pagos').update({
+      'amount': item.amount,
+      'metodo_pago': item.metodoPago,
+      'category': item.category,
+      'nota': item.nota,
+      'fecha_pago': item.fechaPago?.toIso8601String().split('T')[0],
+    }).eq('id', id);
+  }
+
   Stream<List<NominaPago>> getPaymentsForSoldador(String soldadorId) {
     return _client
         .from('nomina_pagos')

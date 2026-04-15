@@ -156,8 +156,9 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
   }
 
   void addMaterial(RelatedMaterial material) {
+    final newMaterial = material.copyWith(sortOrder: state.relatedMaterials.length);
     state = state.copyWith(
-      relatedMaterials: [...state.relatedMaterials, material],
+      relatedMaterials: [...state.relatedMaterials, newMaterial],
     );
     _autoUpdatePrice();
     _debouncedSave();
@@ -176,6 +177,23 @@ class PoleBarnFormNotifier extends StateNotifier<PoleBarnFormState> {
     newList.removeAt(index);
     state = state.copyWith(relatedMaterials: newList);
     _autoUpdatePrice();
+    _debouncedSave();
+  }
+
+  void reorderMaterial(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final newList = [...state.relatedMaterials];
+    final item = newList.removeAt(oldIndex);
+    newList.insert(newIndex, item);
+    
+    // Update sortOrder based on new positions
+    for (int i = 0; i < newList.length; i++) {
+      newList[i] = newList[i].copyWith(sortOrder: i);
+    }
+    
+    state = state.copyWith(relatedMaterials: newList);
     _debouncedSave();
   }
 
@@ -255,10 +273,12 @@ final relatedMaterialsStreamProvider =
       .eq('PoleBarns_Ref', poleBarnId)
       .map((data) {
         // Usamos Map.from para asegurar compatibilidad en Web con JSArray/JSObject
-        return data
+        final list = data
             .map((json) =>
                 RelatedMaterial.fromJson(Map<String, dynamic>.from(json)))
             .toList();
+        list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        return list;
       });
 });
 

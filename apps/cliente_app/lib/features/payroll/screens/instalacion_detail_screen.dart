@@ -26,6 +26,7 @@ class InstalacionDetailScreen extends ConsumerWidget {
         final currentItem = snapshot.data ?? item;
         final total = currentItem.pagoProyecto ?? 0.0;
         final balance = currentItem.saldo ?? 0.0;
+        final isMobile = MediaQuery.of(context).size.width < 600;
 
         return Scaffold(
           appBar: AppBar(
@@ -61,108 +62,141 @@ class InstalacionDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Row 1: Employee, Date
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem('Empleado', employeeName),
+                      Builder(builder: (context) {
+                        final children1 = [
+                          _buildDetailItem('Empleado', employeeName),
+                          _buildDetailItem(
+                            'Fecha Culminación',
+                            currentItem.fechaCulminacion != null
+                                ? DateFormat('MM/dd/yyyy')
+                                    .format(currentItem.fechaCulminacion!)
+                                : 'No definida',
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Fecha Culminación',
-                              currentItem.fechaCulminacion != null
-                                  ? DateFormat('MM/dd/yyyy')
-                                      .format(currentItem.fechaCulminacion!)
-                                  : 'No definida',
-                            ),
-                          ),
-                        ],
-                      ),
+                        ];
+                        return isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children1
+                                    .map((c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 16),
+                                          child: c,
+                                        ))
+                                    .toList(),
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children1
+                                    .map((c) => Expanded(child: c))
+                                    .toList(),
+                              );
+                      }),
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 24),
                       // Row 2: Financial Details
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Pago Proyecto',
-                              NumberFormat.simpleCurrency().format(total),
-                              valueStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green),
-                            ),
+                      Builder(builder: (context) {
+                        final children2 = [
+                          _buildDetailItem(
+                            'Pago Proyecto',
+                            NumberFormat.simpleCurrency().format(total),
+                            valueStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Pagado',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.pagoParcial ?? 0.0),
-                              valueStyle: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
+                          _buildDetailItem(
+                            'Pagado',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.pagoParcial ?? 0.0),
+                            valueStyle: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Saldo',
-                              NumberFormat.simpleCurrency().format(balance),
-                              valueStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      balance > 0 ? Colors.red : Colors.black),
-                            ),
+                          _buildDetailItem(
+                            'Saldo',
+                            NumberFormat.simpleCurrency().format(balance),
+                            valueStyle: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: balance > 0 ? Colors.red : Colors.black),
                           ),
-                        ],
-                      ),
+                        ];
+                        return isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 16),
+                                          child: c,
+                                        ))
+                                    .toList(),
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Expanded(child: c))
+                                    .toList(),
+                              );
+                      }),
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 24),
                       // Row 3: Discounts and Status
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Descuentos',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.descuentos ?? 0.0),
-                            ),
+                      Builder(builder: (context) {
+                        final children3 = [
+                          _buildDetailItem(
+                            'Descuentos',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.descuentos ?? 0.0),
                           ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Estado',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 12)),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Estado',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12)),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: currentItem.proyectoCerrado
+                                      ? Colors.green.withValues(alpha: 0.1)
+                                      : Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  currentItem.proyectoCerrado
+                                      ? 'Cerrado'
+                                      : 'Abierto',
+                                  style: TextStyle(
                                     color: currentItem.proyectoCerrado
-                                        ? Colors.green.withValues(alpha: 0.1)
-                                        : Colors.orange.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    currentItem.proyectoCerrado
-                                        ? 'Cerrado'
-                                        : 'Abierto',
-                                    style: TextStyle(
-                                      color: currentItem.proyectoCerrado
-                                          ? Colors.green
-                                          : Colors.orange,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
+                                        ? Colors.green
+                                        : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ];
+                        return isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children3
+                                    .map((c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 16),
+                                          child: c,
+                                        ))
+                                    .toList(),
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children3
+                                    .map((c) => Expanded(child: c))
+                                    .toList(),
+                              );
+                      }),
                     ],
                   ),
                 ),
@@ -224,9 +258,15 @@ class InstalacionDetailScreen extends ConsumerWidget {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         width: double.infinity,
-                        child: DataTable(
-                          headingRowColor:
-                              WidgetStateProperty.all(Colors.grey.shade50),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
+                            headingRowColor:
+                                WidgetStateProperty.all(Colors.grey.shade50),
                           columns: const [
                             DataColumn(label: Text('Fecha')),
                             DataColumn(label: Text('Monto')),
@@ -236,10 +276,15 @@ class InstalacionDetailScreen extends ConsumerWidget {
                             DataColumn(label: Text('Acción')),
                           ],
                           rows: payments.map((p) {
-                            return DataRow(cells: [
-                              DataCell(Text(p.createdAt != null
-                                  ? DateFormat('MM/dd/yyyy')
-                                      .format(p.createdAt!)
+                            final displayDate = p.fechaPago ?? p.createdAt;
+                            return DataRow(
+                              onSelectChanged: (_) => showDialog(
+                                context: context,
+                                builder: (_) => EditPaymentDialog(payment: p),
+                              ),
+                              cells: [
+                              DataCell(Text(displayDate != null
+                                  ? DateFormat('MM/dd/yyyy').format(displayDate)
                                   : '-')),
                               DataCell(Text(
                                   NumberFormat.simpleCurrency()
@@ -255,20 +300,41 @@ class InstalacionDetailScreen extends ConsumerWidget {
                                 child: Text(p.nota ?? '-',
                                     overflow: TextOverflow.ellipsis),
                               )),
-                              DataCell(
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red, size: 20),
-                                  onPressed: () =>
-                                      _deletePayment(context, ref, p.id),
-                                  tooltip: 'Eliminar Pago',
-                                ),
-                              ),
+                              DataCell(Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined,
+                                        color: Colors.blue, size: 18),
+                                    onPressed: () => showDialog(
+                                      context: context,
+                                      builder: (_) => EditPaymentDialog(payment: p),
+                                    ),
+                                    tooltip: 'Editar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.red, size: 18),
+                                    onPressed: () =>
+                                        _deletePayment(context, ref, p.id),
+                                    tooltip: 'Eliminar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              )),
                             ]);
                           }).toList(),
                         ),
-                      ),
-                    );
+                              ),
+                            );
+                          },
+                        ),
+                    ),
+                  );
                   },
                 ),
               ],

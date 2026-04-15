@@ -75,35 +75,52 @@ class AccountPayableDetailView extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // Stats Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                final cards = [
+                  _buildStatCard(
                     'Total Factura',
                     currency.format(account.totalAmount),
                     Icons.receipt_long_outlined,
                     Colors.blue,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
+                  _buildStatCard(
                     'Total Pagado',
                     currency.format(account.totalPaid),
                     Icons.check_circle_outline,
                     Colors.green,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
+                  _buildStatCard(
                     'Saldo Pendiente',
                     currency.format(account.currentBalance),
                     Icons.warning_amber_outlined,
                     account.currentBalance > 0 ? Colors.orange : Colors.green,
                   ),
-                ),
-              ],
+                ];
+
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      cards[0],
+                      const SizedBox(height: 16),
+                      cards[1],
+                      const SizedBox(height: 16),
+                      cards[2],
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: cards[0]),
+                    const SizedBox(width: 16),
+                    Expanded(child: cards[1]),
+                    const SizedBox(width: 16),
+                    Expanded(child: cards[2]),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 32),

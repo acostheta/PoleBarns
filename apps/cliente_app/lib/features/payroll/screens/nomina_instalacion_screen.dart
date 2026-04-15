@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
+import 'package:users/users.dart';
 import '../widgets/payments_dialog.dart';
+import '../providers/payroll_summary_provider.dart';
 import 'instalacion_detail_screen.dart';
 
 class NominaInstalacionScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,7 @@ class _NominaInstalacionScreenState
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(payrollRepositoryProvider);
+    final periodFilter = ref.watch(payrollPeriodFilterProvider);
 
     return Scaffold(
       body: Column(
@@ -59,6 +62,8 @@ class _NominaInstalacionScreenState
                       };
 
                       final items = snapshot.data!.where((item) {
+                        if (item.fechaCulminacion == null || !isDateInFilterRange(item.fechaCulminacion, periodFilter)) return false;
+                        
                         final empName =
                             empMap[item.idEmpleado]?.toLowerCase() ?? '';
                         return empName.contains(_searchQuery);
@@ -351,8 +356,6 @@ class _InstalacionFormState extends ConsumerState<InstalacionForm> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(payrollRepositoryProvider);
-
     return SingleChildScrollView(
       child: Form(
         key: _formKey,
@@ -362,24 +365,49 @@ class _InstalacionFormState extends ConsumerState<InstalacionForm> {
           children: [
             const Text('Empleado', style: AppStyles.labelStyle),
             const SizedBox(height: 8),
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: repo.getEmployeesStream(),
-              builder: (context, snapshot) {
-                final employees = snapshot.data ?? [];
-                return DropdownButtonFormField<String>(
-                  value: _selectedEmployeeId,
-                  items: employees.map<DropdownMenuItem<String>>((e) {
-                    return DropdownMenuItem<String>(
-                      value: e['id'].toString(),
-                      child: Text(
-                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
-                          style: const TextStyle(fontSize: 14)),
+            Consumer(
+              builder: (context, ref, _) {
+                final usersAsync = ref.watch(allUsersProvider);
+                final positionsAsync = ref.watch(jobPositionsProvider);
+
+                return usersAsync.when(
+                  data: (users) {
+                    final positions = positionsAsync.value ?? [];
+                    final filteredEmployees = users.where((u) {
+                      final posId = u['job_position_id'];
+                      if (posId == null) return false;
+
+                      final pos = positions.firstWhere(
+                        (p) => p['id'] == posId,
+                        orElse: () => {},
+                      );
+                      if (pos.isEmpty) return false;
+
+                      final posName = (pos['name'] as String).toLowerCase();
+                      return posName.contains('instalador');
+                    }).toList();
+
+                    return DropdownButtonFormField<String>(
+                      value: _selectedEmployeeId,
+                      items:
+                          filteredEmployees.map<DropdownMenuItem<String>>((e) {
+                        return DropdownMenuItem<String>(
+                          value: e['id'].toString(),
+                          child: Text(
+                              (e['full_name'] ?? e['name'])?.toString() ??
+                                  'S/N',
+                              style: const TextStyle(fontSize: 14)),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                      validator: (v) => v == null ? 'Requerido' : null,
+                      decoration: AppStyles.inputDecoration(),
+                      icon: const Icon(Icons.keyboard_arrow_down),
                     );
-                  }).toList(),
-                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                  validator: (v) => v == null ? 'Requerido' : null,
-                  decoration: AppStyles.inputDecoration(),
-                  icon: const Icon(Icons.keyboard_arrow_down),
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, s) => Text('Error: $e'),
                 );
               },
             ),
@@ -390,20 +418,36 @@ class _InstalacionFormState extends ConsumerState<InstalacionForm> {
                 _fechaCulminacion ?? DateTime.now(),
                 (d) => setState(() => _fechaCulminacion = d)),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                    child: _buildTextField('Pago Proyecto', _pagoCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        prefixText: '\$ ')),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildTextField('Descuentos', _discountCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        prefixText: '\$ ')),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                final field1 = _buildTextField('Pago Proyecto', _pagoCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    prefixText: '\$ ');
+                final field2 = _buildTextField('Descuentos', _discountCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    prefixText: '\$ ');
+
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      field1,
+                      const SizedBox(height: 24),
+                      field2,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: field1),
+                    const SizedBox(width: 16),
+                    Expanded(child: field2),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             Container(

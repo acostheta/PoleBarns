@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:auth/auth.dart';
 import '../models/rbac_model.dart';
 
 final rbacRepositoryProvider = Provider((ref) => RbacRepository());
@@ -105,21 +108,62 @@ final rolePermissionsProvider =
 });
 
 final currentUserAccessProvider =
-    FutureProvider<Map<String, bool>>((ref) async {
-  final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) return {};
+    StreamProvider<Map<String, bool>>((ref) async* {
+  // ── React to auth changes so this provider re-runs on login / logout ──
+  final authState = ref.watch(authStateProvider);
+  final session = authState.valueOrNull?.session;
+  final user = session?.user ?? Supabase.instance.client.auth.currentUser;
 
+  if (user == null) {
+    yield {};
+    return;
+  }
+
+  final prefs = await SharedPreferences.getInstance();
+  final cacheKey = 'access_map_${user.id}';
+  final cachedData = prefs.getString(cacheKey);
+  
+  // 1. Yield cached data immediately so the sidebar isn't blank while loading.
+  if (cachedData != null) {
+    try {
+      final decoded = jsonDecode(cachedData) as Map<String, dynamic>;
+      final casted = decoded.map((key, value) => MapEntry(key, value as bool));
+      yield casted;
+    } catch (_) {}
+  }
+
+  // 2. Fetch from network
   try {
     final client = Supabase.instance.client;
-    final profile =
-        await client.from('profiles').select().eq('id', user.id).single();
-    final role = profile['role'] as String?;
+    
+    // Watch the profile state
+    final profileProvider = ref.watch(userProfileProvider(user.id));
+    final role = profileProvider.valueOrNull?['user_level'] as String?;
+    final isLoadingProfile = profileProvider.isLoading;
+    final hasError = profileProvider.hasError;
 
-    if (role == 'Administrador') {
-      return {'*': true};
+    // Si aún está cargando o hubo un error (por ejemplo, token fallido), 
+    // mantenemos el caché actual si existe y terminamos.
+    if ((role == null && isLoadingProfile) || hasError) {
+      if (cachedData == null) yield {};
+      return;
     }
 
-    if (role == null) return {};
+    if (role == 'Administrador') {
+      final adminAccess = {'*': true};
+      prefs.setString(cacheKey, jsonEncode(adminAccess));
+      yield adminAccess;
+      return;
+    }
+
+    // Si el rol es null genuinamente (sin error de red y ya cargó), no tienen permisos.
+    if (role == null) {
+      if (cachedData != '{}') {
+        prefs.setString(cacheKey, jsonEncode({}));
+      }
+      yield {};
+      return;
+    }
 
     final data = await client
         .from('app_role_permissions')
@@ -135,8 +179,15 @@ final currentUserAccessProvider =
         access[key] = can;
       }
     }
-    return access;
+    
+    // Save to cache
+    prefs.setString(cacheKey, jsonEncode(access));
+    yield access;
   } catch (e) {
-    return {};
+    // If error and we have cached data, just let the stream end with it.
+    // We don't yield empty to not overwrite the cached data.
+    if (cachedData == null) {
+      yield {};
+    }
   }
 });

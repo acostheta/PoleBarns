@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -46,11 +46,31 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   List<CatalogItemModel> _catalogItems = [];
   bool _isLoading = false;
   int? _nextInvoiceId;
+  bool _isSaved = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void deactivate() {
+    if (widget.invoiceId == null && !_isSaved) {
+      ref.read(invoiceDraftProvider.notifier).updateDraft(InvoiceDraft(
+            projectName: _projectController.text,
+            clientId: _selectedClientId,
+            address: _addressController.text,
+            comment: _commentController.text,
+            notes: _notesController.text,
+            status: _status,
+            selectedDate: _selectedDate,
+            startDate: _startDate,
+            endDate: _endDate,
+            items: List.from(_selectedItems),
+          ));
+    }
+    super.deactivate();
   }
 
   @override
@@ -77,7 +97,19 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         final invoices = await service.getInvoices();
         _nextInvoiceId = invoices.isNotEmpty ? (invoices.first.id + 1) : 1;
 
-        if (widget.clientId != null) {
+        final draft = ref.read(invoiceDraftProvider);
+        if (draft.projectName.isNotEmpty || draft.clientId != null || draft.items.isNotEmpty || draft.address.isNotEmpty) {
+          _projectController.text = draft.projectName;
+          _selectedClientId = draft.clientId;
+          _addressController.text = draft.address;
+          _commentController.text = draft.comment;
+          _notesController.text = draft.notes;
+          _status = draft.status;
+          _selectedDate = draft.selectedDate;
+          _startDate = draft.startDate;
+          _endDate = draft.endDate;
+          _selectedItems = List.from(draft.items);
+        } else if (widget.clientId != null) {
           _selectedClientId = widget.clientId;
           // Initial load for client data if provided
           await _updateClientData(_selectedClientId!);
@@ -236,6 +268,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       } else {
         final newId = await service.createInvoice(invoiceModel, productsToSave);
         _sendInvoiceEmail(newId);
+        _isSaved = true;
+        ref.read(invoiceDraftProvider.notifier).clearDraft();
       }
 
       if (mounted) {

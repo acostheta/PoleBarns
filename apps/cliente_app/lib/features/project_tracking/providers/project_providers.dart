@@ -169,3 +169,74 @@ final projectInvoiceDetailsProvider =
   final repo = ref.watch(projectRepositoryProvider);
   return repo.getProjectInvoiceDetails(projectId);
 });
+
+class ProjectDraft {
+  final String projectName;
+  final String address;
+  final String? clientId;
+  final String? responsible;
+  final List<String> groupUsers;
+  final String status;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String comments;
+  final List<Map<String, dynamic>> structures;
+
+  ProjectDraft({
+    this.projectName = '',
+    this.address = '',
+    this.clientId,
+    this.responsible,
+    this.groupUsers = const [],
+    this.status = 'En Proceso',
+    DateTime? startDate,
+    DateTime? endDate,
+    this.comments = '',
+    this.structures = const [],
+  }) : startDate = startDate ?? DateTime.now(),
+       endDate = endDate ?? DateTime.now().add(const Duration(days: 30));
+
+  ProjectDraft copyWith({
+    String? projectName,
+    String? address,
+    bool nullClientId = false,
+    String? clientId,
+    bool nullResponsible = false,
+    String? responsible,
+    List<String>? groupUsers,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? comments,
+    List<Map<String, dynamic>>? structures,
+  }) {
+    return ProjectDraft(
+      projectName: projectName ?? this.projectName,
+      address: address ?? this.address,
+      clientId: nullClientId ? null : (clientId ?? this.clientId),
+      responsible: nullResponsible ? null : (responsible ?? this.responsible),
+      groupUsers: groupUsers ?? this.groupUsers,
+      status: status ?? this.status,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      comments: comments ?? this.comments,
+      structures: structures ?? this.structures,
+    );
+  }
+}
+
+class ProjectDraftNotifier extends StateNotifier<ProjectDraft> {
+  ProjectDraftNotifier() : super(ProjectDraft());
+
+  void updateDraft(ProjectDraft newDraft) {
+    state = newDraft;
+  }
+
+  void clearDraft() {
+    state = ProjectDraft();
+  }
+}
+
+final projectDraftProvider = StateNotifierProvider<ProjectDraftNotifier, ProjectDraft>((ref) {
+  return ProjectDraftNotifier();
+});

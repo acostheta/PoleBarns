@@ -35,7 +35,8 @@ class PoleBarnRepository {
     final response = await _supabase
         .from('RelatedMaterials')
         .select('*, raw_materials(name, cost)')
-        .eq('PoleBarns_Ref', poleBarnId);
+        .eq('PoleBarns_Ref', poleBarnId)
+        .order('sort_order', ascending: true);
 
     return (response as List).map((e) => RelatedMaterial.fromJson(e)).toList();
   }

@@ -34,28 +34,38 @@ class ProjectModel {
   });
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.tryParse(value.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
     return ProjectModel(
-      id: json['id'],
-      refCliente: json['ref_cliente'],
+      id: json['id'] ?? '',
+      refCliente: json['ref_cliente'] ?? '',
       responsable: json['responsable'],
       estatus: json['estatus'],
-      fechaInicio: json['fecha_inicio'] != null
-          ? DateTime.parse(json['fecha_inicio'])
-          : null,
-      fechaFinalizacion: json['fecha_finalizacion'] != null
-          ? DateTime.parse(json['fecha_finalizacion'])
-          : null,
+      fechaInicio: parseDate(json['fecha_inicio']),
+      fechaFinalizacion: parseDate(json['fecha_finalizacion']),
       grupoAsignado: json['grupo_asignado'],
       address: json['address'],
       direccion: json['direccion'],
-      ventaTotal: (json['venta_total'] as num?)?.toDouble() ?? 0.0,
-      costosTotales: (json['costos_totales'] as num?)?.toDouble() ?? 0.0,
-      profit: (json['profit'] as num?)?.toDouble() ?? 0.0,
+      ventaTotal: parseDouble(json['venta_total']),
+      costosTotales: parseDouble(json['costos_totales']),
+      profit: parseDouble(json['profit']),
       comments: json['comments'],
-      fechaUltimaEvidencia: json['fecha_ultima_evidencia'] != null
-          ? DateTime.parse(json['fecha_ultima_evidencia'])
-          : null,
-      createdAt: DateTime.parse(json['created_at']),
+      fechaUltimaEvidencia: parseDate(json['fecha_ultima_evidencia']),
+      createdAt: parseDate(json['created_at']) ?? DateTime.now(),
     );
   }
 

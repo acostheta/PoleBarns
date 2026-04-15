@@ -16,9 +16,14 @@ class ProjectMaterialsPdfGenerator {
     required ClientModel? client,
     required List<Map<String, dynamic>> items,
   }) async {
-    final pdf = pw.Document();
-    final font = await PdfGoogleFonts.openSansRegular();
-    final fontBold = await PdfGoogleFonts.openSansBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.helvetica(),
+        bold: pw.Font.helveticaBold(),
+        italic: pw.Font.helveticaOblique(),
+        boldItalic: pw.Font.helveticaBoldOblique(),
+      ),
+    );
 
     // Load logo
     pw.ImageProvider? logoImage;
@@ -32,11 +37,7 @@ class ProjectMaterialsPdfGenerator {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        theme: pw.ThemeData.withFont(
-          base: font,
-          bold: fontBold,
-        ),
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(70.87), // 2.5cm
         build: (pw.Context context) {
           return [
             // Header

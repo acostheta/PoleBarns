@@ -184,6 +184,7 @@ class NominaPago {
   final String? category;
   final String? nota;
   final DateTime? createdAt;
+  final DateTime? fechaPago;
 
   NominaPago({
     required this.id,
@@ -197,6 +198,7 @@ class NominaPago {
     this.category,
     this.nota,
     this.createdAt,
+    this.fechaPago,
   });
 
   factory NominaPago.fromJson(Map<String, dynamic> json) {
@@ -214,6 +216,9 @@ class NominaPago {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
+      fechaPago: json['fecha_pago'] != null
+          ? DateTime.parse(json['fecha_pago'])
+          : null,
     );
   }
 
@@ -228,6 +233,7 @@ class NominaPago {
       'metodo_pago': metodoPago,
       'category': category,
       'nota': nota,
+      'fecha_pago': fechaPago?.toIso8601String().split('T')[0],
     };
   }
 }

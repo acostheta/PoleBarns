@@ -32,13 +32,18 @@ class InvoicePdfGenerator {
     required List<RelatedProductModel> products,
     required List<InvoicePaymentModel> payments,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.helvetica(),
+        bold: pw.Font.helveticaBold(),
+        italic: pw.Font.helveticaOblique(),
+        boldItalic: pw.Font.helveticaBoldOblique(),
+      ),
+    );
     final currency = NumberFormat.simpleCurrency();
     final dateFmt = DateFormat('MM/dd/yyyy');
 
-    // Load fonts for Unicode support
-    final font = await PdfGoogleFonts.openSansRegular();
-    final fontBold = await PdfGoogleFonts.openSansBold();
+    // Standard fonts for reliable printing
 
     // Load logo
     pw.ImageProvider? logoImage;
@@ -52,11 +57,7 @@ class InvoicePdfGenerator {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        theme: pw.ThemeData.withFont(
-          base: font,
-          bold: fontBold,
-        ),
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(70.87), // 2.5cm
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,

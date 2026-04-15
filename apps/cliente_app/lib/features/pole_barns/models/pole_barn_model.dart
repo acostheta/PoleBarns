@@ -5,6 +5,7 @@ class PoleBarn {
   final double alto;
   final double spacing;
   final double sheet;
+  final String tamano;
   final double total; // Sales price related
   final double labour;
   final double cost; // Purchase cost (materials)
@@ -23,6 +24,7 @@ class PoleBarn {
     required this.alto,
     required this.spacing,
     required this.sheet,
+    this.tamano = '',
     this.total = 0,
     this.labour = 0,
     this.cost = 0,
@@ -42,6 +44,7 @@ class PoleBarn {
       alto: (json['Alto'] as num?)?.toDouble() ?? 0.0,
       spacing: (json['Spacing'] as num?)?.toDouble() ?? 0.0,
       sheet: (json['Sheet'] as num?)?.toDouble() ?? 0.0,
+      tamano: json['Tamano']?.toString() ?? '',
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       labour: (json['labour'] as num?)?.toDouble() ?? 0.0,
       cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
@@ -66,6 +69,7 @@ class PoleBarn {
       'Alto': alto,
       'Spacing': spacing,
       'Sheet': sheet,
+      'Tamano': tamano,
       'labour': labour,
       'cost': cost,
       'precio_venta': precioVenta,
@@ -81,6 +85,7 @@ class PoleBarn {
     double? alto,
     double? spacing,
     double? sheet,
+    String? tamano,
     double? total,
     double? labour,
     double? cost,
@@ -98,6 +103,7 @@ class PoleBarn {
       alto: alto ?? this.alto,
       spacing: spacing ?? this.spacing,
       sheet: sheet ?? this.sheet,
+      tamano: tamano ?? this.tamano,
       total: total ?? this.total,
       labour: labour ?? this.labour,
       cost: cost ?? this.cost,

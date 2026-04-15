@@ -20,6 +20,7 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
         final currentItem = snapshot.data ?? item;
         final balance =
             (currentItem.monto ?? 0.0) - (currentItem.pagoParcial ?? 0.0);
+        final isMobile = MediaQuery.of(context).size.width < 600;
 
         return Scaffold(
           appBar: AppBar(
@@ -78,67 +79,82 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                                     emp['full_name'] ?? emp['name'] ?? '-';
                               }
                             }
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: _buildDetailItem(
-                                      'Fecha',
-                                      DateFormat('MM/dd/yyyy')
-                                          .format(currentItem.fecha)),
-                                ),
-                                Expanded(
-                                  child: _buildDetailItem('Empleado', empName),
-                                ),
-                                Expanded(
-                                  child: _buildDetailItem('Días',
-                                      currentItem.dias?.toString() ?? '-'),
-                                ),
-                                Expanded(
-                                  child: _buildDetailItem('Método de Pago',
-                                      currentItem.formaPago ?? '-'),
-                                ),
-                              ],
-                            );
+                            final children1 = [
+                              _buildDetailItem(
+                                  'Fecha',
+                                  DateFormat('MM/dd/yyyy')
+                                      .format(currentItem.fecha)),
+                              _buildDetailItem('Empleado', empName),
+                              _buildDetailItem('Días',
+                                  currentItem.dias?.toString() ?? '-'),
+                              _buildDetailItem('Método de Pago',
+                                  currentItem.formaPago ?? '-'),
+                            ];
+                            return isMobile
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: children1
+                                        .map((c) => Padding(
+                                              padding: const EdgeInsets.only(bottom: 16),
+                                              child: c,
+                                            ))
+                                        .toList(),
+                                  )
+                                : Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: children1
+                                        .map((c) => Expanded(child: c))
+                                        .toList(),
+                                  );
                           }),
                       const SizedBox(height: 24),
                       // Row 2: Total a pagar, Pagado, Saldo
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Total a Pagar',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.monto),
-                              valueStyle: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
+                      Builder(builder: (context) {
+                        final children2 = [
+                          _buildDetailItem(
+                            'Total a Pagar',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.monto),
+                            valueStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Pagado',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.pagoParcial ?? 0),
-                              valueStyle: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                          _buildDetailItem(
+                            'Pagado',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.pagoParcial ?? 0),
+                            valueStyle: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          _buildDetailItem(
+                            'Saldo',
+                            NumberFormat.simpleCurrency().format(balance),
+                            valueStyle: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: balance > 0 ? Colors.red : Colors.black,
                             ),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Saldo',
-                              NumberFormat.simpleCurrency().format(balance),
-                              valueStyle: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: balance > 0 ? Colors.red : Colors.black,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ];
+                        return isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 16),
+                                          child: c,
+                                        ))
+                                    .toList(),
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Expanded(child: c))
+                                    .toList(),
+                              );
+                      }),
                       // Row 3: Notas
                       if (currentItem.notas != null &&
                           currentItem.notas!.isNotEmpty) ...[
@@ -215,7 +231,13 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         width: double.infinity,
-                        child: DataTable(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
                           headingRowColor:
                               WidgetStateProperty.all(Colors.grey.shade50),
                           columns: const [
@@ -227,10 +249,15 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                             DataColumn(label: Text('Acción')),
                           ],
                           rows: payments.map((p) {
-                            return DataRow(cells: [
-                              DataCell(Text(p.createdAt != null
-                                  ? DateFormat('MM/dd/yyyy')
-                                      .format(p.createdAt!)
+                            final displayDate = p.fechaPago ?? p.createdAt;
+                            return DataRow(
+                              onSelectChanged: (_) => showDialog(
+                                context: context,
+                                builder: (_) => EditPaymentDialog(payment: p),
+                              ),
+                              cells: [
+                              DataCell(Text(displayDate != null
+                                  ? DateFormat('MM/dd/yyyy').format(displayDate)
                                   : '-')),
                               DataCell(Text(
                                   NumberFormat.simpleCurrency()
@@ -246,20 +273,41 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                                 child: Text(p.nota ?? '-',
                                     overflow: TextOverflow.ellipsis),
                               )),
-                              DataCell(
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red, size: 20),
-                                  onPressed: () =>
-                                      _deletePayment(context, ref, p.id),
-                                  tooltip: 'Eliminar Pago',
-                                ),
-                              ),
+                              DataCell(Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined,
+                                        color: Colors.blue, size: 18),
+                                    onPressed: () => showDialog(
+                                      context: context,
+                                      builder: (_) => EditPaymentDialog(payment: p),
+                                    ),
+                                    tooltip: 'Editar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.red, size: 18),
+                                    onPressed: () =>
+                                        _deletePayment(context, ref, p.id),
+                                    tooltip: 'Eliminar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              )),
                             ]);
                           }).toList(),
                         ),
-                      ),
-                    );
+                              ),
+                            );
+                          },
+                        ),
+                    ),
+                  );
                   },
                 ),
               ],

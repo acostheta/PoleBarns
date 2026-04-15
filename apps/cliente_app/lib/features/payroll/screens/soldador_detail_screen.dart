@@ -21,6 +21,7 @@ class SoldadorDetailScreen extends ConsumerWidget {
         final currentItem = snapshot.data ?? item;
         final double balance =
             (currentItem.total ?? 0.0) - (currentItem.pagoParcial ?? 0.0);
+        final isMobile = MediaQuery.of(context).size.width < 600;
 
         return Scaffold(
           appBar: AppBar(
@@ -71,70 +72,86 @@ class SoldadorDetailScreen extends ConsumerWidget {
                                     emp['full_name'] ?? emp['name'] ?? '-';
                               }
                             }
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: _buildDetailItem(
-                                      'Fecha del Servicio',
-                                      DateFormat('MMMM d, yyyy')
-                                          .format(currentItem.fecha)),
+                            final children1 = [
+                              _buildDetailItem(
+                                  'Fecha del Servicio',
+                                  DateFormat('MMMM d, yyyy')
+                                      .format(currentItem.fecha)),
+                              _buildDetailItem('Empleado', empName),
+                              _buildDetailItem(
+                                'Forma de Pago',
+                                currentItem.formaPago ?? 'Pendiente',
+                                valueStyle: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                Expanded(
-                                  child: _buildDetailItem('Empleado', empName),
-                                ),
-                                Expanded(
-                                  child: _buildDetailItem(
-                                    'Forma de Pago',
-                                    currentItem.formaPago ?? 'Pendiente',
-                                    valueStyle: const TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
+                              ),
+                            ];
+                            return isMobile
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: children1
+                                        .map((c) => Padding(
+                                              padding: const EdgeInsets.only(bottom: 16),
+                                              child: c,
+                                            ))
+                                        .toList(),
+                                  )
+                                : Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: children1
+                                        .map((c) => Expanded(child: c))
+                                        .toList(),
+                                  );
                           }),
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 24),
                       // Row 2: Total, Pagado, Saldo
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Total a Pagar',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.total ?? 0.0),
-                              valueStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green),
-                            ),
+                      Builder(builder: (context) {
+                        final children2 = [
+                          _buildDetailItem(
+                            'Total a Pagar',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.total ?? 0.0),
+                            valueStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Pagado',
-                              NumberFormat.simpleCurrency()
-                                  .format(currentItem.pagoParcial ?? 0.0),
-                              valueStyle: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
+                          _buildDetailItem(
+                            'Pagado',
+                            NumberFormat.simpleCurrency()
+                                .format(currentItem.pagoParcial ?? 0.0),
+                            valueStyle: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          Expanded(
-                            child: _buildDetailItem(
-                              'Saldo',
-                              NumberFormat.simpleCurrency().format(balance),
-                              valueStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      balance > 0 ? Colors.red : Colors.black),
-                            ),
+                          _buildDetailItem(
+                            'Saldo',
+                            NumberFormat.simpleCurrency().format(balance),
+                            valueStyle: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: balance > 0 ? Colors.red : Colors.black),
                           ),
-                        ],
-                      ),
+                        ];
+                        return isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 16),
+                                          child: c,
+                                        ))
+                                    .toList(),
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: children2
+                                    .map((c) => Expanded(child: c))
+                                    .toList(),
+                              );
+                      }),
                       // Row 3: Notas
                       if (currentItem.notas != null &&
                           currentItem.notas!.isNotEmpty) ...[
@@ -188,90 +205,49 @@ class SoldadorDetailScreen extends ConsumerWidget {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         width: double.infinity,
-                        child: Table(
-                          columnWidths: const {
-                            0: FlexColumnWidth(2),
-                            1: FlexColumnWidth(1),
-                            2: FlexColumnWidth(1.5),
-                            3: FlexColumnWidth(1.5),
-                          },
-                          children: [
-                            TableRow(
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                              ),
-                              children: const [
-                                Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 12),
-                                    child: Text('TRUSS',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13))),
-                                Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 12),
-                                    child: Text('CANT.',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13),
-                                        textAlign: TextAlign.center)),
-                                Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 12),
-                                    child: Text('PRECIO U.',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13),
-                                        textAlign: TextAlign.right)),
-                                Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 12),
-                                    child: Text('SUBTOTAL',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13),
-                                        textAlign: TextAlign.right)),
-                              ],
-                            ),
-                            ...trusses.map((t) {
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
+                            headingRowColor:
+                                WidgetStateProperty.all(Colors.grey.shade50),
+                            columns: const [
+                              DataColumn(label: Text('TRUSS')),
+                              DataColumn(label: Text('CANT.'), numeric: true),
+                              DataColumn(label: Text('PRECIO U.'), numeric: true),
+                              DataColumn(label: Text('SUBTOTAL'), numeric: true),
+                            ],
+                            rows: trusses.map((t) {
                               final subtotal = t.quantity * t.unitPrice;
-                              return TableRow(
-                                children: [
-                                  Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      child: Text(t.trussName,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w500))),
-                                  Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      child: Text(t.quantity.toString(),
-                                          textAlign: TextAlign.center)),
-                                  Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      child: Text(
-                                          NumberFormat.simpleCurrency()
-                                              .format(t.unitPrice),
-                                          textAlign: TextAlign.right)),
-                                  Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      child: Text(
-                                          NumberFormat.simpleCurrency()
-                                              .format(subtotal),
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                          textAlign: TextAlign.right)),
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(t.trussName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500)),
+                                  ),
+                                  DataCell(Text(t.quantity.toString())),
+                                  DataCell(Text(NumberFormat.simpleCurrency()
+                                      .format(t.unitPrice))),
+                                  DataCell(Text(
+                                    NumberFormat.simpleCurrency()
+                                        .format(subtotal),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  )),
                                 ],
                               );
-                            }),
-                          ],
+                            }).toList(),
+                          ),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                    );
+                    ),
+                  );
                   },
                 ),
                 const SizedBox(height: 32),
@@ -333,9 +309,15 @@ class SoldadorDetailScreen extends ConsumerWidget {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         width: double.infinity,
-                        child: DataTable(
-                          headingRowColor:
-                              WidgetStateProperty.all(Colors.grey.shade50),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
+                            headingRowColor:
+                                WidgetStateProperty.all(Colors.grey.shade50),
                           columns: const [
                             DataColumn(label: Text('Fecha')),
                             DataColumn(label: Text('Monto')),
@@ -345,10 +327,15 @@ class SoldadorDetailScreen extends ConsumerWidget {
                             DataColumn(label: Text('Acción')),
                           ],
                           rows: payments.map((p) {
-                            return DataRow(cells: [
-                              DataCell(Text(p.createdAt != null
-                                  ? DateFormat('MM/dd/yyyy')
-                                      .format(p.createdAt!)
+                            final displayDate = p.fechaPago ?? p.createdAt;
+                            return DataRow(
+                              onSelectChanged: (_) => showDialog(
+                                context: context,
+                                builder: (_) => EditPaymentDialog(payment: p),
+                              ),
+                              cells: [
+                              DataCell(Text(displayDate != null
+                                  ? DateFormat('MM/dd/yyyy').format(displayDate)
                                   : '-')),
                               DataCell(Text(
                                   NumberFormat.simpleCurrency()
@@ -364,20 +351,40 @@ class SoldadorDetailScreen extends ConsumerWidget {
                                 child: Text(p.nota ?? '-',
                                     overflow: TextOverflow.ellipsis),
                               )),
-                              DataCell(
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red, size: 20),
-                                  onPressed: () =>
-                                      _deletePayment(context, ref, p.id),
-                                  tooltip: 'Eliminar Pago',
-                                ),
-                              ),
-                            ]);
-                          }).toList(),
+                              DataCell(Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined,
+                                        color: Colors.blue, size: 18),
+                                    onPressed: () => showDialog(
+                                      context: context,
+                                      builder: (_) => EditPaymentDialog(payment: p),
+                                    ),
+                                    tooltip: 'Editar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.red, size: 18),
+                                    onPressed: () =>
+                                        _deletePayment(context, ref, p.id),
+                                    tooltip: 'Eliminar Pago',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              )),
+                            ]);                          }).toList(),
                         ),
-                      ),
-                    );
+                              ),
+                            );
+                          },
+                        ),
+                    ),
+                  );
                   },
                 ),
               ],

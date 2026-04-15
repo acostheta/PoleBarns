@@ -46,25 +46,39 @@ class InvoiceModel {
   });
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
+    // Utility to parse numbers safely from potential strings or numbers
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
     return InvoiceModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
       idProyecto: json['IdProyecto'],
       idCliente: json['IdCliente'],
       address: json['Address'],
-      date: DateTime.parse(json['Date']),
-      totalVenta: (json['Total Venta'] as num?)?.toDouble() ?? 0.0,
-      totalPagado: (json['Total Pagado'] as num?)?.toDouble() ?? 0.0,
-      saldo: (json['Saldo'] as num?)?.toDouble() ?? 0.0,
-      reembolsado: (json['Reembolsado'] as num?)?.toDouble() ?? 0.0,
+      date: parseDate(json['Date']) ?? DateTime.now(),
+      totalVenta: parseDouble(json['Total Venta']),
+      totalPagado: parseDouble(json['Total Pagado']),
+      saldo: parseDouble(json['Saldo']),
+      reembolsado: parseDouble(json['Reembolsado']),
       comentario: json['Comentario'],
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: parseDate(json['created_at']) ?? DateTime.now(),
       groupId: json['group_id'],
       status: json['status'] ?? 'Pendiente',
-      startDate: json['start_date'] != null
-          ? DateTime.parse(json['start_date'])
-          : null,
-      endDate:
-          json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      startDate: parseDate(json['start_date']),
+      endDate: parseDate(json['end_date']),
       clientName: json['client_full_name'] ??
           (json['clients'] != null
               ? '${json['clients']['first_name']} ${json['clients']['last_name']}'
@@ -192,14 +206,18 @@ class CatalogItemModel {
   });
 
   factory CatalogItemModel.fromJson(Map<String, dynamic> json) {
-    // Assuming mapping from PoleBarns table
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return CatalogItemModel(
-      id: json['id'], // pole_barn_id? or id? need to check PoleBarns schema.
-      // In project_pole_barns usage: 'PoleBarns': {'name': ...}
-      // Let's assume standard 'name' and 'sale_price' or 'price'.
+      id: json['id'] ?? 0,
       name: json['name'] ?? 'Item',
-      salePrice: (json['precio_venta'] as num?)?.toDouble() ?? 0.0,
-      cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
+      salePrice: parseDouble(json['precio_venta'] ?? json['sale_price']),
+      cost: parseDouble(json['cost']),
     );
   }
 }
@@ -236,22 +254,37 @@ class RelatedProductModel {
   });
 
   factory RelatedProductModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
     return RelatedProductModel(
-      id: json['id'],
-      idInvoice: json['IdInvoice'],
+      id: json['id'] ?? 0,
+      idInvoice: json['IdInvoice'] ?? 0,
       idProyecto: json['IdProyecto'],
       idPoleBarns: json['IdPoleBarns'],
       estatus: json['Estatus'] ?? 'Pendiente',
-      cantidad: (json['Cantidad'] as num?)?.toDouble() ?? 0.0,
-      precioPorUnidad: (json['Precio por unidad'] as num?)?.toDouble() ?? 0.0,
-      tax: (json['Tax'] as num?)?.toDouble() ?? 0.0,
-      totalPrice: (json['Total Price'] as num?)?.toDouble() ?? 0.0,
-      unitCost: (json['unit_cost'] as num?)?.toDouble() ??
-          (json['cost'] as num?)?.toDouble() ??
-          (json['Unit Cost'] as num?)?.toDouble() ??
-          (json['PoleBarns']?['cost'] as num?)?.toDouble() ??
-          0.0,
-      createdAt: DateTime.parse(json['created_at']),
+      cantidad: parseDouble(json['Cantidad']),
+      precioPorUnidad: parseDouble(json['Precio por unidad']),
+      tax: parseDouble(json['Tax']),
+      totalPrice: parseDouble(json['Total Price']),
+      unitCost: parseDouble(json['unit_cost'] ??
+          json['cost'] ??
+          json['Unit Cost'] ??
+          json['PoleBarns']?['cost']),
+      createdAt: parseDate(json['created_at']) ?? DateTime.now(),
       poleBarnName: json['pole_barn_name'] ??
           (json['PoleBarns'] != null ? json['PoleBarns']['name'] : null),
     );
@@ -335,16 +368,24 @@ class InvoicePaymentModel {
   String? get paymentMethodName => metodoDePagoNombre;
 
   factory InvoicePaymentModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return InvoicePaymentModel(
-      id: json['id'],
-      idInvoice: json['IdInvoice'],
-      tipo: json['Tipo'],
-      amount: (json['Amount'] as num?)?.toDouble() ?? 0.0,
+      id: json['id'] ?? 0,
+      idInvoice: json['IdInvoice'] ?? 0,
+      tipo: json['Tipo'] ?? 'Abono',
+      amount: parseDouble(json['Amount']),
       metodoDePagoId: json['Metodo de Pago'],
       category: json['Category'],
       nota: json['Nota'],
-      feeAmount: (json['fee_amount'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(json['created_at']),
+      feeAmount: parseDouble(json['fee_amount']),
+      createdAt:
+          DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       metodoDePagoNombre: json['payment_methods'] != null
           ? json['payment_methods']['name']
           : null,

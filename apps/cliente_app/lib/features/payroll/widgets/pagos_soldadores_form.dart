@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import 'package:users/users.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../../settings/repositories/settings_repository.dart';
@@ -102,8 +103,6 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(payrollRepositoryProvider);
-
     return SingleChildScrollView(
       child: Form(
         key: _formKey,
@@ -113,24 +112,50 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
           children: [
             const Text('Empleado', style: AppStyles.labelStyle),
             const SizedBox(height: 8),
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: repo.getEmployeesStream(),
-              builder: (context, snapshot) {
-                final employees = snapshot.data ?? [];
-                return DropdownButtonFormField<String>(
-                  value: _selectedEmployeeId,
-                  items: employees.map<DropdownMenuItem<String>>((e) {
-                    return DropdownMenuItem<String>(
-                      value: e['id'].toString(),
-                      child: Text(
-                          (e['full_name'] ?? e['name'])?.toString() ?? 'S/N',
-                          style: const TextStyle(fontSize: 14)),
+            Consumer(
+              builder: (context, ref, _) {
+                final usersAsync = ref.watch(allUsersProvider);
+                final positionsAsync = ref.watch(jobPositionsProvider);
+
+                return usersAsync.when(
+                  data: (users) {
+                    final positions = positionsAsync.value ?? [];
+                    final filteredEmployees = users.where((u) {
+                      final posId = u['job_position_id'];
+                      if (posId == null) return false;
+
+                      final pos = positions.firstWhere(
+                        (p) => p['id'] == posId,
+                        orElse: () => {},
+                      );
+                      if (pos.isEmpty) return false;
+
+                      final posName = (pos['name'] as String).toLowerCase();
+                      return posName.contains('soldador');
+                    }).toList();
+
+                    return DropdownButtonFormField<String>(
+                      value: _selectedEmployeeId,
+                      items:
+                          filteredEmployees.map<DropdownMenuItem<String>>((e) {
+                        return DropdownMenuItem<String>(
+                          value: e['id'].toString(),
+                          child: Text(
+                              (e['full_name'] ?? e['name'])?.toString() ??
+                                  'S/N',
+                              style: const TextStyle(fontSize: 14)),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setState(() => _selectedEmployeeId = v),
+                      validator: (v) => v == null ? 'Requerido' : null,
+                      decoration: AppStyles.inputDecoration(),
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                      isExpanded: true,
                     );
-                  }).toList(),
-                  onChanged: (v) => setState(() => _selectedEmployeeId = v),
-                  validator: (v) => v == null ? 'Requerido' : null,
-                  decoration: AppStyles.inputDecoration(),
-                  icon: const Icon(Icons.keyboard_arrow_down),
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, s) => Text('Error: $e'),
                 );
               },
             ),
@@ -141,8 +166,10 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Trabajos Realizados (Trusses/Lean To)',
-                    style: AppStyles.labelStyle),
+                const Expanded(
+                  child: Text('Trabajos Realizados (Trusses/Lean To)',
+                      style: AppStyles.labelStyle),
+                ),
                 ElevatedButton.icon(
                   onPressed: _addTrussRow,
                   icon: const Icon(Icons.add, size: 16),
@@ -219,6 +246,7 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
                               decoration: AppStyles.inputDecoration(),
                               hint: const Text('Seleccionar'),
                               icon: const Icon(Icons.keyboard_arrow_down),
+                              isExpanded: true,
                             ),
                           ],
                         );
@@ -277,17 +305,24 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Table(
-            columnWidths: const {
-              0: FlexColumnWidth(3),
-              1: FlexColumnWidth(1.5),
-              2: FlexColumnWidth(2),
-              3: FlexColumnWidth(2),
-              4: FixedColumnWidth(40),
-            },
-            border: TableBorder(
-              horizontalInside: BorderSide(color: Colors.grey.shade200),
-            ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  minWidth: MediaQuery.of(context).size.width > 600
+                      ? MediaQuery.of(context).size.width - 200
+                      : 600),
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(3),
+                  1: FlexColumnWidth(1.5),
+                  2: FlexColumnWidth(2),
+                  3: FlexColumnWidth(2),
+                  4: FixedColumnWidth(40),
+                },
+                border: TableBorder(
+                  horizontalInside: BorderSide(color: Colors.grey.shade200),
+                ),
             children: [
               // Header
               TableRow(
@@ -421,6 +456,8 @@ class _PagosSoldadoresFormState extends ConsumerState<PagosSoldadoresForm> {
                 );
               }),
             ],
+          ),
+            ),
           ),
         );
       },
