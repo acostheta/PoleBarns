@@ -6,6 +6,7 @@ import '../../../config/app_styles.dart';
 import '../models/pole_barn_model.dart';
 import '../models/related_material_model.dart';
 import '../providers/pole_barn_provider.dart';
+import '../utils/pole_barn_pdf_generator.dart';
 
 class PoleBarnDetailScreen extends ConsumerStatefulWidget {
   final PoleBarn? initialPoleBarn;
@@ -139,11 +140,58 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         elevation: 0.5,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await PoleBarnPdfGenerator.generate(
+                  poleBarn: state.poleBarn,
+                  materials: state.relatedMaterials,
+                  totalCost: state.localCost,
+                  totalPrice: state.localTotal,
+                  suggestedPrice: state.localTotalPrice,
+                );
+              },
+              icon: const Icon(Icons.print_outlined, size: 18),
+              label: const Text('Imprimir PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppStyles.primaryOrange,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
           if (state.poleBarn.id != null)
-            IconButton(
-              onPressed: () => _confirmDelete(state.poleBarn.id!),
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              tooltip: 'Eliminar Producto',
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+              child: ElevatedButton.icon(
+                onPressed: () => _confirmDelete(state.poleBarn.id!),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Eliminar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           if (state.isSaving || state.isLoading)
             const Padding(
