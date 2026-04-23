@@ -78,10 +78,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
       );
     } else {
-      title = 'App Gilbert';
+      title = 'J&P Pole Barns LLC';
       bodyContent = const Center(
           child:
-              Text('Bienvenido a App Gilbert', style: TextStyle(fontSize: 24)));
+              Text('Bienvenido a J&P Pole Barns LLC', style: TextStyle(fontSize: 24)));
     }
 
     final isMenuOpen = ref.watch(sidebarExpandedProvider);

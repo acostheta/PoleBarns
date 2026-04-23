@@ -228,7 +228,7 @@ class PdfGenerator {
               pw.SizedBox(height: 8),
               pw.Center(
                 child: pw.Text(
-                    'Gracias por su confianza - Gilbert Construction',
+                    'Gracias por su confianza - J&P Pole Barns LLC',
                     style: pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey500,

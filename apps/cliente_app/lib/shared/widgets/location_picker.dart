@@ -19,7 +19,7 @@ class _LocationPickerState extends State<LocationPicker> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  static const String _osmUserAgent = 'appGilbert_location_picker';
+  static const String _osmUserAgent = 'jnpolebarns_location_picker';
 
   @override
   void initState() {
@@ -114,7 +114,7 @@ class _LocationPickerState extends State<LocationPicker> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.appGilbert',
+                userAgentPackageName: 'com.jnpolebarns.app',
               ),
               MarkerLayer(
                 markers: [

@@ -6,6 +6,11 @@ import 'package:auth/auth.dart';
 import 'providers/navigation_providers.dart';
 import 'features/settings/repositories/rbac_repository.dart';
 
+const _primaryColor = Color(0xFF173124);
+const _secondaryColor = Color(0xFF7C580F);
+const _onPrimary = Color(0xFFFFFFFF);
+const _errorColor = Color(0xFFBA1A1A);
+
 class ShellLayout extends ConsumerStatefulWidget {
   final Widget child;
 
@@ -40,7 +45,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
     // Determine title based on current route
     final String location = GoRouterState.of(context).uri.toString();
-    String title = 'App Gilbert';
+    String title = 'J&P Pole Barns LLC';
     if (location.startsWith('/profile')) {
       title = 'Mi Perfil';
     } else if (location.startsWith('/settings')) {
@@ -69,76 +74,23 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
     Widget sidebarContent = Column(
       children: [
-        // Logo section at the top
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.go('/dashboard'),
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                vertical: 32,
-                horizontal: effectiveIsMenuOpen ? 24 : 12,
-              ),
-              child: Row(
-                mainAxisAlignment: effectiveIsMenuOpen
-                    ? MainAxisAlignment.start
-                    : MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/branding/logo.png',
-                    height: effectiveIsMenuOpen ? 120 : 40,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.business,
-                        size: effectiveIsMenuOpen ? 120 : 40),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Divider(
-            color: Colors.grey[200], thickness: 1, indent: 16, endIndent: 16),
+        const SizedBox(height: 32),
+        _buildBrandHeader(effectiveIsMenuOpen),
+        const SizedBox(height: 32),
         Expanded(
           child: ListView(
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: effectiveIsMenuOpen ? 1.0 : 0.0,
-                child: effectiveIsMenuOpen
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Divider(color: Colors.grey[300], height: 1),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Text(
-                              'ADMINISTRACIÓN',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).hintColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(
-                            indent: 12,
-                            endIndent: 12,
-                            color: Colors.grey[300],
-                            height: 1),
-                      ),
+              _buildMenuItem(
+                icon: Icons.dashboard_outlined,
+                title: 'Dashboard',
+                path: '/dashboard',
+                location: location,
+                isMenuOpen: effectiveIsMenuOpen,
               ),
               if (canView('clients'))
                 _buildMenuItem(
-                  icon: Icons.person_add,
+                  icon: Icons.group_outlined,
                   title: 'Clientes',
                   path: '/clients',
                   location: location,
@@ -146,7 +98,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 ),
               if (canView('invoices'))
                 _buildMenuItem(
-                  icon: Icons.receipt_long,
+                  icon: Icons.receipt_long_outlined,
                   title: 'Invoices',
                   path: '/invoices',
                   location: location,
@@ -154,7 +106,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 ),
               if (canView('projects'))
                 _buildMenuItem(
-                  icon: Icons.construction,
+                  icon: Icons.architecture_outlined,
                   title: 'Proyectos',
                   path: '/projects',
                   location: location,
@@ -162,15 +114,15 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 ),
               if (canView('inventory'))
                 _buildMenuItem(
-                  icon: Icons.architecture,
-                  title: 'Productos', // Mapped to inventory module
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Productos',
                   path: '/pole-barns',
                   location: location,
                   isMenuOpen: effectiveIsMenuOpen,
                 ),
               if (canView('payroll'))
                 _buildMenuItem(
-                  icon: Icons.payments,
+                  icon: Icons.payments_outlined,
                   title: 'Nómina',
                   path: '/payroll',
                   location: location,
@@ -178,7 +130,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 ),
               if (canView('accounts_payable'))
                 _buildMenuItem(
-                  icon: Icons.attach_money,
+                  icon: Icons.account_balance_wallet_outlined,
                   title: 'Cuentas por Pagar',
                   path: '/accounts-payable',
                   location: location,
@@ -186,107 +138,37 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 ),
               if (canView('users') || isAdmin)
                 _buildMenuItem(
-                  icon: Icons.group,
+                  icon: Icons.person_add_outlined,
                   title: 'Usuarios',
                   path: '/users',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('settings') || isAdmin)
-                _buildMenuItem(
-                  icon: Icons.settings,
-                  title: 'Configuración',
-                  path: '/settings',
                   location: location,
                   isMenuOpen: effectiveIsMenuOpen,
                 ),
             ],
           ),
         ),
-        Divider(color: Colors.grey[300], height: 1),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              if (isMobile && _scaffoldKey.currentState?.isDrawerOpen == true) {
-                _scaffoldKey.currentState?.closeDrawer();
-              }
-              context.go('/profile');
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                vertical: 16,
-                horizontal: effectiveIsMenuOpen ? 24 : 16,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage: profileAsync.asData?.value?['picture'] !=
-                            null
-                        ? NetworkImage(profileAsync.asData!.value!['picture'])
-                        : null,
-                    child: profileAsync.asData?.value?['picture'] == null
-                        ? const Icon(Icons.person, size: 20)
-                        : null,
-                  ),
-                  Expanded(
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 200),
-                      opacity: effectiveIsMenuOpen ? 1.0 : 0.0,
-                      curve: Curves.easeInOut,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              profileAsync.asData?.value?['name'] ?? 'Usuario',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.clip,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (effectiveIsMenuOpen)
-                    IconButton(
-                      icon: const Icon(Icons.logout,
-                          color: Color(0xFF64748B), size: 20),
-                      onPressed: () async {
-                        await ref.read(authRepositoryProvider).signOut();
-                      },
-                      tooltip: 'Cerrar Sesión',
-                    ),
-                ],
-              ),
-            ),
+        const Divider(color: Color(0xFFC2C8C2), height: 1),
+        if (canView('settings') || isAdmin)
+          _buildMenuItem(
+            icon: Icons.settings_outlined,
+            title: 'Ajustes',
+            path: '/settings',
+            location: location,
+            isMenuOpen: effectiveIsMenuOpen,
           ),
-        ),
-        const SizedBox(height: 8),
+        _buildLogoutItem(effectiveIsMenuOpen),
+        const SizedBox(height: 16),
       ],
     );
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF9FAF7),
+        elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
+            icon: const Icon(Icons.menu, color: _primaryColor),
             onPressed: () {
               if (isMobile) {
                 _scaffoldKey.currentState?.openDrawer();
@@ -296,7 +178,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
             },
           ),
         ),
-        title: Text(title),
+        title: Text(title, style: const TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
       ),
       drawer: isMobile
           ? Drawer(
@@ -308,43 +190,109 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
               ),
             )
           : null,
+      backgroundColor: const Color(0xFFF9FAF7),
       body: Row(
         children: [
           if (!isMobile) ...[
-            // Persistent Sidebar
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              width: effectiveIsMenuOpen ? 280 : 72,
-              color: Theme.of(context).cardColor,
+              width: effectiveIsMenuOpen ? 256 : 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAF7),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 32,
+                    offset: const Offset(12, 0),
+                  ),
+                ],
+              ),
               child: sidebarContent,
             ),
-            VerticalDivider(width: 1, thickness: 1, color: Colors.grey[300]),
+            const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFC2C8C2)),
           ],
-          Expanded(child: widget.child),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFF9FAF7),
+              child: widget.child,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem(
-      {required IconData icon,
-      required String title,
-      required String path,
-      required String location,
-      required bool isMenuOpen}) {
-    // final isMenuOpen = ref.watch(sidebarExpandedProvider); // passed directly now
-    // Simple matching: exact match for dashboard, startsWith for others
+  Widget _buildBrandHeader(bool isMenuOpen) {
+    if (!isMenuOpen) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [_primaryColor, Color(0xFF2D4739)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.architecture, color: _onPrimary, size: 24),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_primaryColor, Color(0xFF2D4739)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.architecture, color: _onPrimary, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'J&P Pole Barns LLC',
+                style: TextStyle(
+                  fontFamily: 'Manrope',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: _primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required String path,
+    required String location,
+    required bool isMenuOpen,
+  }) {
     final isSelected = path == '/dashboard'
         ? location == '/dashboard'
         : location.startsWith(path);
 
-    const activeColor = Color(0xFF92400E);
+    const activeColor = _primaryColor;
     const activeBgColor = Color(0xFFFEF3C7);
-    const inactiveColor = Color(0xFF64748B);
+    const inactiveColor = Color(0xFF727973);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
         onTap: () {
           final isMobile = MediaQuery.of(context).size.width < 800;
@@ -354,8 +302,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           context.go(path);
         },
         borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+        child: Container(
           height: 48,
           decoration: BoxDecoration(
             color: isSelected ? activeBgColor : Colors.transparent,
@@ -387,6 +334,49 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                       maxLines: 1,
                       overflow: TextOverflow.clip,
                       softWrap: false,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutItem(bool isMenuOpen) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: () async {
+          await ref.read(authRepositoryProvider).signOut();
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 48,
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              const Icon(
+                Icons.logout,
+                color: _errorColor,
+                size: 22,
+              ),
+              Expanded(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isMenuOpen ? 1.0 : 0.0,
+                  curve: Curves.easeInOut,
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 12),
+                    child: Text(
+                      'Cerrar Sesión',
+                      style: TextStyle(
+                        color: _errorColor,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),

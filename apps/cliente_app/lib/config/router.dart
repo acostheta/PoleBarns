@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:auth/auth.dart';
 import '../shell_layout.dart';
-import '../features/dashboard/screens/dashboard_screen.dart';
+import '../features/dashboard/screens/dashboard_screen_v2.dart';
 
 import '../features/project_tracking/screens/project_dashboard_screen.dart';
 import '../features/project_tracking/screens/project_detail_screen.dart';

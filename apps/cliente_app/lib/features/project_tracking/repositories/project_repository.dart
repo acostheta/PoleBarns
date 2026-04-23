@@ -270,10 +270,11 @@ class ProjectRepository {
     List<Map<String, dynamic>> result = [];
 
     for (var pBarn in projectBarns) {
-      final response = await _supabase
-          .from('RelatedMaterials')
-          .select('*, raw_materials(name)')
-          .eq('PoleBarns_Ref', pBarn.poleBarnId);
+        final response = await _supabase
+            .from('RelatedMaterials')
+            .select('*, raw_materials(name)')
+            .eq('PoleBarns_Ref', pBarn.poleBarnId)
+            .order('sort_order', ascending: true);
 
       final materials = List<Map<String, dynamic>>.from(response);
 

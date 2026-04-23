@@ -8,9 +8,9 @@ class HelpTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Markdown(
       data: '''
-# Manual de Usuario - App Gilbert
+# Manual de Usuario - J&P Pole Barns LLC
 
-Bienvenido a la documentación oficial de **App Gilbert**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
+Bienvenido a la documentación oficial de **J&P Pole Barns LLC**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
 
 ---
 
@@ -33,7 +33,7 @@ Bienvenido a la documentación oficial de **App Gilbert**, su sistema integral p
 
 ## Introducción
 
-App Gilbert es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
+J&P Pole Barns LLC es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
 
 ---
 
