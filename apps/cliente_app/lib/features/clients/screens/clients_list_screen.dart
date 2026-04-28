@@ -130,7 +130,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                   ? filtered.sublist(startIndex, endIndex)
                                   : <ClientModel>[];
 
-                              final isMobile = constraints.maxWidth < 800;
+                              final isMobile = constraints.maxWidth < 650;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,14 +141,12 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                             pagedClients, repository)
                                         : SingleChildScrollView(
                                             scrollDirection: Axis.vertical,
-                                            child: SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              child: ConstrainedBox(
-                                                constraints: BoxConstraints(
-                                                  minWidth:
-                                                      constraints.maxWidth - 48,
-                                                ),
-                                                child: DataTable(
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                minWidth:
+                                                    constraints.maxWidth - 48,
+                                              ),
+                                              child: DataTable(
                                                   showCheckboxColumn: true,
                                                   sortColumnIndex:
                                                       _sortColumnIndex,
@@ -177,19 +175,22 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                     });
                                                   },
                                                   columns: [
-                                                    const DataColumn(
-                                                        label: Text('AVATAR')),
+                                                    if (constraints.maxWidth > 750)
+                                                      const DataColumn(
+                                                          label: Text('AVATAR')),
                                                     DataColumn(
                                                         label: const Text(
                                                             'NOMBRE'),
                                                         onSort: _sort),
-                                                    const DataColumn(
-                                                        label:
-                                                            Text('CONTACTO')),
-                                                    DataColumn(
-                                                        label: const Text(
-                                                            'DIRECCIÓN'),
-                                                        onSort: _sort),
+                                                    if (constraints.maxWidth > 1050)
+                                                      const DataColumn(
+                                                          label:
+                                                              Text('CONTACTO')),
+                                                    if (constraints.maxWidth > 850)
+                                                      DataColumn(
+                                                          label: const Text(
+                                                              'DIRECCIÓN'),
+                                                          onSort: _sort),
                                                     const DataColumn(
                                                         label: Text('ACCIONES',
                                                             textAlign:
@@ -214,33 +215,34 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                         });
                                                       },
                                                       cells: [
-                                                        DataCell(
-                                                          Container(
-                                                            width: 40,
-                                                            height: 40,
-                                                            decoration: BoxDecoration(
-                                                              color: _getAvatarBgColor(client.nombre),
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              image: client.photoUrl != null
-                                                                  ? DecorationImage(
-                                                                      image: NetworkImage(client.photoUrl!),
-                                                                      fit: BoxFit.cover,
+                                                        if (constraints.maxWidth > 750)
+                                                          DataCell(
+                                                            Container(
+                                                              width: 40,
+                                                              height: 40,
+                                                              decoration: BoxDecoration(
+                                                                color: _getAvatarBgColor(client.nombre),
+                                                                borderRadius: BorderRadius.circular(8),
+                                                                image: client.photoUrl != null
+                                                                    ? DecorationImage(
+                                                                        image: NetworkImage(client.photoUrl!),
+                                                                        fit: BoxFit.cover,
+                                                                      )
+                                                                    : null,
+                                                              ),
+                                                              alignment: Alignment.center,
+                                                              child: client.photoUrl == null
+                                                                  ? Text(
+                                                                      _getInitials(client.nombre),
+                                                                      style: TextStyle(
+                                                                        color: _getAvatarTextColor(client.nombre),
+                                                                        fontSize: 14,
+                                                                        fontWeight: FontWeight.bold,
+                                                                      ),
                                                                     )
                                                                   : null,
                                                             ),
-                                                            alignment: Alignment.center,
-                                                            child: client.photoUrl == null
-                                                                ? Text(
-                                                                    _getInitials(client.nombre),
-                                                                    style: TextStyle(
-                                                                      color: _getAvatarTextColor(client.nombre),
-                                                                      fontSize: 14,
-                                                                      fontWeight: FontWeight.bold,
-                                                                    ),
-                                                                  )
-                                                                : null,
                                                           ),
-                                                        ),
                                                         DataCell(
                                                           Column(
                                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,7 +256,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                                   color: Color(0xFF111827),
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 4),
+                                                              const SizedBox(height: 2),
                                                               Text(
                                                                 'Client ID: #${client.id.substring(0, 4)}',
                                                                 style: const TextStyle(
@@ -262,35 +264,22 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                                   color: Color(0xFF6B7280),
                                                                 ),
                                                               ),
-                                                            ],
-                                                          ),
-                                                          onTap: () =>
-                                                              _navigateToDetail(
-                                                                  client.id),
-                                                        ),
-                                                        DataCell(
-                                                          Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                            children: [
-                                                              if (client.email != null && client.email!.isNotEmpty)
+                                                              if (constraints.maxWidth <= 1050 && (client.email != null || client.telefono != null)) ...[
+                                                                const SizedBox(height: 2),
                                                                 Text(
-                                                                  client.email!,
-                                                                  style: const TextStyle(
-                                                                    fontSize: 14,
-                                                                    fontWeight: FontWeight.w500,
-                                                                    color: Color(0xFF374151),
-                                                                  ),
+                                                                  '${client.email ?? ''}${client.email != null && client.telefono != null ? " • " : ""}${client.telefono ?? ""}',
+                                                                  style: TextStyle(fontSize: 11, color: Colors.blueGrey.shade600),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
                                                                 ),
-                                                              if (client.telefono != null && client.telefono!.isNotEmpty) ...[
-                                                                if (client.email != null && client.email!.isNotEmpty)
-                                                                  const SizedBox(height: 4),
+                                                              ],
+                                                              if (constraints.maxWidth <= 850 && client.direccion != null) ...[
+                                                                const SizedBox(height: 2),
                                                                 Text(
-                                                                  client.telefono!,
-                                                                  style: const TextStyle(
-                                                                    fontSize: 12,
-                                                                    color: Color(0xFF6B7280),
-                                                                  ),
+                                                                  client.direccion!,
+                                                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
                                                                 ),
                                                               ],
                                                             ],
@@ -299,51 +288,84 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                               _navigateToDetail(
                                                                   client.id),
                                                         ),
-                                                        DataCell(
-                                                          Builder(
-                                                            builder: (context) {
-                                                              String mainAddr = '-';
-                                                              String subAddr = '';
-                                                              if (client.direccion != null && client.direccion!.isNotEmpty) {
-                                                                final parts = client.direccion!.split(',');
-                                                                mainAddr = parts[0].trim();
-                                                                if (parts.length > 1) {
-                                                                  subAddr = parts.sublist(1).join(',').trim();
-                                                                }
-                                                              }
-                                                              return Column(
-                                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                                children: [
+                                                        if (constraints.maxWidth > 1050)
+                                                          DataCell(
+                                                            Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                              children: [
+                                                                if (client.email != null && client.email!.isNotEmpty)
                                                                   Text(
-                                                                    mainAddr,
+                                                                    client.email!,
                                                                     style: const TextStyle(
                                                                       fontSize: 14,
+                                                                      fontWeight: FontWeight.w500,
                                                                       color: Color(0xFF374151),
                                                                     ),
-                                                                    maxLines: 1,
-                                                                    overflow: TextOverflow.ellipsis,
                                                                   ),
-                                                                  if (subAddr.isNotEmpty) ...[
+                                                                if (client.telefono != null && client.telefono!.isNotEmpty) ...[
+                                                                  if (client.email != null && client.email!.isNotEmpty)
                                                                     const SizedBox(height: 4),
+                                                                  Text(
+                                                                    client.telefono!,
+                                                                    style: const TextStyle(
+                                                                      fontSize: 12,
+                                                                      color: Color(0xFF6B7280),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ],
+                                                            ),
+                                                            onTap: () =>
+                                                                _navigateToDetail(
+                                                                    client.id),
+                                                          ),
+                                                        if (constraints.maxWidth > 850)
+                                                          DataCell(
+                                                            Builder(
+                                                              builder: (context) {
+                                                                String mainAddr = '-';
+                                                                String subAddr = '';
+                                                                if (client.direccion != null && client.direccion!.isNotEmpty) {
+                                                                  final parts = client.direccion!.split(',');
+                                                                  mainAddr = parts[0].trim();
+                                                                  if (parts.length > 1) {
+                                                                    subAddr = parts.sublist(1).join(',').trim();
+                                                                  }
+                                                                }
+                                                                return Column(
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                  children: [
                                                                     Text(
-                                                                      subAddr,
+                                                                      mainAddr,
                                                                       style: const TextStyle(
-                                                                        fontSize: 12,
-                                                                        color: Color(0xFF6B7280),
+                                                                        fontSize: 14,
+                                                                        color: Color(0xFF374151),
                                                                       ),
                                                                       maxLines: 1,
                                                                       overflow: TextOverflow.ellipsis,
                                                                     ),
+                                                                    if (subAddr.isNotEmpty) ...[
+                                                                      const SizedBox(height: 4),
+                                                                      Text(
+                                                                        subAddr,
+                                                                        style: const TextStyle(
+                                                                          fontSize: 12,
+                                                                          color: Color(0xFF6B7280),
+                                                                        ),
+                                                                        maxLines: 1,
+                                                                        overflow: TextOverflow.ellipsis,
+                                                                      ),
+                                                                    ],
                                                                   ],
-                                                                ],
-                                                              );
-                                                            },
+                                                                );
+                                                              },
+                                                            ),
+                                                            onTap: () =>
+                                                                _navigateToDetail(
+                                                                    client.id),
                                                           ),
-                                                          onTap: () =>
-                                                              _navigateToDetail(
-                                                                  client.id),
-                                                        ),
                                                         DataCell(
                                                           Align(
                                                             alignment: Alignment
@@ -361,8 +383,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                               ),
                                             ),
                                           ),
-                                  ),
-                                  _buildPaginationFooter(startIndex, endIndex,
+                                          _buildPaginationFooter(startIndex, endIndex,
                                       totalItems, totalPages, isMobile),
                                 ],
                               );
@@ -383,7 +404,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
 
   Widget _buildToolbar(
       BuildContext context, List<ClientModel> clients, dynamic repository) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.of(context).size.width < 650;
 
     if (_selectedIds.isNotEmpty) {
       return Container(
