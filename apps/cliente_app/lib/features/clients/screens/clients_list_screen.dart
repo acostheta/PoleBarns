@@ -24,12 +24,41 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
   final int _rowsPerPage = 10;
   int _currentPage = 0;
 
+  Color _getAvatarBgColor(String name) {
+    final colors = [
+      const Color(0xFFD1FAE5), // Light green
+      const Color(0xFFFEF3C7), // Light yellow/orange
+      const Color(0xFFE0E7FF), // Light indigo
+      const Color(0xFFF3F4F6), // Light grey
+      const Color(0xFFFEE2E2), // Light red
+    ];
+    return colors[name.length % colors.length];
+  }
+
+  Color _getAvatarTextColor(String name) {
+    final colors = [
+      const Color(0xFF065F46), // Dark green
+      const Color(0xFF92400E), // Dark yellow/orange
+      const Color(0xFF3730A3), // Dark indigo
+      const Color(0xFF374151), // Dark grey
+      const Color(0xFF991B1B), // Dark red
+    ];
+    return colors[name.length % colors.length];
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final repository = ref.watch(clientRepositoryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppStyles.stoneWhite,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -48,9 +77,21 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
               return LayoutBuilder(
                 builder: (context, constraints) {
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Stats Row removed as requested
-
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 8),
+                        child: Text(
+                          'Directorio de Clientes',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.28,
+                            fontFamily: 'Manrope',
+                            color: AppStyles.primaryForest,
+                          ),
+                        ),
+                      ),
                       // Toolbar
                       _buildToolbar(context, clients, repository),
 
@@ -65,7 +106,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border:
-                                  Border.all(color: const Color(0xFFE5E7EB)),
+                                  Border.all(color: AppStyles.paleSage),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.03),
@@ -114,15 +155,16 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                   sortAscending: _isAscending,
                                                   headingTextStyle:
                                                       const TextStyle(
-                                                    fontWeight: FontWeight.bold,
+                                                    fontWeight: FontWeight.w600, // Semibold
                                                     fontSize: 12,
-                                                    color: Color(0xFF6B7280),
+                                                    color: AppStyles.subLabelColor,
                                                     letterSpacing: 0.5,
                                                   ),
-                                                  dataRowMinHeight: 64,
-                                                  dataRowMaxHeight: 64,
+                                                  dataRowMinHeight: 72,
+                                                  dataRowMaxHeight: 72,
                                                   horizontalMargin: 24,
-                                                  columnSpacing: 24,
+                                                  columnSpacing: 32,
+                                                  dividerThickness: 1,
                                                   onSelectAll: (value) {
                                                     setState(() {
                                                       if (value == true) {
@@ -173,82 +215,53 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                       },
                                                       cells: [
                                                         DataCell(
-                                                          CircleAvatar(
-                                                            radius: 18,
-                                                            backgroundColor:
-                                                                const Color(
-                                                                    0xFFF3F4F6),
-                                                            backgroundImage: client
-                                                                        .photoUrl !=
-                                                                    null
-                                                                ? NetworkImage(
-                                                                    client
-                                                                        .photoUrl!)
+                                                          Container(
+                                                            width: 40,
+                                                            height: 40,
+                                                            decoration: BoxDecoration(
+                                                              color: _getAvatarBgColor(client.nombre),
+                                                              borderRadius: BorderRadius.circular(8),
+                                                              image: client.photoUrl != null
+                                                                  ? DecorationImage(
+                                                                      image: NetworkImage(client.photoUrl!),
+                                                                      fit: BoxFit.cover,
+                                                                    )
+                                                                  : null,
+                                                            ),
+                                                            alignment: Alignment.center,
+                                                            child: client.photoUrl == null
+                                                                ? Text(
+                                                                    _getInitials(client.nombre),
+                                                                    style: TextStyle(
+                                                                      color: _getAvatarTextColor(client.nombre),
+                                                                      fontSize: 14,
+                                                                      fontWeight: FontWeight.bold,
+                                                                    ),
+                                                                  )
                                                                 : null,
-                                                            child:
-                                                                client.photoUrl ==
-                                                                        null
-                                                                    ? Text(
-                                                                        client.firstName.isNotEmpty
-                                                                            ? client.firstName[0].toUpperCase()
-                                                                            : '?',
-                                                                        style: const TextStyle(
-                                                                            color: Color(
-                                                                                0xFF6B7280),
-                                                                            fontSize:
-                                                                                12,
-                                                                            fontWeight:
-                                                                                FontWeight.bold),
-                                                                      )
-                                                                    : null,
                                                           ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            client.nombre,
-                                                            style: const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Color(
-                                                                    0xFF111827)),
-                                                          ),
-                                                          onTap: () =>
-                                                              _navigateToDetail(
-                                                                  client.id),
                                                         ),
                                                         DataCell(
                                                           Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            mainAxisAlignment: MainAxisAlignment.center,
                                                             children: [
-                                                              if (client
-                                                                      .email !=
-                                                                  null)
-                                                                Text(
-                                                                  client.email!,
-                                                                  style: const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Color(
-                                                                          0xFF4B5563)),
+                                                              Text(
+                                                                client.nombre,
+                                                                style: const TextStyle(
+                                                                  fontWeight: FontWeight.w600,
+                                                                  fontSize: 14,
+                                                                  color: Color(0xFF111827),
                                                                 ),
-                                                              if (client
-                                                                      .telefono !=
-                                                                  null)
-                                                                Text(
-                                                                  client
-                                                                      .telefono!,
-                                                                  style: const TextStyle(
-                                                                      fontSize:
-                                                                          11,
-                                                                      color: Color(
-                                                                          0xFF9CA3AF)),
+                                                              ),
+                                                              const SizedBox(height: 4),
+                                                              Text(
+                                                                'Client ID: #${client.id.substring(0, 4)}',
+                                                                style: const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Color(0xFF6B7280),
                                                                 ),
+                                                              ),
                                                             ],
                                                           ),
                                                           onTap: () =>
@@ -256,13 +269,76 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                                                   client.id),
                                                         ),
                                                         DataCell(
-                                                          Text(
-                                                            client.direccion ??
-                                                                '-',
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
+                                                          Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              if (client.email != null && client.email!.isNotEmpty)
+                                                                Text(
+                                                                  client.email!,
+                                                                  style: const TextStyle(
+                                                                    fontSize: 14,
+                                                                    fontWeight: FontWeight.w500,
+                                                                    color: Color(0xFF374151),
+                                                                  ),
+                                                                ),
+                                                              if (client.telefono != null && client.telefono!.isNotEmpty) ...[
+                                                                if (client.email != null && client.email!.isNotEmpty)
+                                                                  const SizedBox(height: 4),
+                                                                Text(
+                                                                  client.telefono!,
+                                                                  style: const TextStyle(
+                                                                    fontSize: 12,
+                                                                    color: Color(0xFF6B7280),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ],
+                                                          ),
+                                                          onTap: () =>
+                                                              _navigateToDetail(
+                                                                  client.id),
+                                                        ),
+                                                        DataCell(
+                                                          Builder(
+                                                            builder: (context) {
+                                                              String mainAddr = '-';
+                                                              String subAddr = '';
+                                                              if (client.direccion != null && client.direccion!.isNotEmpty) {
+                                                                final parts = client.direccion!.split(',');
+                                                                mainAddr = parts[0].trim();
+                                                                if (parts.length > 1) {
+                                                                  subAddr = parts.sublist(1).join(',').trim();
+                                                                }
+                                                              }
+                                                              return Column(
+                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: [
+                                                                  Text(
+                                                                    mainAddr,
+                                                                    style: const TextStyle(
+                                                                      fontSize: 14,
+                                                                      color: Color(0xFF374151),
+                                                                    ),
+                                                                    maxLines: 1,
+                                                                    overflow: TextOverflow.ellipsis,
+                                                                  ),
+                                                                  if (subAddr.isNotEmpty) ...[
+                                                                    const SizedBox(height: 4),
+                                                                    Text(
+                                                                      subAddr,
+                                                                      style: const TextStyle(
+                                                                        fontSize: 12,
+                                                                        color: Color(0xFF6B7280),
+                                                                      ),
+                                                                      maxLines: 1,
+                                                                      overflow: TextOverflow.ellipsis,
+                                                                    ),
+                                                                  ],
+                                                                ],
+                                                              );
+                                                            },
                                                           ),
                                                           onTap: () =>
                                                               _navigateToDetail(
@@ -315,10 +391,10 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         height: isMobile ? null : 56,
         decoration: BoxDecoration(
-          color: AppStyles.primaryOrange.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: AppStyles.secondaryEarth.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
           border:
-              Border.all(color: AppStyles.primaryOrange.withValues(alpha: 0.3)),
+              Border.all(color: AppStyles.secondaryEarth.withValues(alpha: 0.3)),
         ),
         child: isMobile
             ? Column(
@@ -330,16 +406,16 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                       Text(
                         '${_selectedIds.length} seleccionados',
                         style: const TextStyle(
-                          color: AppStyles.primaryOrange,
+                          color: AppStyles.secondaryEarth,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       TextButton.icon(
                         onPressed: () => setState(() => _selectedIds.clear()),
                         icon: const Icon(Icons.close,
-                            size: 20, color: AppStyles.primaryOrange),
+                            size: 20, color: AppStyles.secondaryEarth),
                         label: const Text('Cancelar',
-                            style: TextStyle(color: AppStyles.primaryOrange)),
+                            style: TextStyle(color: AppStyles.secondaryEarth)),
                       ),
                     ],
                   ),
@@ -409,8 +485,8 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppStyles.paleSage),
                   ),
                   child: TextField(
                     onChanged: (v) => setState(() => _searchQuery = v),
@@ -644,7 +720,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: AppStyles.paleSage)),
       ),
       child: isMobile
           ? Column(
@@ -756,21 +832,28 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: const Color(0xFFF3F4F6),
-                        backgroundImage: client.photoUrl != null
-                            ? NetworkImage(client.photoUrl!)
-                            : null,
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _getAvatarBgColor(client.nombre),
+                          borderRadius: BorderRadius.circular(8),
+                          image: client.photoUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(client.photoUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        alignment: Alignment.center,
                         child: client.photoUrl == null
                             ? Text(
-                                client.firstName.isNotEmpty
-                                    ? client.firstName[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                    color: Color(0xFF6B7280),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
+                                _getInitials(client.nombre),
+                                style: TextStyle(
+                                  color: _getAvatarTextColor(client.nombre),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               )
                             : null,
                       ),

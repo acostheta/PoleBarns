@@ -138,7 +138,7 @@ final currentUserAccessProvider =
     
     // Watch the profile state
     final profileProvider = ref.watch(userProfileProvider(user.id));
-    final role = profileProvider.valueOrNull?['user_level'] as String?;
+    final role = profileProvider.valueOrNull?['role'] as String?;
     final isLoadingProfile = profileProvider.isLoading;
     final hasError = profileProvider.hasError;
 

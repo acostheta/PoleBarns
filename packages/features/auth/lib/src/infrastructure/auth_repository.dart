@@ -66,7 +66,7 @@ class AuthRepository {
       'updated_at': DateTime.now().toIso8601String(),
       if (name != null) 'name': name,
       if (picture != null) 'picture': picture,
-      if (role != null) 'user_level': role,
+      'role': role,
       if (isActive != null) 'is_active': isActive,
       if (jobPositionId != null) 'job_position_id': jobPositionId,
     };

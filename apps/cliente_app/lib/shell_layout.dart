@@ -35,7 +35,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
     // Check admin status from profile directly to show menu early
     final profile = profileAsync.valueOrNull;
-    final isAdmin = profile?['user_level'] == 'Administrador';
+    final isAdmin = profile?['role'] == 'Administrador';
 
     bool canView(String key) {
       if (isAdmin) return true;
@@ -268,6 +268,8 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                   fontWeight: FontWeight.bold,
                   color: _primaryColor,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

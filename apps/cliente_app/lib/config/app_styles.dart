@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppStyles {
-  // Primary Orange Color
-  static const Color primaryOrange = Color(0xFFD97706);
+  // Heritage Construct Color Palette
+  static const Color primaryForest = Color(0xFF173124);
+  static const Color secondaryEarth = Color(0xFF7C580F);
+  static const Color stoneWhite = Color(0xFFF9FAF7);
+  static const Color paleSage = Color(0xFFEDEEEB);
+  static const Color bodyText = Color(0xFF333333);
 
-  // Label and Text Colors
+  // Legacy (consider migrating to above)
+  static const Color primaryOrange = Color(0xFFD97706);
   static const Color labelColor = Color(0xFF374151);
   static const Color subLabelColor = Color(0xFF6B7280);
   static const Color titleColor = Color(0xFF111827);
@@ -38,12 +43,12 @@ class AppStyles {
 
   // Button Style
   static ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: primaryOrange,
+    backgroundColor: primaryForest,
     foregroundColor: Colors.white,
     elevation: 0,
     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4), // Heritage Construct uses 4px
     ),
     textStyle: const TextStyle(
       fontSize: 16,
