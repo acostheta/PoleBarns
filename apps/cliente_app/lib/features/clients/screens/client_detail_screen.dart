@@ -913,8 +913,12 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
-                  const Text('Información del Cliente',
-                      style: AppStyles.dialogTitleStyle),
+                  const Text('INFORMACIÓN DEL CLIENTE',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Manrope',
+                          color: AppStyles.primaryForest)),
                   const SizedBox(height: 32),
                   isMobile
                       ? Column(
@@ -992,17 +996,40 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppStyles.labelStyle),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: AppStyles.secondaryEarth,
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+            fontFamily: 'Manrope',
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Manrope',
+              color: AppStyles.primaryForest),
           keyboardType: keyboardType,
           validator: required
               ? (v) => v == null || v.isEmpty ? 'Requerido' : null
               : null,
-          decoration: AppStyles.inputDecoration(),
+          decoration: AppStyles.inputDecoration().copyWith(
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppStyles.paleSage),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppStyles.secondaryEarth),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
         )
       ],
     );

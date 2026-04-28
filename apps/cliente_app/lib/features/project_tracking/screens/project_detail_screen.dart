@@ -26,7 +26,7 @@ class ProjectDetailScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
+        backgroundColor: AppStyles.stoneWhite,
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,85 +34,90 @@ class ProjectDetailScreen extends ConsumerWidget {
               Text(
                 project.address ?? 'Detalle de Obra',
                 style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Manrope',
+                  fontSize: 18,
+                ),
               ),
               Text(
-                '#PROJ-${project.id.substring(0, 8)}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                '#PROJ-${project.id.substring(0, 8)}'.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
               )
             ],
           ),
-          backgroundColor: Colors.white,
-          elevation: 0.5,
-          iconTheme: const IconThemeData(color: Colors.black),
+          backgroundColor: AppStyles.primaryForest,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           actions: [
-            // Add Edit/Delete Menu
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.black),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => ProjectCreateDialog(
-                      projectId: project.id,
-                      initialClientId: project.refCliente,
-                      initialProjectName: project.address,
-                      initialDireccion: project.direccion,
-                      initialResponsible: project.responsable,
-                      initialGroupId: project.grupoAsignado != null &&
-                              project.grupoAsignado!.isNotEmpty
-                          ? project.grupoAsignado
-                          : null,
-                      initialStatus: project.estatus,
-                      initialStartDate: project.fechaInicio,
-                      initialEndDate: project.fechaFinalizacion,
-                      initialComments: project.comments,
-                    ),
-                  );
-                } else if (value == 'delete') {
-                  _confirmDelete(context, ref, project.id);
-                }
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => ProjectCreateDialog(
+                    projectId: project.id,
+                    initialClientId: project.refCliente,
+                    initialProjectName: project.address,
+                    initialDireccion: project.direccion,
+                    initialResponsible: project.responsable,
+                    initialGroupId: project.grupoAsignado != null &&
+                            project.grupoAsignado!.isNotEmpty
+                        ? project.grupoAsignado
+                        : null,
+                    initialStatus: project.estatus,
+                    initialStartDate: project.fechaInicio,
+                    initialEndDate: project.fechaFinalizacion,
+                    initialComments: project.comments,
+                  ),
+                );
               },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text('Editar'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Eliminar'),
-                    ],
-                  ),
-                ),
-              ],
+              tooltip: 'Editar',
             ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white70),
+              onPressed: () => _confirmDelete(context, ref, project.id),
+              tooltip: 'Eliminar',
+            ),
+            const SizedBox(width: 8),
           ],
-          bottom: const TabBar(
-            isScrollable: true,
-            labelColor: AppStyles.primaryOrange,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: AppStyles.primaryOrange,
-            tabs: [
-              Tab(text: 'Productos'),
-              Tab(text: 'Evidencias'),
-              Tab(text: 'Chat'),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              color: AppStyles.paleSage,
+              child: const TabBar(
+                isScrollable: true,
+                labelColor: AppStyles.primaryForest,
+                unselectedLabelColor: Color(0xFF6B7280),
+                indicatorColor: AppStyles.secondaryEarth,
+                indicatorWeight: 3,
+                labelStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Manrope',
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+                tabs: [
+                  Tab(text: 'PRODUCTOS'),
+                  Tab(text: 'EVIDENCIAS'),
+                  Tab(text: 'CHAT'),
+                ],
+              ),
+            ),
           ),
         ),
         body: Column(
           children: [
+            // Top Accent Bar
+            Container(
+              height: 4,
+              color: AppStyles.secondaryEarth,
+            ),
             if ((project.direccion ?? project.address ?? '').isNotEmpty)
               Padding(
                 padding:
@@ -140,17 +145,52 @@ class ProjectDetailScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Eliminación'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        backgroundColor: AppStyles.stoneWhite,
+        title: const Text(
+          'Confirmar Eliminación',
+          style: TextStyle(
+            color: AppStyles.primaryForest,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Manrope',
+          ),
+        ),
         content: const Text(
-            '¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.'),
+          '¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.',
+          style: TextStyle(fontFamily: 'Manrope'),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child:
-                  const Text('Eliminar', style: TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'CANCELAR',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF991B1B),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'ELIMINAR',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
         ],
       ),
     );

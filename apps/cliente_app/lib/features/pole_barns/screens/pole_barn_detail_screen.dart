@@ -132,13 +132,20 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppStyles.stoneWhite,
       appBar: AppBar(
-        title: const Text('Detalle de Producto',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: const Text(
+          'Detalle de Producto',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Manrope',
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: AppStyles.primaryForest,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -153,45 +160,30 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                 );
               },
               icon: const Icon(Icons.print_outlined, size: 18),
-              label: const Text('Imprimir PDF'),
+              label: const Text('IMPRIMIR PDF'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppStyles.primaryOrange,
+                backgroundColor: AppStyles.secondaryEarth,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                  fontFamily: 'Manrope',
                 ),
               ),
             ),
           ),
           if (state.poleBarn.id != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-              child: ElevatedButton.icon(
-                onPressed: () => _confirmDelete(state.poleBarn.id!),
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Eliminar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFDC2626),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white70),
+              onPressed: () => _confirmDelete(state.poleBarn.id!),
+              tooltip: 'Eliminar',
             ),
           if (state.isSaving || state.isLoading)
             const Padding(
@@ -202,7 +194,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppStyles.primaryOrange,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -210,7 +202,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           else
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Icon(Icons.cloud_done, color: Colors.green),
+              child: Icon(Icons.cloud_done, color: Color(0xFF86EFAC)),
             ),
           const SizedBox(width: 8),
         ],
@@ -219,6 +211,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         key: _formKey,
         child: Column(
           children: [
+            Container(
+              height: 4,
+              color: AppStyles.secondaryEarth,
+            ),
             if (state.error != null) _buildErrorBanner(state.error!),
             Expanded(
               child: CustomScrollView(
@@ -272,13 +268,13 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppStyles.paleSage),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppStyles.primaryForest.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -287,10 +283,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         children: [
           const Text('RESUMEN DE PRECIOS',
               style: TextStyle(
-                  color: AppStyles.primaryOrange,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                  letterSpacing: 1.2)),
+                  color: AppStyles.secondaryEarth,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Manrope',
+                  fontSize: 10,
+                  letterSpacing: 1.5)),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -304,10 +301,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   children: [
                     const Text('CONFIGURE PRECIO DE VENTA',
                         style: TextStyle(
-                            color: AppStyles.primaryOrange,
+                            color: AppStyles.secondaryEarth,
                             fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                            letterSpacing: 0.5)),
+                            fontFamily: 'Manrope',
+                            fontSize: 12,
+                            letterSpacing: 1.0)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _precioVentaController,
@@ -317,10 +315,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                           color: Colors.black),
                       decoration: AppStyles.inputDecoration().copyWith(
                         prefixIcon: const Icon(Icons.sell,
-                            size: 24, color: AppStyles.primaryOrange),
+                            size: 24, color: AppStyles.secondaryEarth),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 20),
-                        fillColor: Colors.orange.shade50,
+                        fillColor: AppStyles.paleSage.withValues(alpha: 0.3),
                       ),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
@@ -397,16 +395,16 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   Widget _buildHeaderCard(PoleBarnFormState state, String alertStatus) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppStyles.paleSage),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppStyles.primaryForest.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -422,11 +420,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   children: [
                     const Text('PRODUCTO',
                         style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold,
+                            color: AppStyles.secondaryEarth,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'Manrope',
                             fontSize: 10,
-                            letterSpacing: 1.0)),
-                    const SizedBox(height: 4),
+                            letterSpacing: 1.5)),
+                    const SizedBox(height: 8),
                     _buildNameFieldInline(),
                   ],
                 ),
@@ -436,7 +435,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          const Divider(height: 1),
+          const Divider(height: 1, color: AppStyles.paleSage),
           const SizedBox(height: 24),
           Wrap(
             spacing: 32,
@@ -461,11 +460,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
 
   Widget _buildHeaderStat(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        color: AppStyles.paleSage.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppStyles.paleSage),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -479,14 +478,16 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
               Text(label,
                   style: const TextStyle(
                       fontSize: 10,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5)),
+                      color: AppStyles.secondaryEarth,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Manrope',
+                      letterSpacing: 1.0)),
               Text(value,
                   style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B))),
+                      fontFamily: 'Manrope',
+                      color: AppStyles.primaryForest)),
             ],
           ),
         ],
@@ -501,7 +502,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -512,7 +513,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
           const SizedBox(width: 8),
           Text(isOk ? 'PRESUPUESTO OK' : 'ALERTA DE COSTO',
               style: TextStyle(
-                  color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Manrope',
+                  fontSize: 10,
+                  letterSpacing: 0.5)),
         ],
       ),
     );
@@ -522,7 +527,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     return TextFormField(
       controller: _nameController,
       style: const TextStyle(
-          fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Manrope',
+          color: AppStyles.primaryForest),
       decoration: const InputDecoration(
         hintText: 'Nombre del Producto...',
         border: InputBorder.none,
@@ -538,17 +546,25 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppStyles.paleSage),
+        boxShadow: [
+          BoxShadow(
+            color: AppStyles.primaryForest.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Especificaciones y Costos',
               style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF111827))),
+                  fontFamily: 'Manrope',
+                  color: AppStyles.primaryForest)),
           const SizedBox(height: 32),
           _buildMainForm(total, labour),
         ],
@@ -562,8 +578,15 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppStyles.paleSage),
+        boxShadow: [
+          BoxShadow(
+            color: AppStyles.primaryForest.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,21 +598,27 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
               children: [
                 const Text('Lista de Materiales de Catálogo',
                     style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827))),
+                        fontFamily: 'Manrope',
+                        color: AppStyles.primaryForest)),
                 ElevatedButton.icon(
                   onPressed: () => _showMaterialDialog(null),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Agregar Material'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD97706),
+                    backgroundColor: AppStyles.secondaryEarth,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                        horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(4)),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Manrope',
+                        fontSize: 12,
+                        letterSpacing: 1.0),
                   ),
                 ),
               ],
@@ -633,10 +662,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         60;
 
     const headerStyle = TextStyle(
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF6B7280),
-        fontSize: 11,
-        letterSpacing: 0.5);
+        fontWeight: FontWeight.w900,
+        color: AppStyles.secondaryEarth,
+        fontFamily: 'Manrope',
+        fontSize: 10,
+        letterSpacing: 1.0);
 
     return LayoutBuilder(builder: (context, constraints) {
       final double containerWidth =
@@ -655,8 +685,9 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   padding:
                       const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   decoration: const BoxDecoration(
+                    color: AppStyles.paleSage,
                     border:
-                        Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                        Border(bottom: BorderSide(color: AppStyles.paleSage)),
                   ),
                   child: Row(
                     children: [
@@ -706,7 +737,7 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                           decoration: const BoxDecoration(
                             color: Colors.white,
                             border: Border(
-                                bottom: BorderSide(color: Color(0xFFF3F4F6))),
+                                bottom: BorderSide(color: AppStyles.paleSage)),
                           ),
                           padding: const EdgeInsets.symmetric(
                               vertical: 4, horizontal: 20),
@@ -716,9 +747,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                                   width: colNum,
                                   child: Text('${index + 1}',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF9CA3AF),
-                                          fontSize: 13))),
+                                          fontWeight: FontWeight.w900,
+                                          color: AppStyles.secondaryEarth,
+                                          fontFamily: 'Manrope',
+                                          fontSize: 11))),
                               SizedBox(
                                 width: colMat,
                                 child: Text(
@@ -726,7 +758,8 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
-                                      color: Color(0xFF1E293B)),
+                                      fontFamily: 'Manrope',
+                                      color: AppStyles.primaryForest),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -753,9 +786,10 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                                   child: Text(
                                       _currencyFormat.format(m.calculatedTotal),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w800,
+                                          fontFamily: 'Manrope',
                                           fontSize: 13,
-                                          color: Colors.indigo))),
+                                          color: AppStyles.primaryForest))),
                               SizedBox(
                                 width: colAcc,
                                 child: Row(
@@ -763,12 +797,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                                   children: [
                                     IconButton(
                                         icon: const Icon(Icons.edit_outlined,
-                                            size: 16, color: Colors.blueGrey),
+                                            size: 16, color: AppStyles.primaryForest),
                                         onPressed: () =>
                                             _showMaterialDialog(index)),
                                     IconButton(
                                         icon: const Icon(Icons.delete_outline,
-                                            size: 16, color: Colors.red),
+                                            size: 16, color: Color(0xFF991B1B)),
                                         onPressed: () =>
                                             notifier.removeMaterial(index)),
                                   ],
@@ -836,13 +870,35 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppStyles.labelStyle),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: AppStyles.secondaryEarth,
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+            fontFamily: 'Manrope',
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Manrope',
+              color: AppStyles.primaryForest),
           decoration: AppStyles.inputDecoration().copyWith(
-            prefixIcon: Icon(icon, size: 20, color: Colors.grey),
+            prefixIcon: Icon(icon, size: 18, color: AppStyles.secondaryEarth),
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppStyles.paleSage),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppStyles.secondaryEarth),
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           keyboardType: isText
               ? TextInputType.text
@@ -898,19 +954,20 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade100),
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFFFCA5A5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.orange),
+          const Icon(Icons.error_outline, color: Color(0xFFB91C1C)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(msg,
                 style: const TextStyle(
-                    color: Colors.orange,
+                    color: Color(0xFFB91C1C),
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Manrope',
                     fontSize: 14)),
           ),
         ],
@@ -922,17 +979,52 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar Producto?'),
+        backgroundColor: AppStyles.stoneWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: const Text(
+          '¿Eliminar Producto?',
+          style: TextStyle(
+            color: AppStyles.primaryForest,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Manrope',
+          ),
+        ),
         content: const Text(
-            'Esta acción no se puede deshacer. Se eliminará el producto del catálogo permanentemente.'),
+          'Esta acción no se puede deshacer. Se eliminará el producto del catálogo permanentemente.',
+          style: TextStyle(fontFamily: 'Manrope'),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child:
-                  const Text('Eliminar', style: TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'CANCELAR',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF991B1B),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'ELIMINAR',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -989,9 +1081,9 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
     double rowTotal = (qty * price) * (1 + (waste / 100));
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppStyles.stoneWhite,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 500),
         child: SingleChildScrollView(
@@ -1006,14 +1098,24 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Configurar Material',
-                        style: AppStyles.dialogTitleStyle),
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Manrope',
+                            color: AppStyles.primaryForest)),
                     IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
+                        icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
                         onPressed: () => Navigator.pop(context)),
                   ],
                 ),
                 const SizedBox(height: 32),
-                const Text('Material de Catálogo', style: AppStyles.labelStyle),
+                const Text('MATERIAL DE CATÁLOGO',
+                    style: TextStyle(
+                        color: AppStyles.secondaryEarth,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Manrope',
+                        fontSize: 10,
+                        letterSpacing: 1.5)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedId,
@@ -1026,7 +1128,10 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
                           DropdownMenuItem<String>(
                               value: m['id'] as String,
                               child: Text(m['name'],
-                                  style: const TextStyle(fontSize: 14))))
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: 'Manrope',
+                                      fontWeight: FontWeight.w600))))
                       .toList(),
                   onChanged: (val) {
                     final m =
@@ -1075,20 +1180,25 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.indigo.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppStyles.paleSage,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total:',
+                      const Text('TOTAL:',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 13)),
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'Manrope',
+                              fontSize: 11,
+                              letterSpacing: 1.0,
+                              color: AppStyles.secondaryEarth)),
                       Text(NumberFormat.currency(symbol: r'$').format(rowTotal),
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Colors.indigo)),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 20,
+                              fontFamily: 'Manrope',
+                              color: AppStyles.primaryForest)),
                     ],
                   ),
                 ),
@@ -1113,8 +1223,20 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
                             ));
                       }
                     },
-                    style: AppStyles.primaryButtonStyle,
-                    child: const Text('Agregar Material'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppStyles.secondaryEarth,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4)),
+                      textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Manrope',
+                          fontSize: 13,
+                          letterSpacing: 1.0),
+                    ),
+                    child: const Text('AGREGAR MATERIAL'),
                   ),
                 ),
               ],
@@ -1135,13 +1257,25 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppStyles.labelStyle),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: AppStyles.secondaryEarth,
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+            fontFamily: 'Manrope',
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           readOnly: readOnly,
           style: TextStyle(
-              fontSize: 14, color: readOnly ? Colors.grey : Colors.black87),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Manrope',
+              color: readOnly ? const Color(0xFF6B7280) : AppStyles.primaryForest),
           keyboardType: isNumberField ? TextInputType.number : keyboardType,
           inputFormatters: isNumberField
               ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
@@ -1154,8 +1288,11 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
               : null,
           decoration: AppStyles.inputDecoration().copyWith(
             prefixText: prefixText,
-            fillColor:
-                readOnly ? const Color(0xFFF3F4F6) : const Color(0xFFF9FAFB),
+            fillColor: readOnly ? AppStyles.paleSage : Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppStyles.paleSage),
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           onChanged: (_) => setState(() {}),
         )
