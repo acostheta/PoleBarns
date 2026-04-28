@@ -60,11 +60,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showQuickActions(context),
-        backgroundColor: _primaryColor,
-        child: const Icon(Icons.add, color: _onPrimary, size: 28),
-      ),
     );
   }
 
