@@ -149,15 +149,6 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           ),
         ),
         const Divider(color: Color(0xFFC2C8C2), height: 1),
-        if (canView('settings') || isAdmin)
-          _buildMenuItem(
-            icon: Icons.settings_outlined,
-            title: 'Ajustes',
-            path: '/settings',
-            location: location,
-            isMenuOpen: effectiveIsMenuOpen,
-          ),
-        _buildLogoutItem(effectiveIsMenuOpen),
         const SizedBox(height: 16),
       ],
     );
@@ -234,7 +225,11 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
             ],
           ],
         ),
-        actions: appBarActions,
+        actions: [
+          ...appBarActions,
+          _buildUserMenu(profileAsync.valueOrNull),
+          const SizedBox(width: 16),
+        ],
       ),
       drawer: isMobile
           ? Drawer(
@@ -279,6 +274,157 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     );
   }
 
+
+  Widget _buildUserMenu(Map<String, dynamic>? profile) {
+    final name = profile?['full_name'] ?? profile?['nombre'] ?? 'Usuario';
+    final photoUrl = profile?['avatar_url'] ?? profile?['photo_url'];
+
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 48),
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+      ),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white30, width: 1.5),
+            ),
+            child: CircleAvatar(
+              radius: 13,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              child: photoUrl == null
+                  ? const Icon(Icons.person, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (MediaQuery.of(context).size.width > 700) ...[
+            Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Manrope',
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.keyboard_arrow_down,
+                color: Colors.white, size: 18),
+          ],
+        ],
+      ),
+    ),
+  ),
+  onSelected: (value) {
+    if (value == 'profile') {
+      context.go('/profile');
+    } else if (value == 'settings') {
+      context.go('/settings');
+    } else if (value == 'logout') {
+      ref.read(authRepositoryProvider).signOut();
+    }
+  },
+  itemBuilder: (context) => [
+    PopupMenuItem(
+      enabled: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            name,
+            style: const TextStyle(
+              fontFamily: 'Manrope',
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: _primaryColor,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            profile?['role']?.toString().toUpperCase() ?? 'COLABORADOR',
+            style: const TextStyle(
+              fontFamily: 'Manrope',
+              fontSize: 10,
+              color: _secondaryColor,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'profile',
+          child: Row(
+            children: [
+              Icon(Icons.person_outline,
+                  size: 20, color: Colors.black.withValues(alpha: 0.6)),
+              const SizedBox(width: 12),
+              const Text('Mi Perfil',
+                  style: TextStyle(fontFamily: 'Manrope', fontSize: 14)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'settings',
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined,
+                  size: 20, color: Colors.black.withValues(alpha: 0.6)),
+              const SizedBox(width: 12),
+              const Text('Ajustes',
+                  style: TextStyle(fontFamily: 'Manrope', fontSize: 14)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              const Icon(Icons.logout, size: 20, color: Colors.redAccent),
+              const SizedBox(width: 12),
+              const Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontFamily: 'Manrope',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildMenuItem({
     required IconData icon,
@@ -349,46 +495,4 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     );
   }
 
-  Widget _buildLogoutItem(bool isMenuOpen) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: InkWell(
-        onTap: () async {
-          await ref.read(authRepositoryProvider).signOut();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 48,
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              const Icon(
-                Icons.logout,
-                color: _errorColor,
-                size: 22,
-              ),
-              Expanded(
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: isMenuOpen ? 1.0 : 0.0,
-                  curve: Curves.easeInOut,
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 12),
-                    child: Text(
-                      'Cerrar Sesión',
-                      style: TextStyle(
-                        color: _errorColor,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
