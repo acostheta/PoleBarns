@@ -77,9 +77,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
     Widget sidebarContent = Column(
       children: [
-        const SizedBox(height: 32),
-        _buildBrandHeader(effectiveIsMenuOpen),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -182,13 +180,59 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
             },
           ),
         ),
-        title: Text(
-          customTitle ?? title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child:
+                  const Icon(Icons.architecture, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Flexible(
+              child: Text(
+                'J&P Pole Barns',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  fontFamily: 'Manrope',
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (customTitle != null ||
+                (title != 'Inicio' && title != 'J&P Pole Barns LLC')) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Container(
+                  width: 1,
+                  height: 16,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  (customTitle ?? title).toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                    fontFamily: 'Manrope',
+                    letterSpacing: 1.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
         ),
         actions: appBarActions,
       ),
@@ -235,60 +279,6 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     );
   }
 
-  Widget _buildBrandHeader(bool isMenuOpen) {
-    if (!isMenuOpen) {
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [_primaryColor, Color(0xFF2D4739)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.architecture, color: _onPrimary, size: 24),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_primaryColor, Color(0xFF2D4739)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.architecture, color: _onPrimary, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'J&P Pole Barns LLC',
-                style: TextStyle(
-                  fontFamily: 'Manrope',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryColor,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMenuItem({
     required IconData icon,

@@ -164,8 +164,8 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ElevatedButton.icon(
                     onPressed: () => PoleBarnPdfGenerator.generate(
-                      poleBarn: currentPB,
-                      materials: materials,
+                      poleBarn: state.poleBarn,
+                      materials: state.relatedMaterials,
                       totalCost: state.localCost,
                       totalPrice: state.localTotal,
                       suggestedPrice: state.localTotalPrice,
@@ -191,11 +191,11 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (currentPB.id != null)
+                if (state.poleBarn.id != null)
                   IconButton(
                     icon:
                         const Icon(Icons.delete_outline, color: Colors.white70),
-                    onPressed: () => _confirmDelete(currentPB.id!),
+                    onPressed: () => _confirmDelete(state.poleBarn.id!),
                     tooltip: 'Eliminar',
                   ),
                 const SizedBox(width: 8),

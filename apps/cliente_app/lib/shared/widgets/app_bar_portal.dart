@@ -43,11 +43,10 @@ class _AppBarPortalState extends ConsumerState<AppBarPortal> {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Clear actions when leaving the screen
-      ref.read(appBarActionsProvider.notifier).state = [];
-      ref.read(appBarTitleProvider.notifier).state = null;
-    });
+    // Clear actions when leaving the screen
+    // We do this immediately to avoid "ref used after dispose" in postFrameCallback
+    ref.read(appBarActionsProvider.notifier).state = [];
+    ref.read(appBarTitleProvider.notifier).state = null;
     super.dispose();
   }
 

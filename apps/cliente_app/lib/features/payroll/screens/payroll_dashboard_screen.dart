@@ -77,18 +77,22 @@ class PayrollDashboardScreen extends ConsumerWidget {
             ),
             Expanded(
               child: TabBarView(
-          children: [
-            // Dashboard Tab
-            summaryAsync.when(
-              data: (data) => _buildDashboardTab(context, data, ref),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+                children: [
+                  // Dashboard Tab
+                  summaryAsync.when(
+                    data: (data) => _buildDashboardTab(context, data, ref),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Error: $err')),
+                  ),
+                  // Other Tabs
+                  const PagosDiariosScreen(),
+                  const PagosSoldadoresScreen(),
+                  const NominaInstalacionScreen(),
+                  const NominaChoferScreen(),
+                ],
+              ),
             ),
-            // Other Tabs
-            const PagosDiariosScreen(),
-            const PagosSoldadoresScreen(),
-            const NominaInstalacionScreen(),
-            const NominaChoferScreen(),
           ],
         ),
       ),

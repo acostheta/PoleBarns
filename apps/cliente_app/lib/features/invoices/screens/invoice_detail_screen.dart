@@ -76,7 +76,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           );
 
           final totalPurchaseCost = products.fold<double>(
-              0, (sum, p) => sum + (p.purchaseCost ?? 0.0));
+              0, (sum, p) => sum + (p.unitCost ?? 0.0));
           final calculatedProfit =
               calculatedTotalVenta - totalPurchaseCost - totalCosts;
 

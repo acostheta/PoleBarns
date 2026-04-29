@@ -987,6 +987,9 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           ),
         ),
       ),
+    ),
+  ],
+),
     );
   }
 
