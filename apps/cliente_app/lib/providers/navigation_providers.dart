@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final dashboardIndexProvider = StateProvider<int>((ref) => 0);
 final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
 
+/// Provider to hold global AppBar actions from child screens
+final appBarActionsProvider = StateProvider<List<Widget>>((ref) => []);
+
+/// Provider to hold a custom title for the global AppBar
+final appBarTitleProvider = StateProvider<String?>((ref) => null);
+
 class DashboardIndices {
   static const int home = 0;
   static const int profile = 1;

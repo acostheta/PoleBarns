@@ -11,6 +11,7 @@ import '../../invoices/screens/create_invoice_screen.dart';
 import '../../invoices/providers/invoice_providers.dart';
 import '../../invoices/models/invoice_models.dart';
 import '../../invoices/screens/invoice_detail_screen.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String? clientId;
@@ -177,67 +178,58 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppStyles.stoneWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Detalles del Cliente',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        backgroundColor: AppStyles.primaryForest,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        CreateInvoiceScreen(clientId: client.id),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppStyles.secondaryEarth,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text(
-                'Crear Invoice',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Manrope',
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.white70),
-            onPressed: () => setState(() => _isEditing = true),
-            tooltip: 'Editar',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white70),
-            onPressed: _confirmDelete,
-            tooltip: 'Eliminar',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
+            AppBarPortal(
+              title: 'Detalles del Cliente',
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 12.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CreateInvoiceScreen(clientId: client.id),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppStyles.secondaryEarth,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_circle_outline, size: 20),
+                    label: const Text(
+                      'Crear Invoice',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+                  onPressed: () => setState(() => _isEditing = true),
+                  tooltip: 'Editar',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                  onPressed: _confirmDelete,
+                  tooltip: 'Eliminar',
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
             // Top Accent Bar
             Container(
               height: 4,
@@ -806,30 +798,37 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppStyles.stoneWhite,
-      appBar: AppBar(
-        title: Text(
-          isNew ? 'Nuevo Cliente' : 'Editar Cliente',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
+      body: Column(
+        children: [
+          AppBarPortal(
+            title: isNew ? 'Nuevo Cliente' : 'Editar Cliente',
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (isNew) {
+                    context.pop();
+                  } else {
+                    setState(() => _isEditing = false);
+                  }
+                },
+                child: const Text(
+                  'CANCELAR',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-        ),
-        backgroundColor: AppStyles.primaryForest,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (isNew) {
-              context.pop();
-            } else {
-              setState(() => _isEditing = false);
-            }
-          },
-        ),
-      ),
-      body: Center(
+          Container(
+            height: 4,
+            color: AppStyles.secondaryEarth,
+          ),
+          Expanded(
+            child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 800),
           child: SingleChildScrollView(

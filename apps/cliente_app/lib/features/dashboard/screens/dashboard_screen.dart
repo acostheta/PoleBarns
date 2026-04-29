@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
+import '../../../config/app_styles.dart';
 
 // Providers
 import '../../project_tracking/providers/project_providers.dart';
@@ -24,15 +26,15 @@ class DashboardScreen extends ConsumerWidget {
     final clientsAsync = ref.watch(clientListProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6), // Light gray background
-      appBar: AppBar(
-        title: const Text('Dashboard',
-            style:
-                TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
+      backgroundColor: AppStyles.stoneWhite,
+      body: Column(
+        children: [
+          const AppBarPortal(
+            title: 'Dashboard',
+            actions: [],
+          ),
+          Expanded(
+            child: RefreshIndicator(
         onRefresh: () async {
           // Invalidate providers to force refresh
           ref.invalidate(projectListProvider);

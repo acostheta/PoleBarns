@@ -7,6 +7,7 @@ import '../models/pole_barn_model.dart';
 import '../models/related_material_model.dart';
 import '../providers/pole_barn_provider.dart';
 import '../utils/pole_barn_pdf_generator.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class PoleBarnDetailScreen extends ConsumerStatefulWidget {
   final PoleBarn? initialPoleBarn;
@@ -133,84 +134,73 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppStyles.stoneWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Detalle de Producto',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-            fontSize: 18,
-          ),
-        ),
-        backgroundColor: AppStyles.primaryForest,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await PoleBarnPdfGenerator.generate(
-                  poleBarn: state.poleBarn,
-                  materials: state.relatedMaterials,
-                  totalCost: state.localCost,
-                  totalPrice: state.localTotal,
-                  suggestedPrice: state.localTotalPrice,
-                );
-              },
-              icon: const Icon(Icons.print_outlined, size: 18),
-              label: const Text('IMPRIMIR PDF'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppStyles.secondaryEarth,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                  fontFamily: 'Manrope',
-                ),
-              ),
-            ),
-          ),
-          if (state.poleBarn.id != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.white70),
-              onPressed: () => _confirmDelete(state.poleBarn.id!),
-              tooltip: 'Eliminar',
-            ),
-          if (state.isSaving || state.isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            )
-          else
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Icon(Icons.cloud_done, color: Color(0xFF86EFAC)),
-            ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: Form(
         key: _formKey,
         child: Column(
           children: [
+            AppBarPortal(
+              title: 'Detalle de Producto',
+              actions: [
+                if (state.isSaving || state.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Icon(Icons.cloud_done, color: Color(0xFF86EFAC)),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => PoleBarnPdfGenerator.generate(
+                      poleBarn: currentPB,
+                      materials: materials,
+                      totalCost: state.localCost,
+                      totalPrice: state.localTotal,
+                      suggestedPrice: state.localTotalPrice,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppStyles.secondaryEarth,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: const Text(
+                      'Imprimir PDF',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (currentPB.id != null)
+                  IconButton(
+                    icon:
+                        const Icon(Icons.delete_outline, color: Colors.white70),
+                    onPressed: () => _confirmDelete(currentPB.id!),
+                    tooltip: 'Eliminar',
+                  ),
+                const SizedBox(width: 8),
+              ],
+            ),
             Container(
               height: 4,
               color: AppStyles.secondaryEarth,

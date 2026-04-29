@@ -6,6 +6,7 @@ import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../../settings/models/truss_model.dart';
 import '../widgets/payments_dialog.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class SoldadorDetailScreen extends ConsumerWidget {
   final NominaSoldador item;
@@ -26,22 +27,12 @@ class SoldadorDetailScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: AppStyles.stoneWhite,
-          appBar: AppBar(
-            title: const Text(
-              'Detalle de Servicio - Soldador',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Manrope',
-                fontSize: 18,
-              ),
-            ),
-            backgroundColor: AppStyles.primaryForest,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
           body: Column(
             children: [
+              const AppBarPortal(
+                title: 'Detalle de Servicio - Soldador',
+                actions: [],
+              ),
               Container(
                 height: 4,
                 color: AppStyles.secondaryEarth,

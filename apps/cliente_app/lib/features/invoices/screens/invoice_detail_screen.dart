@@ -15,6 +15,7 @@ import '../../accounts_payable/widgets/add_account_dialog.dart';
 import '../../accounts_payable/models/account_payable_model.dart';
 import '../../project_tracking/widgets/project_create_dialog.dart';
 import '../../../shared/widgets/location_map_card.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   final int invoiceId;
@@ -49,141 +50,97 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppStyles.stoneWhite,
-      appBar: widget.showAppBar
-          ? AppBar(
-              title: const Text(
-                'Detalle de Factura',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Manrope',
-                ),
-              ),
-              backgroundColor: AppStyles.primaryForest,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              actions: [
-                invoiceStream.when(
-                  data: (invoice) {
-                    final products = productsAsync.value ?? [];
-                    final payments = paymentsAsync.value ?? [];
-
-                    final calculatedTotalVenta = products.fold<double>(
-                        0, (sum, p) => sum + p.totalPrice);
-                    final calculatedTotalPagado = payments
-                        .where((p) => p.tipo == 'Abono')
-                        .fold<double>(0, (sum, p) => sum + p.amount);
-                    final calculatedReembolsado = payments
-                        .where((p) => p.tipo == 'Reembolso')
-                        .fold<double>(0, (sum, p) => sum + p.amount);
-                    final calculatedSaldo = calculatedTotalVenta -
-                        calculatedTotalPagado +
-                        calculatedReembolsado;
-
-                    final enrichedInvoice = invoice.copyWith(
-                      totalVenta: calculatedTotalVenta,
-                      totalPagado: calculatedTotalPagado,
-                      reembolsado: calculatedReembolsado,
-                      saldo: calculatedSaldo,
-                    );
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (invoice.idProyecto == null)
-                          IconButton(
-                            onPressed: () => _showCreateProjectDialog(
-                                context, enrichedInvoice, products),
-                            icon: const Icon(Icons.business_outlined,
-                                color: Colors.white70),
-                            tooltip: 'Crear Proyecto',
-                          ),
-                        IconButton(
-                          onPressed: () => _sendEmail(enrichedInvoice),
-                          icon: const Icon(Icons.email_outlined,
-                              color: Colors.white70),
-                          tooltip: 'Enviar por Email',
-                        ),
-                        const SizedBox(width: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: ElevatedButton.icon(
-                            onPressed: () => _generatePDF(enrichedInvoice),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppStyles.secondaryEarth,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            icon: const Icon(Icons.picture_as_pdf_outlined,
-                                size: 18),
-                            label: const Text(
-                              'Imprimir',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Manrope',
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined,
-                              color: Colors.white70),
-                          onPressed: () =>
-                              context.push('/invoices/${invoice.id}/edit'),
-                          tooltip: 'Editar',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.white70),
-                          onPressed: () =>
-                              _confirmDeleteInvoice(context, invoice.id),
-                          tooltip: 'Eliminar',
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    );
-                  },
-                  loading: () => const SizedBox(),
-                  error: (_, __) => const SizedBox(),
-                ),
-              ],
-            )
-          : null,
       body: invoiceStream.when(
         data: (invoice) {
           final totalCosts = apTotalAsync.value ?? 0.0;
           final products = productsAsync.value ?? [];
           final payments = paymentsAsync.value ?? [];
 
-          final grandTotalWithTax =
+          final calculatedTotalVenta =
               products.fold<double>(0, (sum, p) => sum + p.totalPrice);
-          final totalPurchaseCost = products.fold<double>(
-              0, (sum, p) => sum + (p.cantidad * p.unitCost));
-          final calculatedProfit = grandTotalWithTax - totalPurchaseCost;
-
           final calculatedTotalPagado = payments
               .where((p) => p.tipo == 'Abono')
               .fold<double>(0, (sum, p) => sum + p.amount);
           final calculatedReembolsado = payments
               .where((p) => p.tipo == 'Reembolso')
               .fold<double>(0, (sum, p) => sum + p.amount);
-          final calculatedSaldo =
-              grandTotalWithTax - calculatedTotalPagado + calculatedReembolsado;
+          final calculatedSaldo = calculatedTotalVenta -
+              calculatedTotalPagado +
+              calculatedReembolsado;
 
           final enrichedInvoice = invoice.copyWith(
-            totalVenta: grandTotalWithTax,
+            totalVenta: calculatedTotalVenta,
             totalPagado: calculatedTotalPagado,
             reembolsado: calculatedReembolsado,
             saldo: calculatedSaldo,
           );
 
+          final totalPurchaseCost = products.fold<double>(
+              0, (sum, p) => sum + (p.purchaseCost ?? 0.0));
+          final calculatedProfit =
+              calculatedTotalVenta - totalPurchaseCost - totalCosts;
+
           return Column(
             children: [
+              AppBarPortal(
+                title: 'Detalle de Factura',
+                actions: [
+                  if (invoice.idProyecto == null)
+                    IconButton(
+                      onPressed: () => _showCreateProjectDialog(
+                          context, enrichedInvoice, products),
+                      icon: const Icon(Icons.business_outlined,
+                          color: Colors.white70),
+                      tooltip: 'Crear Proyecto',
+                    ),
+                  IconButton(
+                    onPressed: () => _sendEmail(enrichedInvoice),
+                    icon: const Icon(Icons.email_outlined,
+                        color: Colors.white70),
+                    tooltip: 'Enviar por Email',
+                  ),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _generatePDF(enrichedInvoice),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppStyles.secondaryEarth,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                      label: const Text(
+                        'Imprimir',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon:
+                        const Icon(Icons.edit_outlined, color: Colors.white70),
+                    onPressed: () =>
+                        context.push('/invoices/${invoice.id}/edit'),
+                    tooltip: 'Editar',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: Colors.white70),
+                    onPressed: () => _confirmDeleteInvoice(context, invoice.id),
+                    tooltip: 'Eliminar',
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
               Container(height: 4, color: AppStyles.secondaryEarth),
               Expanded(
                 child: SingleChildScrollView(
@@ -194,44 +151,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                    if (!widget.showAppBar) ...[
-                      Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 8,
-                        runSpacing: 16,
-                        children: [
-                          Text(
-                            'Detalle de Factura',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppStyles.primaryForest,
-                              fontFamily: 'Manrope',
-                            ),
-                          ),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              IconButton(
-                                onPressed: () => _sendEmail(enrichedInvoice),
-                                icon: const Icon(Icons.email_outlined,
-                                    color: AppStyles.primaryForest),
-                                tooltip: 'Enviar por Email',
-                              ),
-                              IconButton(
-                                onPressed: () => _generatePDF(enrichedInvoice),
-                                icon: const Icon(Icons.picture_as_pdf_outlined,
-                                    color: Color(0xFF991B1B)),
-                                tooltip: 'Imprimir Invoice',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                    ],
                     _buildSummaryBadge(enrichedInvoice),
                     const SizedBox(height: 16),
                     _buildHeader(enrichedInvoice),

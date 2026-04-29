@@ -7,6 +7,7 @@ import '../widgets/evidence_tab.dart';
 import '../widgets/chat_tab.dart';
 import '../widgets/project_create_dialog.dart';
 import '../../../shared/widgets/location_map_card.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
@@ -27,68 +28,44 @@ class ProjectDetailScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         backgroundColor: AppStyles.stoneWhite,
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                project.address ?? 'Detalle de Obra',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Manrope',
-                  fontSize: 18,
+        body: Column(
+          children: [
+            AppBarPortal(
+              title: project.address ?? 'Detalle de Obra',
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => ProjectCreateDialog(
+                        projectId: project.id,
+                        initialClientId: project.refCliente,
+                        initialProjectName: project.address,
+                        initialDireccion: project.direccion,
+                        initialResponsible: project.responsable,
+                        initialGroupId: project.grupoAsignado != null &&
+                                project.grupoAsignado!.isNotEmpty
+                            ? project.grupoAsignado
+                            : null,
+                        initialStatus: project.estatus,
+                        initialStartDate: project.fechaInicio,
+                        initialEndDate: project.fechaFinalizacion,
+                        initialComments: project.comments,
+                      ),
+                    );
+                  },
+                  tooltip: 'Editar',
                 ),
-              ),
-              Text(
-                '#PROJ-${project.id.substring(0, 8)}'.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                  onPressed: () => _confirmDelete(context, ref, project.id),
+                  tooltip: 'Eliminar',
                 ),
-              )
-            ],
-          ),
-          backgroundColor: AppStyles.primaryForest,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white70),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => ProjectCreateDialog(
-                    projectId: project.id,
-                    initialClientId: project.refCliente,
-                    initialProjectName: project.address,
-                    initialDireccion: project.direccion,
-                    initialResponsible: project.responsable,
-                    initialGroupId: project.grupoAsignado != null &&
-                            project.grupoAsignado!.isNotEmpty
-                        ? project.grupoAsignado
-                        : null,
-                    initialStatus: project.estatus,
-                    initialStartDate: project.fechaInicio,
-                    initialEndDate: project.fechaFinalizacion,
-                    initialComments: project.comments,
-                  ),
-                );
-              },
-              tooltip: 'Editar',
+                const SizedBox(width: 8),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.white70),
-              onPressed: () => _confirmDelete(context, ref, project.id),
-              tooltip: 'Eliminar',
-            ),
-            const SizedBox(width: 8),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: Container(
+            Container(
               color: AppStyles.paleSage,
               child: const TabBar(
                 isScrollable: true,
@@ -99,20 +76,15 @@ class ProjectDetailScreen extends ConsumerWidget {
                 labelStyle: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Manrope',
-                  fontSize: 12,
-                  letterSpacing: 0.5,
+                  fontSize: 13,
                 ),
                 tabs: [
                   Tab(text: 'PRODUCTOS'),
-                  Tab(text: 'EVIDENCIAS'),
+                  Tab(text: 'EVIDENCIA'),
                   Tab(text: 'CHAT'),
                 ],
               ),
             ),
-          ),
-        ),
-        body: Column(
-          children: [
             // Top Accent Bar
             Container(
               height: 4,

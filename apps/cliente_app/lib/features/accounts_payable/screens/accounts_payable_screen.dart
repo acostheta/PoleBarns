@@ -7,6 +7,7 @@ import '../models/account_payable_model.dart';
 import '../widgets/add_account_dialog.dart';
 
 import '../widgets/account_payable_detail_view.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class AccountsPayableScreen extends ConsumerStatefulWidget {
   const AccountsPayableScreen({super.key});
@@ -39,15 +40,17 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
     final stats = ref.watch(dashboardStatsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: const Text('Cuentas por Pagar',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
+      backgroundColor: AppStyles.stoneWhite,
       body: Column(
         children: [
+          const AppBarPortal(
+            title: 'Cuentas por Pagar',
+            actions: [],
+          ),
+          Container(
+            height: 4,
+            color: AppStyles.secondaryEarth,
+          ),
           // Dashboard Cards
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),

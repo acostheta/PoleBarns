@@ -69,6 +69,9 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     }
 
     final isMenuOpen = ref.watch(sidebarExpandedProvider);
+    final appBarActions = ref.watch(appBarActionsProvider);
+    final customTitle = ref.watch(appBarTitleProvider);
+    
     final isMobile = MediaQuery.of(context).size.width < 800;
     final effectiveIsMenuOpen = isMobile ? true : isMenuOpen;
 
@@ -164,11 +167,12 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9FAF7),
+        backgroundColor: _primaryColor,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: _primaryColor),
+            icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () {
               if (isMobile) {
                 _scaffoldKey.currentState?.openDrawer();
@@ -178,7 +182,15 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
             },
           ),
         ),
-        title: Text(title, style: const TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
+        title: Text(
+          customTitle ?? title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Manrope',
+          ),
+        ),
+        actions: appBarActions,
       ),
       drawer: isMobile
           ? Drawer(

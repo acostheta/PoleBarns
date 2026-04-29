@@ -7,6 +7,8 @@ import 'pagos_soldadores_screen.dart';
 import 'nomina_instalacion_screen.dart';
 import 'nomina_chofer_screen.dart';
 import '../widgets/pagos_soldadores_form.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
+import '../../../config/app_styles.dart';
 
 class PayrollDashboardScreen extends ConsumerWidget {
   const PayrollDashboardScreen({super.key});
@@ -18,41 +20,63 @@ class PayrollDashboardScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 5,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          title: const Text('Nómina',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          bottom: const TabBar(
-            isScrollable: true,
-            labelColor: Color(0xFFD97706),
-            unselectedLabelColor: Color(0xFF64748B),
-            indicatorColor: Color(0xFFD97706),
-            tabs: [
-              Tab(text: 'Dashboard'),
-              Tab(text: 'Diario'),
-              Tab(text: 'Soldadores'),
-              Tab(text: 'Instalación'),
-              Tab(text: 'Chofer'),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () => _showUnifiedCreationDialog(context),
-                icon: const Icon(Icons.add, size: 18, color: Colors.white),
-                label: const Text('Nuevo Pago',
-                    style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD97706),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        backgroundColor: AppStyles.stoneWhite,
+        body: Column(
+          children: [
+            AppBarPortal(
+              title: 'Nómina',
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showUnifiedCreationDialog(context),
+                    icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                    label: const Text(
+                      'Nuevo Pago',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppStyles.secondaryEarth,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 16),
+              ],
+            ),
+            Container(
+              color: AppStyles.paleSage,
+              child: const TabBar(
+                isScrollable: true,
+                labelColor: AppStyles.secondaryEarth,
+                unselectedLabelColor: AppStyles.primaryForest,
+                indicatorColor: AppStyles.secondaryEarth,
+                indicatorWeight: 3,
+                labelStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Manrope',
+                ),
+                tabs: [
+                  Tab(text: 'Dashboard'),
+                  Tab(text: 'Diario'),
+                  Tab(text: 'Soldadores'),
+                  Tab(text: 'Instalación'),
+                  Tab(text: 'Chofer'),
+                ],
               ),
             ),
-          ],
-        ),
-        body: TabBarView(
+            Expanded(
+              child: TabBarView(
           children: [
             // Dashboard Tab
             summaryAsync.when(

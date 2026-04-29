@@ -5,6 +5,7 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class InstalacionDetailScreen extends ConsumerWidget {
   final NominaInstalacion item;
@@ -31,22 +32,12 @@ class InstalacionDetailScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: AppStyles.stoneWhite,
-          appBar: AppBar(
-            title: const Text(
-              'Detalle de Instalación',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Manrope',
-                fontSize: 18,
-              ),
-            ),
-            backgroundColor: AppStyles.primaryForest,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
           body: Column(
             children: [
+              const AppBarPortal(
+                title: 'Detalle de Instalación',
+                actions: [],
+              ),
               Container(
                 height: 4,
                 color: AppStyles.secondaryEarth,

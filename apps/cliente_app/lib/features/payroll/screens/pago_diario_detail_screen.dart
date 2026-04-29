@@ -5,6 +5,7 @@ import '../../../config/app_styles.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
+import '../../../shared/widgets/app_bar_portal.dart';
 
 class PagoDiarioDetailScreen extends ConsumerWidget {
   final NominaPagoDiario item;
@@ -25,22 +26,12 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: AppStyles.stoneWhite,
-          appBar: AppBar(
-            title: const Text(
-              'Detalle de Pago Diario',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Manrope',
-                fontSize: 18,
-              ),
-            ),
-            backgroundColor: AppStyles.primaryForest,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
           body: Column(
             children: [
+              const AppBarPortal(
+                title: 'Detalle de Pago Diario',
+                actions: [],
+              ),
               Container(
                 height: 4,
                 color: AppStyles.secondaryEarth,
