@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../../settings/repositories/settings_repository.dart';
@@ -239,21 +240,12 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
   }
 
   Future<void> _deleteItem(NominaPagoDiario item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Eliminar Registro'),
-        content: const Text('¿Está seguro de que desea eliminar este pago?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar')),
-        ],
-      ),
+      title: 'Eliminar Registro',
+      message: '¿Está seguro de que desea eliminar este pago?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
     if (confirm == true) {
       await ref.read(payrollRepositoryProvider).deletePagoDiario(item.id);
@@ -261,41 +253,27 @@ class _PagosDiariosScreenState extends ConsumerState<PagosDiariosScreen> {
   }
 
   void _showEditDialog(BuildContext context, NominaPagoDiario? item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 550),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(item == null ? 'Nuevo Pago Diario' : 'Editar Pago',
-                      style: AppStyles.dialogTitleStyle),
-                  IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Flexible(child: PagoDiarioForm(item: item)),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item == null ? 'Nuevo Pago Diario' : 'Editar Pago',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            Flexible(child: PagoDiarioForm(item: item)),
+          ],
         ),
       ),
     );
   }
 
   void _showPaymentsDialog(BuildContext context, NominaPagoDiario item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PaymentsDialog(
+      child: PaymentsDialog(
         pagoDiarioId: item.id,
         type: 'Pago Diario',
       ),

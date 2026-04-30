@@ -10,6 +10,7 @@ import 'sections/project_pole_barns_section.dart';
 import '../../invoices/providers/invoice_providers.dart';
 import '../../invoices/screens/create_invoice_screen.dart';
 import '../../../providers/navigation_providers.dart';
+import '../../../config/ui_helpers.dart';
 
 class ProjectDetailView extends ConsumerWidget {
   final String projectId;
@@ -168,22 +169,12 @@ class ProjectDetailView extends ConsumerWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, WidgetRef ref, String projectId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar Proyecto?'),
-        content: const Text(
-            'Esta acción no se puede deshacer. Toda la información del proyecto se perderá para siempre.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child:
-                  const Text('Eliminar', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: '¿Eliminar Proyecto?',
+      message: 'Esta acción no se puede deshacer. Toda la información del proyecto se perderá para siempre.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {

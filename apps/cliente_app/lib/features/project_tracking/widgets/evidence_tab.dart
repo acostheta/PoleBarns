@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../providers/project_providers.dart';
 import '../models/project_models.dart';
+import '../../../config/ui_helpers.dart';
 
 class EvidenceTab extends ConsumerWidget {
   final String projectId;
@@ -99,9 +100,9 @@ class EvidenceTab extends ConsumerWidget {
   }
 
   void _showUploadDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (_) => _UploadMediaDialog(projectId: projectId),
+      child: _UploadMediaDialog(projectId: projectId),
     );
   }
 }
@@ -310,68 +311,61 @@ class _DateCarouselCard extends ConsumerWidget {
   }
 
   void _showEditDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => _UploadMediaDialog(
+      child: _UploadMediaDialog(
         projectId: mediaList.first.projectRef,
         existingMedia: mediaList,
       ),
     );
   }
 
-  void _showDeleteConfirm(BuildContext context, WidgetRef ref) {
-    showDialog(
+  void _showDeleteConfirm(BuildContext context, WidgetRef ref) async {
+    final confirmed = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¿Eliminar registro?'),
-        content: Text(
-            'Se eliminarán las ${mediaList.length} fotos y la descripción de este día. Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                final repo = ref.read(projectRepositoryProvider);
-                final ids = mediaList.map((m) => m.id).toList();
-                await repo.deleteMediaBatch(ids);
-                ref.invalidate(
-                    projectMediaProvider(mediaList.first.projectRef));
-                if (context.mounted) Navigator.pop(context);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al eliminar: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: '¿Eliminar registro?',
+      message: 'Se eliminarán las ${mediaList.length} fotos y la descripción de este día. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      try {
+        final repo = ref.read(projectRepositoryProvider);
+        final ids = mediaList.map((m) => m.id).toList();
+        await repo.deleteMediaBatch(ids);
+        ref.invalidate(
+            projectMediaProvider(mediaList.first.projectRef));
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
   }
 
   void _showFullImage(BuildContext context, String imageUrl) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.9),
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         child: Stack(
+          alignment: Alignment.center,
           children: [
             InteractiveViewer(
               child: Image.network(imageUrl, fit: BoxFit.contain),
             ),
             Positioned(
-              top: 40,
-              right: 40,
+              top: 20,
+              right: 20,
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -569,215 +563,215 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  widget.existingMedia == null
-                      ? 'Subir Evidencias Diarias'
-                      : 'Editar Registro Diario',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Date selector
-            InkWell(
-              onTap: () => _selectDate(context),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today,
-                        color: AppStyles.primaryOrange),
-                    const SizedBox(width: 12),
-                    Text(
-                      DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.existingMedia == null
+                ? 'Subir Evidencias Diarias'
+                : 'Editar Registro Diario',
+            style: const TextStyle(
+                fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124)),
+          ),
+          const SizedBox(height: 24),
+          // Date selector
+          InkWell(
+            onTap: () => _selectDate(context),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[50],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      color: Color(0xFF173124)),
+                  const SizedBox(width: 12),
+                  Text(
+                    DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            // Description
-            TextField(
-              controller: _descripcionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Descripción del progreso (opcional)',
-                hintText: 'Ej: Instalación de postes de la estructura',
-                border: OutlineInputBorder(),
+          ),
+          const SizedBox(height: 16),
+          // Description
+          TextField(
+            controller: _descripcionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Descripción del progreso (opcional)',
+              hintText: 'Ej: Instalación de postes de la estructura',
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Image picker buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickImageFromCamera,
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Cámara'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Image picker buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _pickImageFromCamera,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Cámara'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickImages,
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Galería'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _pickImages,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Galería'),
-                  ),
-                ),
-              ],
-            ),
-            if (_currentImages.isNotEmpty || _newImageFiles.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text('Imágenes:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    // Existing Images
-                    ..._currentImages.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final media = entry.value;
-                      return Stack(
-                        children: [
-                          Container(
-                            width: 100,
-                            margin: const EdgeInsets.only(right: 8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(media.urlMedia,
-                                  fit: BoxFit.cover),
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 12,
-                            child: GestureDetector(
-                              onTap: () => _removeExistingImage(index),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.close,
-                                    color: Colors.white, size: 16),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                    // New Images
-                    ..._newImageFiles.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final imageFile = entry.value;
-                      return Stack(
-                        children: [
-                          Container(
-                            width: 100,
-                            margin: const EdgeInsets.only(right: 8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: AppStyles.primaryOrange, width: 2),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: kIsWeb
-                                  ? Image.network(imageFile.path,
-                                      fit: BoxFit.cover)
-                                  : Image.file(File(imageFile.path),
-                                      fit: BoxFit.cover),
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 12,
-                            child: GestureDetector(
-                              onTap: () => _removeNewImage(index),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.close,
-                                    color: Colors.white, size: 16),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 4,
-                            left: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppStyles.primaryOrange,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text('NUEVA',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ],
                 ),
               ),
             ],
+          ),
+          if (_currentImages.isNotEmpty || _newImageFiles.isNotEmpty) ...[
             const SizedBox(height: 24),
-            ElevatedButton(
+            const Text('Imágenes seleccionadas:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  // Existing Images
+                  ..._currentImages.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final media = entry.value;
+                    return Stack(
+                      children: [
+                        Container(
+                          width: 120,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(media.urlMedia,
+                                fit: BoxFit.cover),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () => _removeExistingImage(index),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                  // New Images
+                  ..._newImageFiles.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final imageFile = entry.value;
+                    return Stack(
+                      children: [
+                        Container(
+                          width: 120,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: const Color(0xFF173124), width: 2),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: kIsWeb
+                                ? Image.network(imageFile.path,
+                                    fit: BoxFit.cover)
+                                : Image.file(File(imageFile.path),
+                                    fit: BoxFit.cover),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () => _removeNewImage(index),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF173124),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('NUEVA',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 54,
+            child: ElevatedButton(
               onPressed:
                   ((_currentImages.isNotEmpty || _newImageFiles.isNotEmpty) &&
                           !_isUploading)
                       ? _uploadAll
                       : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppStyles.primaryOrange,
+                backgroundColor: const Color(0xFF173124),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
               child: _isUploading
                   ? const SizedBox(
-                      height: 20,
-                      width: 20,
+                      height: 24,
+                      width: 24,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))
                   : Text(
@@ -788,8 +782,8 @@ class _UploadMediaDialogState extends ConsumerState<_UploadMediaDialog> {
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

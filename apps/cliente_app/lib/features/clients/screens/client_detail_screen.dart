@@ -12,6 +12,7 @@ import '../../invoices/providers/invoice_providers.dart';
 import '../../invoices/models/invoice_models.dart';
 import '../../invoices/screens/invoice_detail_screen.dart';
 import '../../../shared/widgets/app_bar_portal.dart';
+import '../../../config/ui_helpers.dart';
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String? clientId;
@@ -731,57 +732,12 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
   }
 
   Future<void> _confirmDelete() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        backgroundColor: AppStyles.stoneWhite,
-        title: const Text(
-          'Eliminar Cliente',
-          style: TextStyle(
-            color: AppStyles.primaryForest,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        content: const Text(
-          '¿Seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.',
-          style: TextStyle(fontFamily: 'Manrope', color: Colors.black87),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF991B1B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'ELIMINAR',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: 'Eliminar Cliente',
+      message: '¿Seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true && _client != null) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../providers/accounts_payable_provider.dart';
 import '../models/account_payable_model.dart';
 import '../models/ap_payment_model.dart';
@@ -398,49 +399,36 @@ class AccountPayableDetailView extends ConsumerWidget {
 
   void _showEditAccountDialog(
       BuildContext context, WidgetRef ref, AccountPayableModel account) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => EditAccountDialog(account: account),
+      child: EditAccountDialog(account: account),
     );
   }
 
   void _showAddPaymentDialog(
       BuildContext context, WidgetRef ref, AccountPayableModel account) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => RegisterPaymentDialog(account: account),
+      child: RegisterPaymentDialog(account: account),
     );
   }
 
   void _showEditPaymentDialog(
       BuildContext context, WidgetRef ref, APPaymentModel payment) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => EditPaymentDialog(payment: payment),
+      child: EditPaymentDialog(payment: payment),
     );
   }
 
   Future<void> _confirmDeleteAccount(
       BuildContext context, WidgetRef ref, AccountPayableModel account) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Cuenta'),
-        content: Text(
-          '¿Está seguro de que desea eliminar esta cuenta por pagar de ${account.provider?.name ?? "este proveedor"}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar Cuenta',
+      message: '¿Está seguro de que desea eliminar esta cuenta por pagar de ${account.provider?.name ?? "este proveedor"}?',
+      confirmLabel: 'ELIMINAR',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -469,25 +457,12 @@ class AccountPayableDetailView extends ConsumerWidget {
   Future<void> _confirmDeletePayment(
       BuildContext context, WidgetRef ref, APPaymentModel payment) async {
     final currency = NumberFormat.simpleCurrency();
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Pago'),
-        content: Text(
-          '¿Está seguro de que desea eliminar este pago de ${currency.format(payment.amount)}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar Pago',
+      message: '¿Está seguro de que desea eliminar este pago de ${currency.format(payment.amount)}?',
+      confirmLabel: 'ELIMINAR',
+      isDestructive: true,
     );
 
     if (confirm == true) {

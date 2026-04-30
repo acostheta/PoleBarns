@@ -24,6 +24,7 @@ import '../features/invoices/screens/create_invoice_screen.dart';
 import 'package:users/users.dart';
 import '../features/project_tracking/widgets/project_create_dialog.dart';
 import '../features/project_tracking/providers/project_providers.dart';
+import 'ui_helpers.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -100,10 +101,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/clients',
             builder: (context, state) => ClientsListScreen(
               onCreateEstimate: (clientId, _) {
-                showDialog(
+                AppBottomSheet.show(
                   context: context,
-                  builder: (context) =>
-                      ProjectCreateDialog(initialClientId: clientId),
+                  child: ProjectCreateDialog(initialClientId: clientId),
                 ).then((success) {
                   if (success == true) {
                     ref.invalidate(projectListProvider);

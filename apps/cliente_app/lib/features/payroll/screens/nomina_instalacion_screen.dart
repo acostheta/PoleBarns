@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import 'package:users/users.dart';
@@ -247,22 +248,12 @@ class _NominaInstalacionScreenState
   }
 
   void _confirmDelete(NominaInstalacion item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Eliminar Registro'),
-        content: const Text(
-            '¿Está seguro de que desea eliminar este registro de instalación?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar')),
-        ],
-      ),
+      title: 'Eliminar Registro',
+      message: '¿Está seguro de que desea eliminar este registro de instalación?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
     if (confirm == true) {
       await ref.read(payrollRepositoryProvider).deleteInstalacion(item.id);
@@ -270,42 +261,27 @@ class _NominaInstalacionScreenState
   }
 
   void _showEditDialog(BuildContext context, NominaInstalacion? item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 550),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                      item == null ? 'Nueva Instalación' : 'Editar Instalación',
-                      style: AppStyles.dialogTitleStyle),
-                  IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Flexible(child: InstalacionForm(item: item)),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item == null ? 'Nueva Instalación' : 'Editar Instalación',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            Flexible(child: InstalacionForm(item: item)),
+          ],
         ),
       ),
     );
   }
 
   void _showPaymentsDialog(BuildContext context, NominaInstalacion item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PaymentsDialog(
+      child: PaymentsDialog(
         instalacionId: item.id,
         type: 'Instalación',
         initialAmount: (item.saldo ?? 0.0) > 0 ? item.saldo : null,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import 'package:users/users.dart';
@@ -241,22 +242,12 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
   }
 
   void _deleteItem(NominaChofer item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Eliminar Registro'),
-        content: const Text(
-            '¿Está seguro de que desea eliminar este registro de chofer?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar')),
-        ],
-      ),
+      title: 'Eliminar Registro',
+      message: '¿Está seguro de que desea eliminar este registro de chofer?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
     if (confirm == true) {
       await ref.read(payrollRepositoryProvider).deleteChofer(item.id);
@@ -264,32 +255,18 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
   }
 
   void _showEditDialog(BuildContext context, NominaChofer? item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 550),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(item == null ? 'Nuevo Chofer' : 'Editar Chofer',
-                      style: AppStyles.dialogTitleStyle),
-                  IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Flexible(child: ChoferForm(item: item)),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item == null ? 'Nuevo Chofer' : 'Editar Chofer',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            Flexible(child: ChoferForm(item: item)),
+          ],
         ),
       ),
     );
@@ -298,9 +275,9 @@ class _NominaChoferScreenState extends ConsumerState<NominaChoferScreen> {
   void _showPaymentsDialog(BuildContext context, NominaChofer item) {
     final total = (item.horas ?? 0.0) * (item.ratePorHora ?? 0.0);
     final balance = total - (item.pagoParcial ?? 0.0);
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PaymentsDialog(
+      child: PaymentsDialog(
         choferId: item.id,
         type: 'Chofer',
         initialAmount: balance > 0 ? balance : null,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../widgets/payments_dialog.dart';
@@ -306,10 +307,9 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                                                 p.fechaPago ?? p.createdAt;
                                             return DataRow(
                                                 onSelectChanged: (_) =>
-                                                    showDialog(
+                                                    AppBottomSheet.show(
                                                       context: context,
-                                                      builder: (_) =>
-                                                          EditPaymentDialog(
+                                                      child: EditPaymentDialog(
                                                               payment: p),
                                                     ),
                                                 cells: [
@@ -349,10 +349,9 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
                                                                 .primaryForest,
                                                             size: 18),
                                                         onPressed: () =>
-                                                            showDialog(
+                                                            AppBottomSheet.show(
                                                           context: context,
-                                                          builder: (_) =>
-                                                              EditPaymentDialog(
+                                                          child: EditPaymentDialog(
                                                                   payment: p),
                                                         ),
                                                         tooltip: 'Editar Pago',
@@ -431,9 +430,9 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
 
   void _showPaymentsDialog(
       BuildContext context, String itemId, double balance) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PaymentsDialog(
+      child: PaymentsDialog(
         pagoDiarioId: itemId,
         type: 'Pago Diario',
         initialAmount: balance > 0 ? balance : null,
@@ -443,57 +442,12 @@ class PagoDiarioDetailScreen extends ConsumerWidget {
 
   Future<void> _deletePayment(
       BuildContext context, WidgetRef ref, String paymentId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        backgroundColor: AppStyles.stoneWhite,
-        title: const Text(
-          'Eliminar Pago',
-          style: TextStyle(
-            color: AppStyles.primaryForest,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        content: const Text(
-          '¿Está seguro de que desea eliminar este pago?',
-          style: TextStyle(fontFamily: 'Manrope'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF991B1B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text(
-              'ELIMINAR',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: 'Eliminar Pago',
+      message: '¿Está seguro de que desea eliminar este pago?',
+      confirmLabel: 'ELIMINAR',
+      isDestructive: true,
     );
 
     if (confirm == true) {

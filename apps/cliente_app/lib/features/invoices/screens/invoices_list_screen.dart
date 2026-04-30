@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
+import '../../../config/ui_helpers.dart';
 import 'create_invoice_screen.dart';
 import 'invoice_detail_screen.dart';
 
@@ -760,24 +761,12 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
   Future<void> _deleteSelectedInvoices() async {
     if (_selectedIds.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Facturas'),
-        content: Text(
-            '¿Estás seguro de eliminar ${_selectedIds.length} facturas seleccionadas? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Eliminar Facturas',
+      message: '¿Estás seguro de eliminar ${_selectedIds.length} facturas seleccionadas? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -805,24 +794,12 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
   }
 
   Future<void> _confirmDeleteSingle(InvoiceModel invoice) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Factura'),
-        content: Text(
-            '¿Estás seguro de eliminar la factura #${invoice.id}? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Eliminar Factura',
+      message: '¿Estás seguro de eliminar la factura #${invoice.id}? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {

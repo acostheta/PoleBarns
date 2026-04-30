@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
 import '../models/pole_barn_model.dart';
 import '../providers/pole_barn_provider.dart';
+import '../../../config/ui_helpers.dart';
 import 'pole_barn_detail_screen.dart';
 
 class PoleBarnsListScreen extends ConsumerStatefulWidget {
@@ -470,22 +471,12 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
   }
 
   Future<void> _deleteSelected() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Productos'),
-        content: Text(
-            '¿Estás seguro de eliminar ${_selectedIds.length} productos seleccionados?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Eliminar Todo',
-                  style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: 'Eliminar Productos',
+      message: '¿Estás seguro de eliminar ${_selectedIds.length} productos seleccionados?',
+      confirmLabel: 'Eliminar Todo',
+      isDestructive: true,
     );
 
     if (confirmed == true) {
@@ -623,24 +614,12 @@ class _PoleBarnsListScreenState extends ConsumerState<PoleBarnsListScreen> {
   }
 
   Future<void> _confirmDelete(PoleBarn product) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Producto'),
-        content: Text(
-            '¿Estás seguro de eliminar "${product.name}"? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Eliminar Producto',
+      message: '¿Estás seguro de eliminar "${product.name}"? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true && product.id != null) {

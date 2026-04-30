@@ -14,6 +14,7 @@ import 'package:users/users.dart';
 import 'package:clients/clients.dart';
 import '../features/project_tracking/widgets/project_create_dialog.dart';
 import '../features/project_tracking/providers/project_providers.dart';
+import '../config/ui_helpers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -64,10 +65,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       title = 'Clientes';
       bodyContent = ClientsListScreen(
         onCreateEstimate: (clientId, _) {
-          showDialog(
+          AppBottomSheet.show(
             context: context,
-            builder: (context) =>
-                ProjectCreateDialog(initialClientId: clientId),
+            child: ProjectCreateDialog(initialClientId: clientId),
           ).then((success) {
             if (success == true) {
               ref.invalidate(projectListProvider);

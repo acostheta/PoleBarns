@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../providers/accounts_payable_provider.dart';
 import '../models/account_payable_model.dart';
 import '../widgets/add_account_dialog.dart';
@@ -164,9 +165,9 @@ class AccountsPayableListSidebar extends ConsumerWidget {
   }
 
   void _showAddAccountDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => const AddAccountDialog(),
+      child: const AddAccountDialog(),
     );
   }
 }

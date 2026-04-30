@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/rbac_repository.dart';
 import '../models/rbac_model.dart';
+import '../../../config/ui_helpers.dart';
 
 class RbacTab extends ConsumerStatefulWidget {
   const RbacTab({super.key});
@@ -119,60 +120,76 @@ class _RbacTabState extends ConsumerState<RbacTab> {
     final nameController = TextEditingController(text: role?['name']);
     final isEditing = role != null;
 
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Editar Rol' : 'Nuevo Rol'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Nombre del Rol',
-            hintText: 'Ej: Supervisor, Vendedor...',
-          ),
-          autofocus: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isEditing ? 'Editar Rol' : 'Nuevo Rol',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124)),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del Rol',
+                hintText: 'Ej: Supervisor, Vendedor...',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF173124),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  final newName = nameController.text.trim();
+                  if (newName.isEmpty) return;
+
+                  try {
+                    final repo = ref.read(rbacRepositoryProvider);
+                    if (isEditing) {
+                      await repo.updateRole(role['id'], role['name'], newName);
+                    } else {
+                      await repo.createRole(newName);
+                    }
+
+                    ref.invalidate(rolesListProvider);
+                    if (isEditing) {
+                      setState(() {
+                        _selectedRole = newName;
+                      });
+                    }
+
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    }
+                  }
+                },
+                child: Text(isEditing ? 'Actualizar Rol' : 'Crear Rol'),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newName = nameController.text.trim();
-              if (newName.isEmpty) return;
-
-              try {
-                final repo = ref.read(rbacRepositoryProvider);
-                if (isEditing) {
-                  await repo.updateRole(role['id'], role['name'], newName);
-                } else {
-                  await repo.createRole(newName);
-                }
-
-                ref.invalidate(rolesListProvider);
-                if (isEditing) {
-                  setState(() {
-                    _selectedRole = newName;
-                  });
-                }
-
-                if (context.mounted) Navigator.pop(context);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            },
-            child: Text(isEditing ? 'Actualizar' : 'Crear'),
-          ),
-        ],
       ),
     );
   }
 
-  void _confirmDeleteRole(BuildContext context, Map<String, dynamic> role) {
+  void _confirmDeleteRole(BuildContext context, Map<String, dynamic> role) async {
     if (role['name'] == 'Administrador') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -181,43 +198,31 @@ class _RbacTabState extends ConsumerState<RbacTab> {
       return;
     }
 
-    showDialog(
+    final confirmed = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Rol'),
-        content: Text(
-            '¿Está seguro de eliminar el rol "${role['name']}"? \nSe perderán todos sus permisos asociados.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () async {
-              try {
-                await ref
-                    .read(rbacRepositoryProvider)
-                    .deleteRole(role['id'], role['name']);
-                ref.invalidate(rolesListProvider);
-                setState(() {
-                  _selectedRole = null;
-                });
-                if (context.mounted) Navigator.pop(context);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al eliminar: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar Rol',
+      message: '¿Está seguro de eliminar el rol "${role['name']}"? Se perderán todos sus permisos asociados.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      try {
+        await ref
+            .read(rbacRepositoryProvider)
+            .deleteRole(role['id'], role['name']);
+        ref.invalidate(rolesListProvider);
+        setState(() {
+          _selectedRole = null;
+        });
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
   }
 }
 

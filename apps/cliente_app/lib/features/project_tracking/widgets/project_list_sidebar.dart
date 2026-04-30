@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/project_providers.dart';
 import '../models/project_models.dart';
+import '../../../config/ui_helpers.dart';
 import 'project_create_dialog.dart';
 
 class ProjectListSidebar extends ConsumerStatefulWidget {
@@ -153,9 +154,9 @@ class _ProjectListSidebarState extends ConsumerState<ProjectListSidebar> {
   }
 
   Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
-    await showDialog(
+    await AppBottomSheet.show(
       context: context,
-      builder: (ctx) => const ProjectCreateDialog(),
+      child: const ProjectCreateDialog(),
     );
   }
 }

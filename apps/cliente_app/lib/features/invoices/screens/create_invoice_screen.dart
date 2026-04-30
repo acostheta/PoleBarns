@@ -10,6 +10,7 @@ import '../utils/invoice_pdf_generator.dart';
 import '../../clients/repositories/client_repository.dart';
 import '../../project_tracking/models/project_models.dart';
 import '../../../shared/widgets/location_selector_button.dart';
+import '../../../config/ui_helpers.dart';
 
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
   final String? projectId;
@@ -178,9 +179,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   void _addItemsFromCatalog() async {
-    await showDialog(
+    await AppBottomSheet.show(
       context: context,
-      builder: (context) => _CatalogSelectionDialog(
+      child: _CatalogSelectionDialog(
         items: _catalogItems,
         onSelected: (selected) {
           setState(() {
@@ -670,48 +671,68 @@ class _CatalogSelectionDialogState extends State<_CatalogSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Seleccionar Items del Catálogo'),
-      content: SizedBox(
-        width: 400,
-        height: 500,
-        child: ListView.builder(
-          itemCount: widget.items.length,
-          itemBuilder: (context, index) {
-            final item = widget.items[index];
-            final isSelected = _selectedIds.contains(item.id);
-            return CheckboxListTile(
-              title: Text(item.name),
-              subtitle:
-                  Text(NumberFormat.simpleCurrency().format(item.salePrice)),
-              value: isSelected,
-              onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    _selectedIds.add(item.id);
-                  } else {
-                    _selectedIds.remove(item.id);
-                  }
-                });
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Seleccionar Items del Catálogo',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: widget.items.length,
+              itemBuilder: (context, index) {
+                final item = widget.items[index];
+                final isSelected = _selectedIds.contains(item.id);
+                return CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text(
+                      NumberFormat.simpleCurrency().format(item.salePrice),
+                      style: TextStyle(color: Colors.grey[600])),
+                  value: isSelected,
+                  activeColor: const Color(0xFF173124),
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true) {
+                        _selectedIds.add(item.id);
+                      } else {
+                        _selectedIds.remove(item.id);
+                      }
+                    });
+                  },
+                );
               },
-            );
-          },
-        ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 54,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF173124),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                final selected =
+                    widget.items.where((i) => _selectedIds.contains(i.id)).toList();
+                widget.onSelected(selected);
+                Navigator.pop(context);
+              },
+              child: const Text('Agregar Selección', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar')),
-        ElevatedButton(
-          onPressed: () {
-            final selected =
-                widget.items.where((i) => _selectedIds.contains(i.id)).toList();
-            widget.onSelected(selected);
-            Navigator.pop(context);
-          },
-          child: const Text('Agregar'),
-        ),
-      ],
     );
   }
 }

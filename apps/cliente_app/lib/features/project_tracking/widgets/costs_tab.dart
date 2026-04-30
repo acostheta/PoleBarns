@@ -5,6 +5,7 @@ import '../providers/project_providers.dart';
 import '../../accounts_payable/widgets/add_account_dialog.dart';
 import '../../invoices/providers/invoice_providers.dart';
 import '../../invoices/widgets/add_payment_dialog.dart';
+import '../../../config/ui_helpers.dart';
 
 class CostsTab extends ConsumerWidget {
   final String projectId;
@@ -247,9 +248,9 @@ class CostsTab extends ConsumerWidget {
 
   void _showAddPaymentDialog(
       BuildContext context, int invoiceId, double maxAmount, WidgetRef ref) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => AddPaymentDialog(
+      child: AddPaymentDialog(
         invoiceId: invoiceId,
         maxAmount: maxAmount,
         onAdded: () {
@@ -260,9 +261,9 @@ class CostsTab extends ConsumerWidget {
   }
 
   void _showAddAccountDialog(BuildContext context) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (_) => AddAccountDialog(initialProjectId: projectId),
+      child: AddAccountDialog(initialProjectId: projectId),
     );
   }
 }

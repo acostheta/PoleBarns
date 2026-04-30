@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import '../repositories/payroll_repository.dart';
 import '../providers/payroll_summary_provider.dart';
@@ -241,22 +242,12 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
   }
 
   void _confirmDelete(NominaSoldador item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Eliminar Registro'),
-        content: const Text(
-            '¿Está seguro de que desea eliminar este registro de pago a soldador?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar')),
-        ],
-      ),
+      title: 'Eliminar Registro',
+      message: '¿Está seguro de que desea eliminar este registro de pago a soldador?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
     if (confirm == true) {
       await ref.read(payrollRepositoryProvider).deleteSoldador(item.id);
@@ -264,18 +255,18 @@ class _PagosSoldadoresScreenState extends ConsumerState<PagosSoldadoresScreen> {
   }
 
   void _showEditDialog(BuildContext context, NominaSoldador? item) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PagosSoldadoresFormDialog(item: item),
+      child: PagosSoldadoresFormDialog(item: item),
     );
   }
 
   void _showPaymentsDialog(BuildContext context, NominaSoldador item) {
     final total = (item.cantidad ?? 0.0) * (item.montoUnitario ?? 0.0);
     final balance = total - (item.pagoParcial ?? 0.0);
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => PaymentsDialog(
+      child: PaymentsDialog(
         soldadorId: item.id,
         type: 'Soldadura',
         initialAmount: balance > 0 ? balance : null,

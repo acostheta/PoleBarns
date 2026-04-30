@@ -9,6 +9,7 @@ import '../../accounts_payable/providers/accounts_payable_provider.dart';
 import '../../project_tracking/models/project_models.dart';
 import '../../invoices/models/invoice_models.dart';
 import '../../accounts_payable/models/account_payable_model.dart';
+import '../../../config/ui_helpers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -641,13 +642,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -89,16 +89,38 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 location: location,
                 isMenuOpen: effectiveIsMenuOpen,
               ),
-              _buildMenuItem(
-                icon: Icons.architecture_outlined,
-                title: 'Proyectos',
-                path: '/projects',
-                location: location,
-                isMenuOpen: effectiveIsMenuOpen,
-              ),
 
-              // --- Módulos Administrativos (Basados en permisos) ---
-              if (canView('clients') || canView('accounts_payable') || canView('pole_barns') || canView('invoices') || canView('payroll') || canView('users')) ...[
+              // --- Módulos Administrativos (Ordenados según solicitud) ---
+              if (accessAsync.isLoading && accessMap.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _secondaryColor,
+                      ),
+                    ),
+                  ),
+                )
+              else if (accessAsync.hasError && accessMap.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Error de permisos',
+                        style: TextStyle(color: Colors.redAccent.withValues(alpha: 0.8), fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              else if (canView('clients') || canView('invoices') || canView('projects') || canView('pole_barns') || canView('payroll') || canView('accounts_payable') || canView('users')) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                   child: Divider(color: Color(0xFFC2C8C2), height: 1),
@@ -111,11 +133,19 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
-                if (canView('accounts_payable'))
+                if (canView('invoices'))
                   _buildMenuItem(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: 'Cuentas por Pagar',
-                    path: '/accounts-payable',
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Facturación',
+                    path: '/invoices',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('projects'))
+                  _buildMenuItem(
+                    icon: Icons.architecture_outlined,
+                    title: 'Proyectos',
+                    path: '/projects',
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
@@ -127,19 +157,19 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
-                if (canView('invoices'))
-                  _buildMenuItem(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Facturación',
-                    path: '/invoices',
-                    location: location,
-                    isMenuOpen: effectiveIsMenuOpen,
-                  ),
                 if (canView('payroll'))
                   _buildMenuItem(
                     icon: Icons.payments_outlined,
                     title: 'Nómina',
                     path: '/payroll',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('accounts_payable'))
+                  _buildMenuItem(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'Cuentas por Pagar',
+                    path: '/accounts-payable',
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
@@ -245,17 +275,8 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           ],
         ),
         actions: [
-          // Acciones filtradas por permisos dinámicos
-          if (can('view_analytics')) ...[
-            IconButton(
-              icon: const Icon(Icons.analytics_outlined, color: Colors.white70),
-              onPressed: () {
-                // Navegar a reportes globales
-              },
-              tooltip: 'Reportes Globales',
-            ),
-          ],
           ...appBarActions,
+          const SizedBox(width: 8),
           _buildUserMenu(profileAsync.valueOrNull),
           const SizedBox(width: 16),
         ],

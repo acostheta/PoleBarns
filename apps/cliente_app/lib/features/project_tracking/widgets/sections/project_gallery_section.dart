@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../config/ui_helpers.dart';
 import '../../providers/project_providers.dart';
 import '../../models/project_models.dart';
 
@@ -296,12 +297,14 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
   }
 
   void _openFullScreen(BuildContext context, String url) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.9),
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -311,7 +314,7 @@ class _ProjectGallerySectionState extends ConsumerState<ProjectGallerySection> {
               child: Image.network(url, fit: BoxFit.contain),
             ),
             Positioned(
-              top: 40,
+              top: 20,
               right: 20,
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.white, size: 30),

@@ -46,105 +46,91 @@ class _EditPaymentDialogState extends ConsumerState<EditPaymentDialog> {
     _noteController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 450),
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Editar Pago', style: AppStyles.dialogTitleStyle),
-                IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Text('Tipo de Transacción', style: AppStyles.labelStyle),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTypeButton(
-                      'Abono', Icons.add_circle_outline, Colors.green),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTypeButton(
-                      'Reembolso', Icons.remove_circle_outline, Colors.red),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Text('Método de Pago', style: AppStyles.labelStyle),
-            const SizedBox(height: 8),
-            ref.watch(paymentMethodsListProvider).when(
-                  data: (methods) {
-                    return DropdownButtonFormField<String>(
-                      value: _selectedMethodId,
-                      decoration: AppStyles.inputDecoration(),
-                      items: methods
-                          .map<DropdownMenuItem<String>>(
-                              (PaymentMethodModel m) =>
-                                  DropdownMenuItem<String>(
-                                      value: m.id.toString(),
-                                      child: Text(m.name)))
-                          .toList(),
-                      onChanged: (val) =>
-                          setState(() => _selectedMethodId = val),
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                    );
-                  },
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error: $e',
-                      style: const TextStyle(color: Colors.red)),
-                ),
-            const SizedBox(height: 24),
-            const Text('Monto', style: AppStyles.labelStyle),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _amountController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: AppStyles.inputDecoration()
-                  .copyWith(prefixText: r'$ ', hintText: '0.00'),
-            ),
-            const SizedBox(height: 24),
-            const Text('Notas (Opcional)', style: AppStyles.labelStyle),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _noteController,
-              maxLines: 3,
-              decoration: AppStyles.inputDecoration()
-                  .copyWith(hintText: 'Agregar notas...'),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: AppStyles.primaryButtonStyle,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Guardar Cambios'),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Editar Pago', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+          const SizedBox(height: 32),
+          const Text('Tipo de Transacción', style: AppStyles.labelStyle),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTypeButton(
+                    'Abono', Icons.add_circle_outline, Colors.green),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTypeButton(
+                    'Reembolso', Icons.remove_circle_outline, Colors.red),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text('Método de Pago', style: AppStyles.labelStyle),
+          const SizedBox(height: 8),
+          ref.watch(paymentMethodsListProvider).when(
+                data: (methods) {
+                  return DropdownButtonFormField<String>(
+                    value: _selectedMethodId,
+                    decoration: AppStyles.inputDecoration(),
+                    items: methods
+                        .map<DropdownMenuItem<String>>(
+                            (PaymentMethodModel m) =>
+                                DropdownMenuItem<String>(
+                                    value: m.id.toString(),
+                                    child: Text(m.name)))
+                        .toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedMethodId = val),
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: Colors.red)),
+              ),
+          const SizedBox(height: 24),
+          const Text('Monto', style: AppStyles.labelStyle),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _amountController,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            decoration: AppStyles.inputDecoration()
+                .copyWith(prefixText: r'$ ', hintText: '0.00'),
+          ),
+          const SizedBox(height: 24),
+          const Text('Notas (Opcional)', style: AppStyles.labelStyle),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _noteController,
+            maxLines: 3,
+            decoration: AppStyles.inputDecoration()
+                .copyWith(hintText: 'Agregar notas...'),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: AppStyles.primaryButtonStyle,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Guardar Cambios'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

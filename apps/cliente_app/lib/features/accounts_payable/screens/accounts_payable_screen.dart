@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../providers/accounts_payable_provider.dart';
 import '../models/account_payable_model.dart';
 import '../widgets/add_account_dialog.dart';
@@ -426,9 +427,9 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => showDialog(
+                  onPressed: () => AppBottomSheet.show(
                       context: context,
-                      builder: (_) => const AddAccountDialog()),
+                      child: const AddAccountDialog()),
                   icon: const Icon(Icons.add, color: Colors.white, size: 18),
                   label: const Text('Nueva Factura'),
                   style: AppStyles.primaryButtonStyle.copyWith(
@@ -461,9 +462,9 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                 }),
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  onPressed: () => showDialog(
+                  onPressed: () => AppBottomSheet.show(
                       context: context,
-                      builder: (_) => const AddAccountDialog()),
+                      child: const AddAccountDialog()),
                   icon: const Icon(Icons.add, color: Colors.white, size: 18),
                   label: const Text('Nueva Factura'),
                   style: AppStyles.primaryButtonStyle.copyWith(
@@ -572,87 +573,85 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
     providers.sort();
     providers.insert(0, 'Todos');
 
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setStateSB) {
-          return Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 450),
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Filtrar Facturas',
-                      style: AppStyles.dialogTitleStyle),
-                  const SizedBox(height: 32),
-                  const Text('Estado', style: AppStyles.labelStyle),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    decoration: AppStyles.inputDecoration(),
-                    value: _statusFilter,
-                    items: ['Todos', 'Pagado', 'Parcial', 'Pendiente']
-                        .map<DropdownMenuItem<String>>((s) =>
-                            DropdownMenuItem<String>(
-                                value: s,
-                                child: Text(s,
-                                    style: const TextStyle(fontSize: 14))))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setStateSB(() => _statusFilter = val);
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Proveedor', style: AppStyles.labelStyle),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    decoration: AppStyles.inputDecoration(),
-                    value: _providerFilter ?? 'Todos',
-                    items: providers
-                        .map<DropdownMenuItem<String>>((p) =>
-                            DropdownMenuItem<String>(
-                                value: p,
-                                child: Text(p!,
-                                    style: const TextStyle(fontSize: 14))))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setStateSB(() => _providerFilter = val);
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Rango de Fechas', style: AppStyles.labelStyle),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () async {
-                      final picked = await showDateRangePicker(
-                          context: context,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
-                          initialDateRange: _dateRange);
-                      if (picked != null) setStateSB(() => _dateRange = picked);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                          borderRadius: BorderRadius.circular(8),
-                          color: const Color(0xFFF9FAFB)),
-                      child: Row(children: [
-                        const Icon(Icons.date_range,
-                            size: 18, color: Colors.grey),
-                        const SizedBox(width: 12),
-                        Text(
-                            _dateRange == null
-                                ? 'Cualquier fecha'
-                                : '${DateFormat('MM/dd').format(_dateRange!.start)} - ${DateFormat('MM/dd').format(_dateRange!.end)}',
-                            style: const TextStyle(fontSize: 14)),
-                      ]),
-                    ),
-                  ),
+      child: StatefulBuilder(builder: (context, setStateSB) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Filtrar Facturas',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+              const SizedBox(height: 32),
+              const Text('Estado', style: AppStyles.labelStyle),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                decoration: AppStyles.inputDecoration(),
+                value: _statusFilter,
+                items: ['Todos', 'Pagado', 'Parcial', 'Pendiente']
+                    .map<DropdownMenuItem<String>>((s) =>
+                        DropdownMenuItem<String>(
+                            value: s,
+                            child: Text(s,
+                                style: const TextStyle(fontSize: 14))))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setStateSB(() => _statusFilter = val);
+                  }
+                },
+              ),
+              const SizedBox(height: 20),
+              const Text('Proveedor', style: AppStyles.labelStyle),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                decoration: AppStyles.inputDecoration(),
+                value: _providerFilter ?? 'Todos',
+                items: providers
+                    .map<DropdownMenuItem<String>>((s) =>
+                        DropdownMenuItem<String>(
+                            value: s,
+                            child: Text(s ?? '',
+                                style: const TextStyle(fontSize: 14))))
+                    .toList(),
+                onChanged: (val) {
+                  setStateSB(() => _providerFilter = val);
+                },
+              ),
+              const SizedBox(height: 32),
+              const Text('Rango de Fecha', style: AppStyles.labelStyle),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                      initialDateRange: _dateRange);
+                  if (picked != null) {
+                    setStateSB(() => _dateRange = picked);
+                  }
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFFF9FAFB)),
+                  child: Row(children: [
+                    const Icon(Icons.date_range, size: 18, color: Colors.grey),
+                    const SizedBox(width: 12),
+                    Text(
+                        _dateRange == null
+                            ? 'Cualquier fecha'
+                            : '${DateFormat('MM/dd').format(_dateRange!.start)} - ${DateFormat('MM/dd').format(_dateRange!.end)}',
+                        style: const TextStyle(fontSize: 14)),
+                  ]),
+                ),
+              ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
@@ -721,11 +720,10 @@ class _AccountsPayableScreenState extends ConsumerState<AccountsPayableScreen> {
                         child: const Text('Aplicar Filtros')),
                   ]),
                 ],
-              ),
             ),
           );
-        });
-      },
+        },
+      ),
     );
   }
 

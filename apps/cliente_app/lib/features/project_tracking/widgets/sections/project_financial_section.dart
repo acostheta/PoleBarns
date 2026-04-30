@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../config/ui_helpers.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
 import '../../../accounts_payable/widgets/add_account_dialog.dart';
@@ -58,9 +59,9 @@ class ProjectFinancialSection extends ConsumerWidget {
                       data: (invoice) => invoice == null
                           ? null
                           : () {
-                              showDialog(
+                              AppBottomSheet.show(
                                 context: context,
-                                builder: (_) => AddPaymentDialog(
+                                child: AddPaymentDialog(
                                   invoiceId: invoice.id,
                                   maxAmount: project.ventaTotal,
                                   onAdded: () {
@@ -86,10 +87,9 @@ class ProjectFinancialSection extends ConsumerWidget {
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
                     onPressed: () {
-                      showDialog(
+                      AppBottomSheet.show(
                         context: context,
-                        builder: (_) =>
-                            AddAccountDialog(initialProjectId: project.id),
+                        child: AddAccountDialog(initialProjectId: project.id),
                       );
                     },
                     icon: const Icon(Icons.add, size: 20),

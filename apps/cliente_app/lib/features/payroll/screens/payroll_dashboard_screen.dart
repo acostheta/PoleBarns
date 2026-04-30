@@ -9,6 +9,7 @@ import 'nomina_chofer_screen.dart';
 import '../widgets/pagos_soldadores_form.dart';
 import '../../../shared/widgets/app_bar_portal.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 
 class PayrollDashboardScreen extends ConsumerWidget {
   const PayrollDashboardScreen({super.key});
@@ -420,9 +421,9 @@ class PayrollDashboardScreen extends ConsumerWidget {
   }
 
   void _showUnifiedCreationDialog(BuildContext context) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => const UnifiedPayrollDialog(),
+      child: const UnifiedPayrollDialog(),
     );
   }
 
@@ -581,37 +582,21 @@ class UnifiedPayrollDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 800),
-        child: DefaultTabController(
-          length: 4,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Nuevo Registro de Nómina',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: DefaultTabController(
+        length: 4,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Nuevo Registro de Nómina',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF173124)),
+            ),
+            const SizedBox(height: 24),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Container(
                 color: const Color(0xFFF8FAFC),
@@ -651,8 +636,7 @@ class UnifiedPayrollDialog extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

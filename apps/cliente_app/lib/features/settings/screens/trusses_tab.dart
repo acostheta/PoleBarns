@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../repositories/settings_repository.dart';
 import '../models/truss_model.dart';
+import '../../../config/ui_helpers.dart';
+import '../../../config/app_styles.dart';
 
 class TrussesTab extends ConsumerWidget {
   const TrussesTab({super.key});
@@ -49,23 +51,12 @@ class TrussesTab extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
-                          final confirm = await showDialog<bool>(
+                          final confirm = await AppBottomSheet.showConfirm(
                             context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Confirmar'),
-                              content: const Text(
-                                  '¿Estás seguro de eliminar este producto del catálogo?'),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancelar')),
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    style: TextButton.styleFrom(
-                                        foregroundColor: Colors.red),
-                                    child: const Text('Eliminar')),
-                              ],
-                            ),
+                            title: 'Confirmar',
+                            message: '¿Estás seguro de eliminar este producto del catálogo?',
+                            confirmLabel: 'Eliminar',
+                            isDestructive: true,
                           );
                           if (confirm == true) {
                             try {
@@ -104,76 +95,83 @@ class TrussesTab extends ConsumerWidget {
         TextEditingController(text: truss?.cost.toString() ?? '');
     final isEditing = truss != null;
 
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(isEditing ? 'Editar Producto' : 'Nuevo Producto'),
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(isEditing ? 'Editar Producto' : 'Nuevo Producto',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            const Text('Nombre del Producto', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
             TextField(
               controller: nameController,
-              decoration:
-                  const InputDecoration(labelText: 'Nombre del Producto'),
+              decoration: AppStyles.inputDecoration(),
               autofocus: true,
             ),
             const SizedBox(height: 16),
+            const Text('Costo Unitario', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
             TextField(
               controller: costController,
-              decoration: const InputDecoration(
-                labelText: 'Costo Unitario',
+              decoration: AppStyles.inputDecoration().copyWith(
                 prefixText: '\$ ',
                 helperText: 'Costo por unidad del producto',
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
             ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: AppStyles.primaryButtonStyle,
+                onPressed: () async {
+                  if (nameController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Nombre es requerido')),
+                    );
+                    return;
+                  }
+
+                  final cost = double.tryParse(costController.text) ?? 0.0;
+
+                  try {
+                    if (truss != null) {
+                      final updated = Truss(
+                        id: truss.id,
+                        name: nameController.text,
+                        cost: cost,
+                        createdAt: truss.createdAt,
+                      );
+                      await ref
+                          .read(settingsRepositoryProvider)
+                          .updateTruss(updated);
+                    } else {
+                      await ref
+                          .read(settingsRepositoryProvider)
+                          .createTruss(nameController.text, cost);
+                    }
+                    ref.invalidate(trussesListProvider);
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al guardar: $e')),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Guardar'),
+              ),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Nombre es requerido')),
-                );
-                return;
-              }
-
-              final cost = double.tryParse(costController.text) ?? 0.0;
-
-              try {
-                if (truss != null) {
-                  final updated = Truss(
-                    id: truss.id,
-                    name: nameController.text,
-                    cost: cost,
-                    createdAt: truss.createdAt,
-                  );
-                  await ref
-                      .read(settingsRepositoryProvider)
-                      .updateTruss(updated);
-                } else {
-                  await ref
-                      .read(settingsRepositoryProvider)
-                      .createTruss(nameController.text, cost);
-                }
-                ref.invalidate(trussesListProvider);
-                if (context.mounted) Navigator.pop(ctx);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al guardar: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
       ),
     );
   }

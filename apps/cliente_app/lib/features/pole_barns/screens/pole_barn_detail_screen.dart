@@ -8,6 +8,7 @@ import '../models/related_material_model.dart';
 import '../providers/pole_barn_provider.dart';
 import '../utils/pole_barn_pdf_generator.dart';
 import '../../../shared/widgets/app_bar_portal.dart';
+import '../../../config/ui_helpers.dart';
 
 class PoleBarnDetailScreen extends ConsumerStatefulWidget {
   final PoleBarn? initialPoleBarn;
@@ -923,9 +924,9 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
         ? state.relatedMaterials[index]
         : RelatedMaterial(qty: 0, wastePercent: 0, pricePorUnidad: 0);
 
-    final result = await showDialog<RelatedMaterial>(
+    final result = await AppBottomSheet.show<RelatedMaterial>(
       context: context,
-      builder: (context) => MaterialEditDialog(
+      child: MaterialEditDialog(
           initialMaterial: material, rawMaterials: rawMaterials),
     );
 
@@ -966,57 +967,12 @@ class _PoleBarnDetailScreenState extends ConsumerState<PoleBarnDetailScreen> {
   }
 
   Future<void> _confirmDelete(int poleBarnId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppStyles.stoneWhite,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: const Text(
-          '¿Eliminar Producto?',
-          style: TextStyle(
-            color: AppStyles.primaryForest,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        content: const Text(
-          'Esta acción no se puede deshacer. Se eliminará el producto del catálogo permanentemente.',
-          style: TextStyle(fontFamily: 'Manrope'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF991B1B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'ELIMINAR',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: '¿Eliminar Producto?',
+      message: 'Esta acción no se puede deshacer. Se eliminará el producto del catálogo permanentemente.',
+      confirmLabel: 'ELIMINAR',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -1070,168 +1026,148 @@ class _MaterialEditDialogState extends State<MaterialEditDialog> {
     double waste = double.tryParse(_wasteController.text) ?? 0;
     double rowTotal = (qty * price) * (1 + (waste / 100));
 
-    return Dialog(
-      backgroundColor: AppStyles.stoneWhite,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Configurar Material',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            const Text('MATERIAL DE CATÁLOGO',
+                style: TextStyle(
+                    color: AppStyles.secondaryEarth,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Manrope',
+                    fontSize: 10,
+                    letterSpacing: 1.5)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _selectedId,
+              isExpanded: true,
+              validator: (v) => v == null ? 'Seleccione material' : null,
+              decoration: AppStyles.inputDecoration(),
+              icon: const Icon(Icons.keyboard_arrow_down),
+              items: widget.rawMaterials
+                  .map<DropdownMenuItem<String>>((m) =>
+                      DropdownMenuItem<String>(
+                          value: m['id'] as String,
+                          child: Text(m['name'],
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: 'Manrope',
+                                  fontWeight: FontWeight.w600))))
+                  .toList(),
+              onChanged: (val) {
+                final m =
+                    widget.rawMaterials.firstWhere((e) => e['id'] == val);
+                setState(() {
+                  _selectedId = val;
+                  _materialName = m['name'];
+                  _priceController.text = m['price'].toString();
+                  _medidaController.text =
+                      m['measures']?['name']?.toString() ?? '';
+                });
+              },
+            ),
+            const SizedBox(height: 24),
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Configurar Material',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Manrope',
-                            color: AppStyles.primaryForest)),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('MATERIAL DE CATÁLOGO',
-                    style: TextStyle(
-                        color: AppStyles.secondaryEarth,
-                        fontWeight: FontWeight.w900,
-                        fontFamily: 'Manrope',
-                        fontSize: 10,
-                        letterSpacing: 1.5)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _selectedId,
-                  isExpanded: true,
-                  validator: (v) => v == null ? 'Seleccione material' : null,
-                  decoration: AppStyles.inputDecoration(),
-                  icon: const Icon(Icons.keyboard_arrow_down),
-                  items: widget.rawMaterials
-                      .map<DropdownMenuItem<String>>((m) =>
-                          DropdownMenuItem<String>(
-                              value: m['id'] as String,
-                              child: Text(m['name'],
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Manrope',
-                                      fontWeight: FontWeight.w600))))
-                      .toList(),
-                  onChanged: (val) {
-                    final m =
-                        widget.rawMaterials.firstWhere((e) => e['id'] == val);
-                    setState(() {
-                      _selectedId = val;
-                      _materialName = m['name'];
-                      _priceController.text = m['price'].toString();
-                      _medidaController.text =
-                          m['measures']?['name']?.toString() ?? '';
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField('Cantidad', _qtyController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true))),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField(
-                            'Medida (Auto)', _medidaController,
-                            readOnly: true)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _buildTextField(
-                            'Precio Unitario', _priceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            prefixText: '\$ ')),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _buildTextField(
-                            'Desperdicio (%)', _wasteController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true))),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppStyles.paleSage,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('TOTAL:',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'Manrope',
-                              fontSize: 11,
-                              letterSpacing: 1.0,
-                              color: AppStyles.secondaryEarth)),
-                      Text(NumberFormat.currency(symbol: r'$').format(rowTotal),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 20,
-                              fontFamily: 'Manrope',
-                              color: AppStyles.primaryForest)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pop(
-                            context,
-                            RelatedMaterial(
-                              id: widget.initialMaterial.id,
-                              materialId: _selectedId,
-                              materialName: _materialName,
-                              medida: _medidaController.text,
-                              qty: double.tryParse(_qtyController.text) ?? 0,
-                              wastePercent:
-                                  double.tryParse(_wasteController.text) ?? 0,
-                              pricePorUnidad:
-                                  double.tryParse(_priceController.text) ?? 0,
-                            ));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppStyles.secondaryEarth,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4)),
-                      textStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Manrope',
-                          fontSize: 13,
-                          letterSpacing: 1.0),
-                    ),
-                    child: const Text('AGREGAR MATERIAL'),
-                  ),
-                ),
+                Expanded(
+                    child: _buildTextField('Cantidad', _qtyController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true))),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField(
+                        'Medida (Auto)', _medidaController,
+                        readOnly: true)),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                    child: _buildTextField(
+                        'Precio Unitario', _priceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        prefixText: '\$ ')),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: _buildTextField(
+                        'Desperdicio (%)', _wasteController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true))),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppStyles.paleSage,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('TOTAL:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'Manrope',
+                          fontSize: 11,
+                          letterSpacing: 1.0,
+                          color: AppStyles.secondaryEarth)),
+                  Text(NumberFormat.currency(symbol: r'$').format(rowTotal),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          fontFamily: 'Manrope',
+                          color: AppStyles.primaryForest)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Navigator.pop(
+                        context,
+                        RelatedMaterial(
+                          id: widget.initialMaterial.id,
+                          materialId: _selectedId,
+                          materialName: _materialName,
+                          medida: _medidaController.text,
+                          qty: double.tryParse(_qtyController.text) ?? 0,
+                          wastePercent:
+                              double.tryParse(_wasteController.text) ?? 0,
+                          pricePorUnidad:
+                              double.tryParse(_priceController.text) ?? 0,
+                        ));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppStyles.secondaryEarth,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4)),
+                  textStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Manrope',
+                      fontSize: 13,
+                      letterSpacing: 1.0),
+                ),
+                child: const Text('AGREGAR MATERIAL'),
+              ),
+            ),
+          ],
         ),
       ),
     );

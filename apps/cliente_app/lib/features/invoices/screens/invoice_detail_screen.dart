@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../config/app_styles.dart';
+import '../../../config/ui_helpers.dart';
 import '../models/invoice_models.dart';
 import '../providers/invoice_providers.dart';
 import '../utils/invoice_pdf_generator.dart';
@@ -1041,9 +1042,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
   void _showAddPaymentModal(
       BuildContext context, double maxAmount, double initialAmount) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => AddPaymentDialog(
+      child: AddPaymentDialog(
         invoiceId: widget.invoiceId,
         maxAmount: maxAmount,
         initialAmount: initialAmount,
@@ -1056,51 +1057,49 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   }
 
   void _showEditProductModal(RelatedProductModel product) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Estatus del Producto',
-                  style: AppStyles.dialogTitleStyle),
-              const SizedBox(height: 32),
-              const Text('Estatus', style: AppStyles.labelStyle),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: product.estatus,
-                decoration: AppStyles.inputDecoration(),
-                items: ['Pendiente', 'En Proceso', 'Completado']
-                    .map<DropdownMenuItem<String>>((e) =>
-                        DropdownMenuItem<String>(
-                            value: e,
-                            child:
-                                Text(e, style: const TextStyle(fontSize: 14))))
-                    .toList(),
-                onChanged: (v) async {
-                  if (v == null) return;
-                  final updated = product.copyWith(estatus: v);
-                  await ref
-                      .read(invoiceServiceProvider)
-                      .saveRelatedProduct(updated);
-                  // No need to invalidate manually if using StreamProvider properly,
-                  // but it doesn't hurt.
-                  ref.invalidate(relatedProductsProvider(widget.invoiceId));
-                  if (context.mounted) Navigator.pop(context);
-                },
-              ),
-              const SizedBox(height: 24),
-              TextButton(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Estatus del Producto',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            const Text('Estatus', style: AppStyles.labelStyle),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: product.estatus,
+              decoration: AppStyles.inputDecoration(),
+              items: ['Pendiente', 'En Proceso', 'Completado']
+                  .map<DropdownMenuItem<String>>((e) =>
+                      DropdownMenuItem<String>(
+                          value: e,
+                          child:
+                              Text(e, style: const TextStyle(fontSize: 14))))
+                  .toList(),
+              onChanged: (v) async {
+                if (v == null) return;
+                final updated = product.copyWith(estatus: v);
+                await ref
+                    .read(invoiceServiceProvider)
+                    .saveRelatedProduct(updated);
+                ref.invalidate(relatedProductsProvider(widget.invoiceId));
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
+                style: AppStyles.primaryButtonStyle,
+                child: const Text('Cerrar'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1216,9 +1215,9 @@ J & P Pole Barns
         ref.read(invoiceDetailProvider(widget.invoiceId)).asData?.value;
     if (enrichedInvoice == null) return;
 
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (context) => EditPaymentDialog(
+      child: EditPaymentDialog(
         payment: payment,
         maxAmount: enrichedInvoice.totalVenta,
         onUpdated: () {
@@ -1230,25 +1229,12 @@ J & P Pole Barns
   }
 
   Future<void> _confirmDeletePayment(InvoicePaymentModel payment) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Pago'),
-        content: Text(
-          '¿Está seguro de que desea eliminar este ${payment.tipo.toLowerCase()} de ${currency.format(payment.amount)}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar Pago',
+      message: '¿Está seguro de que desea eliminar este ${payment.tipo.toLowerCase()} de ${currency.format(payment.amount)}?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -1273,9 +1259,9 @@ J & P Pole Barns
   }
 
   void _showAddCostDialog(BuildContext context) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (_) => AddAccountDialog(initialInvoiceId: widget.invoiceId),
+      child: AddAccountDialog(initialInvoiceId: widget.invoiceId),
     );
   }
 
@@ -1294,9 +1280,9 @@ J & P Pole Barns
       };
     }).toList();
 
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (_) => ProjectCreateDialog(
+      child: ProjectCreateDialog(
         initialClientId: invoice.idCliente,
         initialProjectName: invoice.projectName ?? invoice.address,
         initialDireccion: invoice.address,
@@ -1314,24 +1300,12 @@ J & P Pole Barns
   }
 
   Future<void> _confirmDeleteInvoice(BuildContext context, int id) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Factura'),
-        content: const Text(
-            '¿Está seguro de que desea eliminar esta factura? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar Factura',
+      message: '¿Está seguro de que desea eliminar esta factura? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {

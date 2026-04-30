@@ -7,6 +7,7 @@ import '../models/project_models.dart';
 import '../providers/project_providers.dart';
 import '../widgets/project_create_dialog.dart';
 import 'project_detail_screen.dart';
+import '../../../config/ui_helpers.dart';
 
 class ProjectDashboardScreen extends ConsumerStatefulWidget {
   const ProjectDashboardScreen({super.key});
@@ -474,9 +475,9 @@ class _ProjectDashboardScreenState
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          showDialog(
+                          AppBottomSheet.show(
                             context: context,
-                            builder: (ctx) => const ProjectCreateDialog(),
+                            child: const ProjectCreateDialog(),
                           );
                         },
                         icon: const Icon(Icons.add,
@@ -526,9 +527,9 @@ class _ProjectDashboardScreenState
                 // New Project Button
                 ElevatedButton.icon(
                   onPressed: () {
-                    showDialog(
+                    AppBottomSheet.show(
                       context: context,
-                      builder: (ctx) => const ProjectCreateDialog(),
+                      child: const ProjectCreateDialog(),
                     );
                   },
                   icon: const Icon(Icons.add, size: 18, color: Colors.white),
@@ -618,22 +619,12 @@ class _ProjectDashboardScreenState
       icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
       onSelected: (value) async {
         if (value == 'delete') {
-          final confirm = await showDialog<bool>(
+          final confirm = await AppBottomSheet.showConfirm(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Eliminar Proyecto'),
-              content: const Text(
-                  '¿Estás seguro de eliminar este proyecto y todos sus datos relacionados?'),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancelar')),
-                TextButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Eliminar',
-                        style: TextStyle(color: Colors.red))),
-              ],
-            ),
+            title: 'Eliminar Proyecto',
+            message: '¿Estás seguro de eliminar este proyecto y todos sus datos relacionados?',
+            confirmLabel: 'Eliminar',
+            isDestructive: true,
           );
           if (confirm == true) {
             await ref.read(projectRepositoryProvider).deleteProject(project.id);
@@ -752,22 +743,12 @@ class _ProjectDashboardScreenState
   }
 
   Future<void> _deleteSelected() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Proyectos'),
-        content: Text(
-            '¿Estás seguro de eliminar ${_selectedIds.length} proyectos seleccionados?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Eliminar Todo',
-                  style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: 'Eliminar Proyectos',
+      message: '¿Estás seguro de eliminar ${_selectedIds.length} proyectos seleccionados?',
+      confirmLabel: 'Eliminar Todo',
+      isDestructive: true,
     );
 
     if (confirmed == true) {

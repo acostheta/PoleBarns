@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/app_styles.dart';
 import '../models/client_model.dart';
 import '../repositories/client_repository.dart';
+import '../../../config/ui_helpers.dart';
 
 class ClientsListScreen extends ConsumerStatefulWidget {
   final void Function(String clientId, Map<String, dynamic> client)?
@@ -652,24 +653,12 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
   Future<void> _deleteSelectedClients(dynamic repository) async {
     if (_selectedIds.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Clientes'),
-        content: Text(
-            '¿Estás seguro de eliminar ${_selectedIds.length} clientes seleccionados? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Eliminar Clientes',
+      message: '¿Estás seguro de eliminar ${_selectedIds.length} clientes seleccionados? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -698,24 +687,12 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
 
   Future<void> _confirmDeleteSingle(
       ClientModel client, dynamic repository) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Cliente'),
-        content: Text(
-            '¿Estás seguro de eliminar a ${client.nombre}? Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Eliminar Cliente',
+      message: '¿Estás seguro de eliminar a ${client.nombre}? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirm == true) {

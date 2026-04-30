@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../config/app_styles.dart';
+import '../../../../config/ui_helpers.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
 
@@ -97,9 +98,9 @@ class ProjectPoleBarnsSection extends ConsumerWidget {
   }
 
   void _showAddDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (_) => _AddPoleBarnDialog(projectId: projectId),
+      child: _AddPoleBarnDialog(projectId: projectId),
     );
   }
 }
@@ -187,22 +188,12 @@ class _PoleBarnRow extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Eliminar Asociación'),
-        content: const Text(
-            '¿Está seguro de que desea desvincular esta caballeriza del proyecto?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar')),
-        ],
-      ),
+      title: 'Eliminar Asociación',
+      message: '¿Está seguro de que desea desvincular esta caballeriza del proyecto?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
     if (confirm == true) {
       await ref.read(projectRepositoryProvider).deleteProjectPoleBarn(barn.id);
@@ -212,50 +203,45 @@ class _PoleBarnRow extends ConsumerWidget {
 
   void _showEditPriceDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController(text: barn.salePrice.toString());
-    showDialog(
+    AppBottomSheet.show(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Editar Precio de Venta',
-                  style: AppStyles.dialogTitleStyle),
-              const SizedBox(height: 32),
-              const Text('Precio de Venta', style: AppStyles.labelStyle),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 14),
-                decoration: AppStyles.inputDecoration().copyWith(
-                  prefixText: r'$ ',
-                ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Editar Precio de Venta',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 32),
+            const Text('Precio de Venta', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(fontSize: 14),
+              decoration: AppStyles.inputDecoration().copyWith(
+                prefixText: r'$ ',
               ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final newPrice = double.tryParse(controller.text) ?? 0;
-                    await ref
-                        .read(projectRepositoryProvider)
-                        .updateProjectPoleBarnPrice(barn.id, newPrice);
-                    ref.invalidate(projectPoleBarnsProvider(barn.projectId));
-                    if (ctx.mounted) Navigator.pop(ctx);
-                  },
-                  style: AppStyles.primaryButtonStyle,
-                  child: const Text('Guardar Cambios'),
-                ),
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final newPrice = double.tryParse(controller.text) ?? 0;
+                  await ref
+                      .read(projectRepositoryProvider)
+                      .updateProjectPoleBarnPrice(barn.id, newPrice);
+                  ref.invalidate(projectPoleBarnsProvider(barn.projectId));
+                  if (context.mounted) Navigator.pop(context);
+                },
+                style: AppStyles.primaryButtonStyle,
+                child: const Text('Guardar Cambios'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -286,90 +272,82 @@ class _AddPoleBarnDialogState extends ConsumerState<_AddPoleBarnDialog> {
   Widget build(BuildContext context) {
     final catalogAsync = ref.watch(poleBarnsCatalogProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Asociar Caballeriza',
-                  style: AppStyles.dialogTitleStyle),
-              const SizedBox(height: 32),
-              const Text('Seleccionar del Catálogo',
-                  style: AppStyles.labelStyle),
-              const SizedBox(height: 8),
-              catalogAsync.when(
-                data: (catalog) {
-                  return DropdownButtonFormField<int>(
-                    isExpanded: true,
-                    value: _selectedBarnId,
-                    decoration: AppStyles.inputDecoration(),
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    items: catalog.map<DropdownMenuItem<int>>((b) {
-                      return DropdownMenuItem<int>(
-                        value: b['id'],
-                        child: Text(b['name'] ?? 'ID: ${b['id']}',
-                            style: const TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      final barn = catalog.firstWhere((b) => b['id'] == val);
-                      setState(() {
-                        _selectedBarnId = val;
-                        _salePrice =
-                            (barn['precio_venta'] as num?)?.toDouble() ?? 0.0;
-                        _priceController.text = _salePrice.toString();
-                      });
-                    },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Asociar Caballeriza',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+          const SizedBox(height: 32),
+          const Text('Seleccionar del Catálogo',
+              style: AppStyles.labelStyle),
+          const SizedBox(height: 8),
+          catalogAsync.when(
+            data: (catalog) {
+              return DropdownButtonFormField<int>(
+                isExpanded: true,
+                value: _selectedBarnId,
+                decoration: AppStyles.inputDecoration(),
+                icon: const Icon(Icons.keyboard_arrow_down),
+                items: catalog.map<DropdownMenuItem<int>>((b) {
+                  return DropdownMenuItem<int>(
+                    value: b['id'],
+                    child: Text(b['name'] ?? 'ID: ${b['id']}',
+                        style: const TextStyle(fontSize: 14)),
                   );
+                }).toList(),
+                onChanged: (val) {
+                  final barn = catalog.firstWhere((b) => b['id'] == val);
+                  setState(() {
+                    _selectedBarnId = val;
+                    _salePrice =
+                        (barn['precio_venta'] as num?)?.toDouble() ?? 0.0;
+                    _priceController.text = _salePrice.toString();
+                  });
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (e, __) => Text('Error: $e',
-                    style: const TextStyle(color: Colors.red)),
-              ),
-              if (_selectedBarnId != null) ...[
-                const SizedBox(height: 24),
-                const Text('Precio de Venta Sugerido',
-                    style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _priceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 14),
-                  decoration: AppStyles.inputDecoration().copyWith(
-                    prefixText: r'$ ',
-                  ),
-                  onChanged: (val) {
-                    _salePrice = double.tryParse(val) ?? 0;
-                  },
-                ),
-              ],
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      (_selectedBarnId == null || _isSaving) ? null : _submit,
-                  style: AppStyles.primaryButtonStyle,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text('Asociar al Proyecto'),
-                ),
-              ),
-            ],
+              );
+            },
+            loading: () => const LinearProgressIndicator(),
+            error: (e, __) => Text('Error: $e',
+                style: const TextStyle(color: Colors.red)),
           ),
-        ),
+          if (_selectedBarnId != null) ...[
+            const SizedBox(height: 24),
+            const Text('Precio de Venta Sugerido',
+                style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _priceController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(fontSize: 14),
+              decoration: AppStyles.inputDecoration().copyWith(
+                prefixText: r'$ ',
+              ),
+              onChanged: (val) {
+                _salePrice = double.tryParse(val) ?? 0;
+              },
+            ),
+          ],
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed:
+                  (_selectedBarnId == null || _isSaving) ? null : _submit,
+              style: AppStyles.primaryButtonStyle,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Asociar al Proyecto'),
+            ),
+          ),
+        ],
       ),
     );
   }

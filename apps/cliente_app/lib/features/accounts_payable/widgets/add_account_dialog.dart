@@ -81,125 +81,116 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     final providersAsync = ref.watch(providersListProvider);
     final invoicesAsync = ref.watch(invoicesStreamProvider);
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Registrar Cuenta',
-                        style: AppStyles.dialogTitleStyle),
-                    IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                const SizedBox(height: 32),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Registrar Cuenta',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF173124))),
+            const SizedBox(height: 24),
 
-                // Provider Dropdown
-                const Text('Proveedor', style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                providersAsync.when(
-                  data: (providers) => DropdownButtonFormField<String>(
-                    value: _selectedProviderId,
-                    items: providers
-                        .map<DropdownMenuItem<String>>((ProviderModel p) {
-                      return DropdownMenuItem<String>(
-                        value: p.id,
-                        child:
-                            Text(p.name, style: const TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedProviderId = val),
-                    decoration: AppStyles.inputDecoration(),
-                    validator: (val) => val == null ? 'Requerido' : null,
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                  ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error: $e',
-                      style: const TextStyle(color: Colors.red)),
-                ),
-                const SizedBox(height: 24),
-
-                // Project Dropdown
-                const Text('Relacionar a Invoice (Opcional)',
-                    style: AppStyles.labelStyle),
-                const SizedBox(height: 8),
-                invoicesAsync.when(
-                  data: (invoices) => DropdownButtonFormField<int>(
-                    value: _selectedInvoiceId,
-                    items: invoices.map<DropdownMenuItem<int>>((inv) {
-                      return DropdownMenuItem<int>(
-                        value: inv.id,
-                        child: Text(
-                            'Factura #${inv.id} - ${inv.clientName ?? ''}',
-                            style: const TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedInvoiceId = val;
-                        if (val != null) {
-                          final inv = invoices.firstWhere((i) => i.id == val);
-                          _selectedProjectId = inv.idProyecto;
-                        }
-                      });
-                    },
-                    decoration: AppStyles.inputDecoration(
-                        hintText: 'Seleccione un invoice'),
-                    icon: const Icon(Icons.receipt_outlined),
-                  ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error al cargar invoices',
-                      style: const TextStyle(color: Colors.red)),
-                ),
-                const SizedBox(height: 24),
-
-                // Date Picker
-                _buildDateField('Fecha de Factura', _selectedDate,
-                    (d) => setState(() => _selectedDate = d)),
-                const SizedBox(height: 24),
-
-                // Reference
-                _buildTextField(
-                    'Referencia Interna (Opcional)', _refController),
-                const SizedBox(height: 24),
-
-                // Amount
-                _buildTextField(
-                  'Monto Total',
-                  _amountController,
-                  required: true,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  prefixText: '\$ ',
-                ),
-
-                const SizedBox(height: 40),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: const Text('Registrar Cuenta'),
-                  ),
-                )
-              ],
+            // Provider Dropdown
+            const Text('Proveedor', style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            providersAsync.when(
+              data: (providers) => DropdownButtonFormField<String>(
+                value: _selectedProviderId,
+                items: providers
+                    .map<DropdownMenuItem<String>>((ProviderModel p) {
+                  return DropdownMenuItem<String>(
+                    value: p.id,
+                    child:
+                        Text(p.name, style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedProviderId = val),
+                decoration: AppStyles.inputDecoration(),
+                validator: (val) => val == null ? 'Requerido' : null,
+                icon: const Icon(Icons.keyboard_arrow_down),
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text('Error: $e',
+                  style: const TextStyle(color: Colors.red)),
             ),
-          ),
+            const SizedBox(height: 20),
+
+            // Project Dropdown
+            const Text('Relacionar a Invoice (Opcional)',
+                style: AppStyles.labelStyle),
+            const SizedBox(height: 8),
+            invoicesAsync.when(
+              data: (invoices) => DropdownButtonFormField<int>(
+                value: _selectedInvoiceId,
+                items: invoices.map<DropdownMenuItem<int>>((inv) {
+                  return DropdownMenuItem<int>(
+                    value: inv.id,
+                    child: Text(
+                        'Factura #${inv.id} - ${inv.clientName ?? ''}',
+                        style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedInvoiceId = val;
+                    if (val != null) {
+                      final inv = invoices.firstWhere((i) => i.id == val);
+                      _selectedProjectId = inv.idProyecto;
+                    }
+                  });
+                },
+                decoration: AppStyles.inputDecoration(
+                    hintText: 'Seleccione un invoice'),
+                icon: const Icon(Icons.receipt_outlined),
+                isExpanded: true,
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text('Error al cargar invoices',
+                  style: const TextStyle(color: Colors.red)),
+            ),
+            const SizedBox(height: 20),
+
+            // Date Picker
+            _buildDateField('Fecha de Factura', _selectedDate,
+                (d) => setState(() => _selectedDate = d)),
+            const SizedBox(height: 20),
+
+            // Reference
+            _buildTextField(
+                'Referencia Interna (Opcional)', _refController),
+            const SizedBox(height: 20),
+
+            // Amount
+            _buildTextField(
+              'Monto Total',
+              _amountController,
+              required: true,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              prefixText: '\$ ',
+            ),
+
+            const SizedBox(height: 32),
+
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF173124),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Registrar Cuenta', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            )
+          ],
         ),
       ),
     );

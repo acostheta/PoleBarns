@@ -8,6 +8,7 @@ import '../widgets/chat_tab.dart';
 import '../widgets/project_create_dialog.dart';
 import '../../../shared/widgets/location_map_card.dart';
 import '../../../shared/widgets/app_bar_portal.dart';
+import '../../../config/ui_helpers.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
@@ -36,9 +37,9 @@ class ProjectDetailScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, color: Colors.white70),
                   onPressed: () {
-                    showDialog(
+                    AppBottomSheet.show(
                       context: context,
-                      builder: (ctx) => ProjectCreateDialog(
+                      child: ProjectCreateDialog(
                         projectId: project.id,
                         initialClientId: project.refCliente,
                         initialProjectName: project.address,
@@ -114,57 +115,12 @@ class ProjectDetailScreen extends ConsumerWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, WidgetRef ref, String projectId) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        backgroundColor: AppStyles.stoneWhite,
-        title: const Text(
-          'Confirmar Eliminación',
-          style: TextStyle(
-            color: AppStyles.primaryForest,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        content: const Text(
-          '¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.',
-          style: TextStyle(fontFamily: 'Manrope'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF991B1B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'ELIMINAR',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: 'Confirmar Eliminación',
+      message: '¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
     if (confirmed == true) {
