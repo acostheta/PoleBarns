@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:auth/auth.dart';
 import '../models/rbac_model.dart';
+import '../../../config/rbac_config.dart';
 
 final rbacRepositoryProvider = Provider((ref) => RbacRepository());
 
@@ -107,87 +108,68 @@ final rolePermissionsProvider =
   return repo.getPermissionsForRole(roleName);
 });
 
-final currentUserAccessProvider =
-    StreamProvider<Map<String, bool>>((ref) async* {
-  // ── React to auth changes so this provider re-runs on login / logout ──
-  final authState = ref.watch(authStateProvider);
-  final session = authState.valueOrNull?.session;
-  final user = session?.user ?? Supabase.instance.client.auth.currentUser;
-
+final currentUserAccessProvider = StreamProvider<Map<String, bool>>((ref) async* {
+  final user = Supabase.instance.client.auth.currentUser;
   if (user == null) {
     yield {};
     return;
   }
 
-  final prefs = await SharedPreferences.getInstance();
-  final cacheKey = 'access_map_${user.id}';
-  final cachedData = prefs.getString(cacheKey);
-  
-  // 1. Yield cached data immediately so the sidebar isn't blank while loading.
-  if (cachedData != null) {
-    try {
-      final decoded = jsonDecode(cachedData) as Map<String, dynamic>;
-      final casted = decoded.map((key, value) => MapEntry(key, value as bool));
-      yield casted;
-    } catch (_) {}
-  }
+  // 1. Escuchar cambios en el perfil para obtener el role_id
+  final profileStream = Supabase.instance.client
+      .from('profiles')
+      .stream(primaryKey: ['id'])
+      .eq('id', user.id);
 
-  // 2. Fetch from network
-  try {
-    final client = Supabase.instance.client;
-    
-    // Watch the profile state
-    final profileProvider = ref.watch(userProfileProvider(user.id));
-    final role = profileProvider.valueOrNull?['role'] as String?;
-    final isLoadingProfile = profileProvider.isLoading;
-    final hasError = profileProvider.hasError;
-
-    // Si aún está cargando o hubo un error (por ejemplo, token fallido), 
-    // mantenemos el caché actual si existe y terminamos.
-    if ((role == null && isLoadingProfile) || hasError) {
-      if (cachedData == null) yield {};
-      return;
-    }
-
-    if (role == 'Administrador') {
-      final adminAccess = {'*': true};
-      prefs.setString(cacheKey, jsonEncode(adminAccess));
-      yield adminAccess;
-      return;
-    }
-
-    // Si el rol es null genuinamente (sin error de red y ya cargó), no tienen permisos.
-    if (role == null) {
-      if (cachedData != '{}') {
-        prefs.setString(cacheKey, jsonEncode({}));
-      }
+  await for (final profiles in profileStream) {
+    if (profiles.isEmpty) {
       yield {};
-      return;
+      continue;
     }
 
-    final data = await client
-        .from('app_role_permissions')
-        .select('can_access, app_modules(key)')
-        .eq('role_name', role);
-
-    final Map<String, bool> access = {};
-    for (var item in data as List) {
-      final moduleData = item['app_modules'];
-      if (moduleData != null) {
-        final key = moduleData['key'] as String;
-        final can = item['can_access'] as bool;
-        access[key] = can;
-      }
-    }
-    
-    // Save to cache
-    prefs.setString(cacheKey, jsonEncode(access));
-    yield access;
-  } catch (e) {
-    // If error and we have cached data, just let the stream end with it.
-    // We don't yield empty to not overwrite the cached data.
-    if (cachedData == null) {
+    final roleId = profiles.first['role_id'] as String?;
+    if (roleId == null) {
+      // Si no tiene rol asignado, tal vez permisos básicos
       yield {};
+      continue;
     }
+
+    // 2. Obtener los permisos del rol en tiempo real
+    final roleData = await Supabase.instance.client
+        .from('roles')
+        .select('permissions, name')
+        .eq('id', roleId)
+        .single();
+
+    final permissionsJson = roleData['permissions'] as Map<String, dynamic>? ?? {};
+    final roleName = roleData['name'] as String;
+
+    final Map<String, bool> accessMap = {};
+
+    // Si es Administrador de sistema, dar acceso total
+    if (roleName == 'Admin' || roleName == 'Administrador') {
+      accessMap['*'] = true;
+    } else {
+      // Mapear permisos del JSONB a un mapa plano de capacidades
+      permissionsJson.forEach((module, actions) {
+        if (actions is Map) {
+          final canView = actions['view'] == true;
+          if (canView) {
+            accessMap['view_${module.toLowerCase()}'] = true;
+          }
+          if (actions['create'] == true) {
+            accessMap['create_${module.toLowerCase()}'] = true;
+          }
+          if (actions['edit'] == true) {
+            accessMap['edit_${module.toLowerCase()}'] = true;
+          }
+          if (actions['delete'] == true) {
+            accessMap['delete_${module.toLowerCase()}'] = true;
+          }
+        }
+      });
+    }
+
+    yield accessMap;
   }
 });

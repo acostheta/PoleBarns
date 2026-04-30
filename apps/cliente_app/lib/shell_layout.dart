@@ -25,26 +25,19 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final profileAsync = user != null
-        ? ref.watch(userProfileProvider(user.id))
-        : const AsyncValue<Map<String, dynamic>>.loading();
-
+    // 1. Datos de Acceso Dinámico (RBAC basado en capacidades)
     final accessAsync = ref.watch(currentUserAccessProvider);
     final accessMap = accessAsync.valueOrNull ?? {};
 
-    // Check admin status from profile directly to show menu early
-    final profile = profileAsync.valueOrNull;
-    final isAdmin = profile?['role'] == 'Administrador';
-
-    bool canView(String key) {
-      if (isAdmin) return true;
+    // Ayudantes de permisos
+    bool can(String permission) {
       if (accessMap['*'] == true) return true;
-      return accessMap[key] == true;
+      return accessMap[permission] == true;
     }
 
-    // Determine title based on current route
-    final String location = GoRouterState.of(context).uri.toString();
+    bool canView(String module) => can('view_${module.toLowerCase()}');
+    
+    final location = GoRouterState.of(context).uri.toString();
     String title = 'J&P Pole Barns LLC';
     if (location.startsWith('/profile')) {
       title = 'Mi Perfil';
@@ -52,7 +45,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
       title = 'Configuración';
     } else if (location.startsWith('/accounts-payable')) {
       title = 'Cuentas por Pagar';
-    } else if (location.startsWith('/projects')) {
+    } else if (location.startsWith('/projects') || location.startsWith('/jobs')) {
       title = 'Proyectos';
     } else if (location.startsWith('/pole-barns')) {
       title = 'Productos';
@@ -72,7 +65,6 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     final appBarActions = ref.watch(appBarActionsProvider);
     final customTitle = ref.watch(appBarTitleProvider);
     
-    final isMobile = MediaQuery.of(context).size.width < 800;
     final effectiveIsMenuOpen = isMobile ? true : isMenuOpen;
 
     Widget sidebarContent = Column(
@@ -82,6 +74,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
+              // --- Módulos Públicos ---
               _buildMenuItem(
                 icon: Icons.dashboard_outlined,
                 title: 'Dashboard',
@@ -89,66 +82,84 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                 location: location,
                 isMenuOpen: effectiveIsMenuOpen,
               ),
-              if (canView('clients'))
-                _buildMenuItem(
-                  icon: Icons.group_outlined,
-                  title: 'Clientes',
-                  path: '/clients',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
+              _buildMenuItem(
+                icon: Icons.calendar_month_outlined,
+                title: 'Calendario',
+                path: '/calendar',
+                location: location,
+                isMenuOpen: effectiveIsMenuOpen,
+              ),
+              _buildMenuItem(
+                icon: Icons.work_outline,
+                title: 'Trabajos (Jobs)',
+                path: '/jobs',
+                location: location,
+                isMenuOpen: effectiveIsMenuOpen,
+              ),
+
+              // --- Módulos Administrativos (Basados en permisos) ---
+              if (canView('clients') || canView('invoices') || canView('inventory') || canView('payroll') || canView('users')) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  child: Divider(color: Color(0xFFC2C8C2), height: 1),
                 ),
-              if (canView('invoices'))
-                _buildMenuItem(
-                  icon: Icons.receipt_long_outlined,
-                  title: 'Invoices',
-                  path: '/invoices',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('projects'))
-                _buildMenuItem(
-                  icon: Icons.architecture_outlined,
-                  title: 'Proyectos',
-                  path: '/projects',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('inventory'))
-                _buildMenuItem(
-                  icon: Icons.inventory_2_outlined,
-                  title: 'Productos',
-                  path: '/pole-barns',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('payroll'))
-                _buildMenuItem(
-                  icon: Icons.payments_outlined,
-                  title: 'Nómina',
-                  path: '/payroll',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('accounts_payable'))
-                _buildMenuItem(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'Cuentas por Pagar',
-                  path: '/accounts-payable',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
-              if (canView('users') || isAdmin)
-                _buildMenuItem(
-                  icon: Icons.person_add_outlined,
-                  title: 'Usuarios',
-                  path: '/users',
-                  location: location,
-                  isMenuOpen: effectiveIsMenuOpen,
-                ),
+                if (canView('clients'))
+                  _buildMenuItem(
+                    icon: Icons.people_outline,
+                    title: 'Clientes',
+                    path: '/clients',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('invoices'))
+                  _buildMenuItem(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Facturación',
+                    path: '/invoices',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('inventory'))
+                  _buildMenuItem(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'Inventario',
+                    path: '/inventory',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('payroll'))
+                  _buildMenuItem(
+                    icon: Icons.payments_outlined,
+                    title: 'Nómina',
+                    path: '/payroll',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('users'))
+                  _buildMenuItem(
+                    icon: Icons.manage_accounts_outlined,
+                    title: 'Usuarios',
+                    path: '/users',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+              ],
+
+              // --- Configuración (Público/Base) ---
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Divider(color: Color(0xFFC2C8C2), height: 1),
+              ),
+              _buildMenuItem(
+                icon: Icons.settings_outlined,
+                title: 'Configuración',
+                path: '/settings',
+                location: location,
+                isMenuOpen: effectiveIsMenuOpen,
+              ),
             ],
           ),
         ),
-        const Divider(color: Color(0xFFC2C8C2), height: 1),
         const SizedBox(height: 16),
       ],
     );
@@ -226,6 +237,16 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           ],
         ),
         actions: [
+          // Acciones filtradas por permisos dinámicos
+          if (can('view_analytics')) ...[
+            IconButton(
+              icon: const Icon(Icons.analytics_outlined, color: Colors.white70),
+              onPressed: () {
+                // Navegar a reportes globales
+              },
+              tooltip: 'Reportes Globales',
+            ),
+          ],
           ...appBarActions,
           _buildUserMenu(profileAsync.valueOrNull),
           const SizedBox(width: 16),
@@ -274,6 +295,15 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     );
   }
 
+  void _onRouteSelected(String path) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    
+    if (isMobile && _scaffoldKey.currentState?.isDrawerOpen == true) {
+      _scaffoldKey.currentState?.closeDrawer();
+    }
+    
+    context.go(path);
+  }
 
   Widget _buildUserMenu(Map<String, dynamic>? profile) {
     final name = profile?['full_name'] ?? profile?['nombre'] ?? 'Usuario';
@@ -290,94 +320,94 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
         cursor: SystemMouseCursors.click,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white30, width: 1.5),
-            ),
-            child: CircleAvatar(
-              radius: 13,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-              child: photoUrl == null
-                  ? const Icon(Icons.person, size: 16, color: Colors.white)
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (MediaQuery.of(context).size.width > 700) ...[
-            Text(
-              name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Manrope',
-                letterSpacing: 0.3,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(Icons.keyboard_arrow_down,
-                color: Colors.white, size: 18),
-          ],
-        ],
-      ),
-    ),
-  ),
-  onSelected: (value) {
-    if (value == 'profile') {
-      context.go('/profile');
-    } else if (value == 'settings') {
-      context.go('/settings');
-    } else if (value == 'logout') {
-      ref.read(authRepositoryProvider).signOut();
-    }
-  },
-  itemBuilder: (context) => [
-    PopupMenuItem(
-      enabled: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            name,
-            style: const TextStyle(
-              fontFamily: 'Manrope',
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-              color: _primaryColor,
-            ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            profile?['role']?.toString().toUpperCase() ?? 'COLABORADOR',
-            style: const TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 10,
-              color: _secondaryColor,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white30, width: 1.5),
+                ),
+                child: CircleAvatar(
+                  radius: 13,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                  child: photoUrl == null
+                      ? const Icon(Icons.person, size: 16, color: Colors.white)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (MediaQuery.of(context).size.width > 700) ...[
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Manrope',
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.keyboard_arrow_down,
+                    color: Colors.white, size: 18),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
-    ),
+      onSelected: (value) {
+        if (value == 'profile') {
+          context.go('/profile');
+        } else if (value == 'settings') {
+          context.go('/settings');
+        } else if (value == 'logout') {
+          ref.read(authRepositoryProvider).signOut();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                profile?['role']?.toString().toUpperCase() ?? 'COLABORADOR',
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontSize: 10,
+                  color: _secondaryColor,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: 'profile',
@@ -444,13 +474,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
-        onTap: () {
-          final isMobile = MediaQuery.of(context).size.width < 800;
-          if (isMobile && _scaffoldKey.currentState?.isDrawerOpen == true) {
-            _scaffoldKey.currentState?.closeDrawer();
-          }
-          context.go(path);
-        },
+        onTap: () => _onRouteSelected(path),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           height: 48,
