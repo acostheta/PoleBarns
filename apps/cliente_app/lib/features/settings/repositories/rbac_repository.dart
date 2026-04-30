@@ -128,13 +128,23 @@ final currentUserAccessProvider = StreamProvider<Map<String, bool>>((ref) async*
     }
 
     final roleId = profiles.first['role_id'] as String?;
+    final userLevel = profiles.first['user_level']?.toString().toLowerCase() ?? '';
+    
+    final Map<String, bool> accessMap = {};
+
+    // 1. Si el nivel de usuario es 'administrador', dar acceso total de inmediato
+    if (userLevel == 'administrador' || userLevel == 'admin') {
+      accessMap['*'] = true;
+      yield accessMap;
+      continue;
+    }
+
     if (roleId == null) {
-      // Si no tiene rol asignado, tal vez permisos básicos
       yield {};
       continue;
     }
 
-    // 2. Obtener los permisos del rol en tiempo real
+    // 2. Obtener los permisos del rol
     final roleData = await Supabase.instance.client
         .from('roles')
         .select('permissions, name')
@@ -142,29 +152,33 @@ final currentUserAccessProvider = StreamProvider<Map<String, bool>>((ref) async*
         .single();
 
     final permissionsJson = roleData['permissions'] as Map<String, dynamic>? ?? {};
-    final roleName = roleData['name'] as String;
+    final roleName = roleData['name']?.toString().toLowerCase() ?? '';
 
-    final Map<String, bool> accessMap = {};
-
-    // Si es Administrador de sistema, dar acceso total
-    if (roleName == 'Admin' || roleName == 'Administrador') {
+    // 3. Si el nombre del rol es administrador, dar acceso total
+    if (roleName == 'admin' || roleName == 'administrador') {
       accessMap['*'] = true;
     } else {
       // Mapear permisos del JSONB a un mapa plano de capacidades
       permissionsJson.forEach((module, actions) {
         if (actions is Map) {
           final canView = actions['view'] == true;
+          // Normalizar el nombre del módulo para que coincida con el Sidebar
+          String moduleKey = module.toLowerCase();
+          if (moduleKey == 'jobs') moduleKey = 'projects';
+          if (moduleKey == 'products') moduleKey = 'pole_barns';
+          if (moduleKey == 'properties') moduleKey = 'accounts_payable'; // Ejemplo de mapeo si aplica
+
           if (canView) {
-            accessMap['view_${module.toLowerCase()}'] = true;
+            accessMap['view_$moduleKey'] = true;
           }
           if (actions['create'] == true) {
-            accessMap['create_${module.toLowerCase()}'] = true;
+            accessMap['create_$moduleKey'] = true;
           }
           if (actions['edit'] == true) {
-            accessMap['edit_${module.toLowerCase()}'] = true;
+            accessMap['edit_$moduleKey'] = true;
           }
           if (actions['delete'] == true) {
-            accessMap['delete_${module.toLowerCase()}'] = true;
+            accessMap['delete_$moduleKey'] = true;
           }
         }
       });

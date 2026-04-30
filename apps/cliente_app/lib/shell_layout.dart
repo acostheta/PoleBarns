@@ -25,9 +25,17 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    
     // 1. Datos de Acceso Dinámico (RBAC basado en capacidades)
     final accessAsync = ref.watch(currentUserAccessProvider);
     final accessMap = accessAsync.valueOrNull ?? {};
+
+    // 2. Perfil para el menú de usuario
+    final user = Supabase.instance.client.auth.currentUser;
+    final profileAsync = user != null
+        ? ref.watch(userProfileProvider(user.id))
+        : const AsyncValue<Map<String, dynamic>>.loading();
 
     // Ayudantes de permisos
     bool can(String permission) {
@@ -74,31 +82,23 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
-              // --- Módulos Públicos ---
               _buildMenuItem(
                 icon: Icons.dashboard_outlined,
-                title: 'Dashboard',
+                title: 'Inicio',
                 path: '/dashboard',
                 location: location,
                 isMenuOpen: effectiveIsMenuOpen,
               ),
               _buildMenuItem(
-                icon: Icons.calendar_month_outlined,
-                title: 'Calendario',
-                path: '/calendar',
-                location: location,
-                isMenuOpen: effectiveIsMenuOpen,
-              ),
-              _buildMenuItem(
-                icon: Icons.work_outline,
-                title: 'Trabajos (Jobs)',
-                path: '/jobs',
+                icon: Icons.architecture_outlined,
+                title: 'Proyectos',
+                path: '/projects',
                 location: location,
                 isMenuOpen: effectiveIsMenuOpen,
               ),
 
               // --- Módulos Administrativos (Basados en permisos) ---
-              if (canView('clients') || canView('invoices') || canView('inventory') || canView('payroll') || canView('users')) ...[
+              if (canView('clients') || canView('accounts_payable') || canView('pole_barns') || canView('invoices') || canView('payroll') || canView('users')) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                   child: Divider(color: Color(0xFFC2C8C2), height: 1),
@@ -111,19 +111,27 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
+                if (canView('accounts_payable'))
+                  _buildMenuItem(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'Cuentas por Pagar',
+                    path: '/accounts-payable',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
+                if (canView('pole_barns'))
+                  _buildMenuItem(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'Productos',
+                    path: '/pole-barns',
+                    location: location,
+                    isMenuOpen: effectiveIsMenuOpen,
+                  ),
                 if (canView('invoices'))
                   _buildMenuItem(
                     icon: Icons.receipt_long_outlined,
                     title: 'Facturación',
                     path: '/invoices',
-                    location: location,
-                    isMenuOpen: effectiveIsMenuOpen,
-                  ),
-                if (canView('inventory'))
-                  _buildMenuItem(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Inventario',
-                    path: '/inventory',
                     location: location,
                     isMenuOpen: effectiveIsMenuOpen,
                   ),
