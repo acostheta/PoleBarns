@@ -35,18 +35,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   String _roleFilter = 'Todos';
   String _statusFilter = 'Todos';
 
-  // Branded Colors
-  static const Color primaryForest = Color(0xFF173124);
-  static const Color secondaryEarth = Color(0xFF7C580F);
-  static const Color backgroundLight = Color(0xFFFDFBF7);
-
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(allUsersProvider);
     final groupsAsync = ref.watch(workerGroupsProvider);
 
     return Scaffold(
-      backgroundColor: backgroundLight,
+      backgroundColor: AppColors.backgroundLight,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1400),
@@ -125,7 +120,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
               width: 4,
               height: 24,
               decoration: BoxDecoration(
-                color: secondaryEarth,
+                color: AppColors.secondary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -135,7 +130,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: primaryForest,
+                color: AppColors.primary,
                 letterSpacing: -0.5,
               ),
             ),
@@ -202,7 +197,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
             Icon(
               icon,
               size: 18,
-              color: isSelected ? primaryForest : Colors.black.withValues(alpha: 0.4),
+              color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.4),
             ),
             const SizedBox(width: 8),
             Text(
@@ -210,7 +205,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? primaryForest : Colors.black.withValues(alpha: 0.4),
+                color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -243,7 +238,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
               ? 'Buscar por nombre, email...'
               : 'Buscar grupos...',
           hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.3), fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: primaryForest.withValues(alpha: 0.4), size: 20),
+          prefixIcon: Icon(Icons.search, color: AppColors.primary.withValues(alpha: 0.4), size: 20),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -264,7 +259,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       style: FilledButton.styleFrom(
-        backgroundColor: primaryForest,
+        backgroundColor: AppColors.primary,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -333,22 +328,22 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: primaryForest.withValues(alpha: 0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primaryForest.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          Icon(Icons.check_circle, color: primaryForest, size: 20),
+          Icon(Icons.check_circle, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
           Text(
             '${_selectedIds.length} seleccionados',
-            style: const TextStyle(color: primaryForest, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           TextButton(
             onPressed: () => setState(() => _selectedIds.clear()),
-            child: const Text('Cancelar', style: TextStyle(color: secondaryEarth)),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.secondary)),
           ),
         ],
       ),
@@ -374,8 +369,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           value: value,
           onChanged: onChanged,
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
-          icon: Icon(Icons.keyboard_arrow_down, color: primaryForest.withValues(alpha: 0.5)),
-          style: const TextStyle(color: primaryForest, fontWeight: FontWeight.w500),
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.primary.withValues(alpha: 0.5)),
+          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500),
         ),
       ),
     );
@@ -436,7 +431,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                     sortAscending: _isAscending,
                     headingTextStyle: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: primaryForest.withValues(alpha: 0.6),
+                      color: AppColors.primary.withValues(alpha: 0.6),
                       fontSize: 13,
                     ),
                     onSelectAll: (val) {
@@ -469,19 +464,19 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 18,
-                                  backgroundColor: secondaryEarth.withValues(alpha: 0.1),
+                                  backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
                                   backgroundImage: user['picture'] != null ? NetworkImage(user['picture']) : null,
                                   child: user['picture'] == null
                                       ? Text(
                                           ((user['name'] != null && user['name'].toString().isNotEmpty) ? user['name'][0] : 'U').toUpperCase(),
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: secondaryEarth),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.secondary),
                                         )
                                       : null,
                                 ),
                                 const SizedBox(width: 14),
                                 Text(
                                   user['name'] ?? 'Sin Nombre',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, color: primaryForest),
+                                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
                                 ),
                               ],
                             ),
@@ -492,7 +487,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                           DataCell(_buildStatusBadge(isActive), onTap: () => _navigateToDetail(user['id'])),
                           DataCell(
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: secondaryEarth, size: 20),
+                              icon: const Icon(Icons.edit_outlined, color: AppColors.secondary, size: 20),
                               onPressed: () {
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => UserFormScreen(userId: user['id'], userMetadata: user)));
                               },
@@ -509,7 +504,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       error: (e, s) => Center(child: Text('Error: $e')),
     );
   }
@@ -549,13 +544,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                         Expanded(
                           child: Text(
                             group['name'] ?? 'Grupo',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryForest),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),
                         ),
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: secondaryEarth, size: 20),
+                              icon: const Icon(Icons.edit_outlined, color: AppColors.secondary, size: 20),
                               onPressed: () => _showEditGroupDialog(group),
                             ),
                             IconButton(
@@ -588,7 +583,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       error: (e, s) => Center(child: Text('Error: $e')),
     );
   }
@@ -596,13 +591,13 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   Widget _buildGroupInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: primaryForest.withValues(alpha: 0.4)),
+        Icon(icon, size: 18, color: AppColors.primary.withValues(alpha: 0.4)),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label, style: TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.4), fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: primaryForest)),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.primary)),
           ],
         ),
       ],
@@ -611,7 +606,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
 
   Widget _buildRoleBadge(String role) {
     final isAdmin = role == 'Administrador';
-    final color = isAdmin ? primaryForest : Colors.blueGrey;
+    final color = isAdmin ? AppColors.primary : Colors.blueGrey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -658,23 +653,23 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
           IconButton(
             onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
             icon: const Icon(Icons.chevron_left),
-            color: primaryForest,
+            color: AppColors.primary,
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: primaryForest.withValues(alpha: 0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${_currentPage + 1} / $totalPages',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
           ),
           IconButton(
             onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
             icon: const Icon(Icons.chevron_right),
-            color: primaryForest,
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -705,7 +700,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('¿Eliminar Grupo?', style: TextStyle(color: primaryForest, fontWeight: FontWeight.bold)),
+        title: const Text('¿Eliminar Grupo?', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
         content: const Text('Esta acción eliminará el grupo. Los usuarios no serán eliminados.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),

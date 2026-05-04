@@ -16,11 +16,6 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
 
-  // Branded Colors
-  static const Color primaryForest = Color(0xFF173124);
-  static const Color secondaryEarth = Color(0xFF7C580F);
-  static const Color backgroundLight = Color(0xFFFDFBF7);
-
   // Selection State
   final Set<String> _selectedMemberIds = {};
   String? _selectedSupervisorId;
@@ -112,7 +107,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.group == null ? 'Grupo creado exitosamente' : 'Grupo actualizado exitosamente'),
-            backgroundColor: primaryForest,
+            backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -150,7 +145,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               decoration: BoxDecoration(
-                color: primaryForest,
+                color: AppColors.primary,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: Row(
@@ -199,7 +194,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                             label: 'Responsable (Líder)',
                             value: activeUsers.any((u) => u['id'] == _selectedSupervisorId) ? _selectedSupervisorId : null,
                             icon: Icons.star_border_rounded,
-                            itemsMaps: activeUsers.map((u) => {'value': u['id'] as String, 'label': u['name'] ?? 'Sin nombre'}).toList(),
+                            itemsMaps: activeUsers.map<Map<String, String>>((u) => {'value': u['id'] as String, 'label': (u['name'] as String?) ?? 'Sin nombre'}).toList(),
                             onChanged: (val) {
                               setState(() {
                                 _selectedSupervisorId = val;
@@ -208,7 +203,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                             },
                           );
                         },
-                        loading: () => const LinearProgressIndicator(color: primaryForest),
+                        loading: () => const LinearProgressIndicator(color: AppColors.primary),
                         error: (_, __) => const Text('Error cargando usuarios', style: TextStyle(color: Colors.red)),
                       ),
 
@@ -240,7 +235,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                   TextButton(
                     onPressed: _isLoading ? null : () => Navigator.pop(context),
                     style: TextButton.styleFrom(
-                      foregroundColor: primaryForest.withValues(alpha: 0.6),
+                      foregroundColor: AppColors.primary.withValues(alpha: 0.6),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
                     child: const Text('CANCELAR', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -251,7 +246,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                     child: FilledButton(
                       onPressed: _isLoading ? null : _submit,
                       style: FilledButton.styleFrom(
-                        backgroundColor: primaryForest,
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                       ),
@@ -272,11 +267,11 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
   Widget _buildSectionHeader(String title) {
     return Row(
       children: [
-        Container(width: 3, height: 14, decoration: BoxDecoration(color: secondaryEarth, borderRadius: BorderRadius.circular(2))),
+        Container(width: 3, height: 14, decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 10),
         Text(
           title.toUpperCase(),
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: primaryForest.withValues(alpha: 0.6), letterSpacing: 1),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary.withValues(alpha: 0.6), letterSpacing: 1),
         ),
       ],
     );
@@ -289,7 +284,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.02), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black.withValues(alpha: 0.05), style: BorderStyle.solid)),
-        child: Text('Ningún miembro seleccionado', style: TextStyle(fontSize: 13, color: primaryForest.withValues(alpha: 0.4), fontStyle: FontStyle.italic)),
+        child: Text('Ningún miembro seleccionado', style: TextStyle(fontSize: 13, color: AppColors.primary.withValues(alpha: 0.4), fontStyle: FontStyle.italic)),
       );
     }
 
@@ -300,13 +295,13 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
         final user = users.firstWhere((u) => u['id'] == id, orElse: () => {'name': 'Desconocido'});
         final isSupervisor = id == _selectedSupervisorId;
         return Chip(
-          backgroundColor: isSupervisor ? secondaryEarth.withValues(alpha: 0.1) : Colors.white,
-          side: BorderSide(color: isSupervisor ? secondaryEarth.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1)),
+          backgroundColor: isSupervisor ? AppColors.secondary.withValues(alpha: 0.1) : Colors.white,
+          side: BorderSide(color: isSupervisor ? AppColors.secondary.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1)),
           avatar: CircleAvatar(
-            backgroundColor: isSupervisor ? secondaryEarth : primaryForest.withValues(alpha: 0.1),
-            child: Text((user['name'] as String? ?? 'U')[0].toUpperCase(), style: TextStyle(fontSize: 10, color: isSupervisor ? Colors.white : primaryForest, fontWeight: FontWeight.bold)),
+            backgroundColor: isSupervisor ? AppColors.secondary : AppColors.primary.withValues(alpha: 0.1),
+            child: Text((user['name'] as String? ?? 'U')[0].toUpperCase(), style: TextStyle(fontSize: 10, color: isSupervisor ? Colors.white : AppColors.primary, fontWeight: FontWeight.bold)),
           ),
-          label: Text('${user['name']}${isSupervisor ? ' (Líder)' : ''}', style: TextStyle(fontSize: 12, fontWeight: isSupervisor ? FontWeight.bold : FontWeight.normal, color: primaryForest)),
+          label: Text('${user['name']}${isSupervisor ? ' (Líder)' : ''}', style: TextStyle(fontSize: 12, fontWeight: isSupervisor ? FontWeight.bold : FontWeight.normal, color: AppColors.primary)),
           deleteIcon: const Icon(Icons.close, size: 14),
           onDeleted: isSupervisor ? null : () => setState(() => _selectedMemberIds.remove(id)),
         );
@@ -339,10 +334,10 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                 final isSupervisor = uid == _selectedSupervisorId;
 
                 return CheckboxListTile(
-                  title: Text(user['name'] ?? '-', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: primaryForest)),
-                  subtitle: Text(user['email'] ?? '-', style: TextStyle(fontSize: 12, color: primaryForest.withValues(alpha: 0.5))),
+                  title: Text(user['name'] ?? '-', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                  subtitle: Text(user['email'] ?? '-', style: TextStyle(fontSize: 12, color: AppColors.primary.withValues(alpha: 0.5))),
                   value: isSelected,
-                  activeColor: primaryForest,
+                  activeColor: AppColors.primary,
                   checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   onChanged: isSupervisor ? null : (val) {
                     setState(() {
@@ -350,14 +345,14 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
                       else _selectedMemberIds.remove(uid);
                     });
                   },
-                  secondary: isSupervisor ? const Icon(Icons.star, color: secondaryEarth, size: 20) : null,
+                  secondary: isSupervisor ? const Icon(Icons.star, color: AppColors.secondary, size: 20) : null,
                 );
               },
             ),
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       error: (e, s) => Text('Error: $e'),
     );
   }
@@ -372,7 +367,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary.withValues(alpha: 0.7))),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -381,13 +376,13 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.3), fontSize: 14),
-            prefixIcon: Icon(icon, color: primaryForest.withValues(alpha: 0.4), size: 20),
+            prefixIcon: Icon(icon, color: AppColors.primary.withValues(alpha: 0.4), size: 20),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.secondary, width: 2)),
           ),
         ),
       ],
@@ -404,21 +399,21 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary.withValues(alpha: 0.7))),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: value,
           onChanged: onChanged,
           validator: (v) => v == null ? 'Seleccione un responsable' : null,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: primaryForest),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.primary),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: primaryForest.withValues(alpha: 0.4), size: 20),
+            prefixIcon: Icon(icon, color: AppColors.primary.withValues(alpha: 0.4), size: 20),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.secondary, width: 2)),
           ),
           items: itemsMaps.map((m) => DropdownMenuItem(value: m['value'], child: Text(m['label']!))).toList(),
         ),

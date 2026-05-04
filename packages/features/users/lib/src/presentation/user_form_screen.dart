@@ -23,11 +23,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   bool _isActive = true;
   bool _isLoading = false;
 
-  // Branded Colors
-  static const Color primaryForest = Color(0xFF173124);
-  static const Color secondaryEarth = Color(0xFF7C580F);
-  static const Color backgroundLight = Color(0xFFFDFBF7);
-
   @override
   void initState() {
     super.initState();
@@ -64,7 +59,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Trabajador creado exitosamente'),
-              backgroundColor: primaryForest,
+              backgroundColor: AppColors.primary,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -93,7 +88,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Trabajador actualizado exitosamente'),
-              backgroundColor: primaryForest,
+              backgroundColor: AppColors.primary,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -123,12 +118,12 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     final rolesAsync = ref.watch(appRolesProvider);
 
     return Scaffold(
-      backgroundColor: backgroundLight,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(isEditing ? 'Editar Trabajador' : 'Nuevo Trabajador', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: false,
         backgroundColor: Colors.white,
-        foregroundColor: primaryForest,
+        foregroundColor: AppColors.primary,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -214,7 +209,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                   items: roles,
                                   onChanged: (v) => setState(() => _selectedRole = v),
                                 ),
-                                loading: () => const LinearProgressIndicator(color: primaryForest),
+                                loading: () => const LinearProgressIndicator(color: AppColors.primary),
                                 error: (_, __) => const SizedBox(),
                               ),
                             ),
@@ -227,7 +222,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                   itemsMaps: positions.map((p) => {'value': p['id'] as String, 'label': p['name'] as String}).toList(),
                                   onChanged: (v) => setState(() => _selectedJobPositionId = v),
                                 ),
-                                loading: () => const LinearProgressIndicator(color: primaryForest),
+                                loading: () => const LinearProgressIndicator(color: AppColors.primary),
                                 error: (_, __) => const SizedBox(),
                               ),
                             ),
@@ -243,14 +238,14 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                 scale: 0.9,
                                 child: Switch(
                                   value: _isActive,
-                                  activeColor: primaryForest,
+                                  activeColor: AppColors.primary,
                                   onChanged: (v) => setState(() => _isActive = v),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 _isActive ? 'Usuario Activo' : 'Usuario Inactivo',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: _isActive ? primaryForest : Colors.redAccent),
+                                style: TextStyle(fontWeight: FontWeight.bold, color: _isActive ? AppColors.primary : Colors.redAccent),
                               ),
                             ],
                           ),
@@ -265,7 +260,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                     child: FilledButton(
                       onPressed: _isLoading ? null : _submit,
                       style: FilledButton.styleFrom(
-                        backgroundColor: primaryForest,
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
@@ -304,13 +299,13 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: secondaryEarth.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: secondaryEarth, size: 20),
+          decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: AppColors.secondary, size: 20),
         ),
         const SizedBox(width: 16),
         Text(
           title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryForest),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
       ],
     );
@@ -328,7 +323,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary.withValues(alpha: 0.7))),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -339,13 +334,13 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.3), fontSize: 14),
-            prefixIcon: Icon(icon, color: primaryForest.withValues(alpha: 0.4), size: 20),
+            prefixIcon: Icon(icon, color: AppColors.primary.withValues(alpha: 0.4), size: 20),
             filled: true,
-            fillColor: readOnly ? backgroundLight : Colors.white,
+            fillColor: readOnly ? AppColors.backgroundLight : Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.secondary, width: 2)),
           ),
         ),
       ],
@@ -362,19 +357,19 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary.withValues(alpha: 0.7))),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: value,
           onChanged: onChanged,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: primaryForest),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.primary),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.secondary, width: 2)),
           ),
           items: itemsMaps != null
               ? itemsMaps.map((m) => DropdownMenuItem(value: m['value'], child: Text(m['label']!))).toList()

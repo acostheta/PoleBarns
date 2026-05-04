@@ -11,17 +11,13 @@ class JobPositionsScreen extends ConsumerStatefulWidget {
 }
 
 class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
-  // Branded Colors
-  static const Color primaryForest = Color(0xFF173124);
-  static const Color secondaryEarth = Color(0xFF7C580F);
-  static const Color backgroundLight = Color(0xFFFDFBF7);
 
   @override
   Widget build(BuildContext context) {
     final positionsAsync = ref.watch(jobPositionsProvider);
 
     return Container(
-      color: backgroundLight,
+      color: AppColors.backgroundLight,
       child: Column(
         children: [
           // Premium Branded Header
@@ -39,22 +35,22 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                   children: [
                     Row(
                       children: [
-                        Container(width: 4, height: 24, decoration: BoxDecoration(color: secondaryEarth, borderRadius: BorderRadius.circular(2))),
+                        Container(width: 4, height: 24, decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(2))),
                         const SizedBox(width: 12),
                         const Text(
                           'Puestos de Trabajo',
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryForest, letterSpacing: -0.5),
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary, letterSpacing: -0.5),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text('Administra las categorías de cargos para el personal', style: TextStyle(color: primaryForest.withValues(alpha: 0.5), fontSize: 14)),
+                    Text('Administra las categorías de cargos para el personal', style: TextStyle(color: AppColors.primary.withValues(alpha: 0.5), fontSize: 14)),
                   ],
                 ),
                 FilledButton.icon(
                   onPressed: () => _showPositionDialog(context),
                   style: FilledButton.styleFrom(
-                    backgroundColor: primaryForest,
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
@@ -78,13 +74,13 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(32),
-                            decoration: BoxDecoration(color: primaryForest.withValues(alpha: 0.03), shape: BoxShape.circle),
-                            child: Icon(Icons.work_outline_rounded, size: 64, color: primaryForest.withValues(alpha: 0.1)),
+                            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.03), shape: BoxShape.circle),
+                            child: Icon(Icons.work_outline_rounded, size: 64, color: AppColors.primary.withValues(alpha: 0.1)),
                           ),
                           const SizedBox(height: 24),
-                          Text('No hay puestos registrados', style: TextStyle(color: primaryForest.withValues(alpha: 0.4), fontSize: 18, fontWeight: FontWeight.w600)),
+                          Text('No hay puestos registrados', style: TextStyle(color: AppColors.primary.withValues(alpha: 0.4), fontSize: 18, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          Text('Comienza agregando un nuevo puesto de trabajo', style: TextStyle(color: primaryForest.withValues(alpha: 0.3), fontSize: 14)),
+                          Text('Comienza agregando un nuevo puesto de trabajo', style: TextStyle(color: AppColors.primary.withValues(alpha: 0.3), fontSize: 14)),
                         ],
                       ),
                     );
@@ -110,16 +106,16 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                             leading: Container(
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: secondaryEarth.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                              child: const Icon(Icons.business_center_outlined, color: secondaryEarth, size: 20),
+                              decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.business_center_outlined, color: AppColors.secondary, size: 20),
                             ),
-                            title: Text(pos['name'], style: const TextStyle(fontWeight: FontWeight.bold, color: primaryForest, fontSize: 16)),
+                            title: Text(pos['name'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 16)),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 _buildActionButton(
                                   icon: Icons.edit_outlined,
-                                  color: primaryForest.withValues(alpha: 0.4),
+                                  color: AppColors.primary.withValues(alpha: 0.4),
                                   onPressed: () => _showPositionDialog(context, position: pos),
                                   tooltip: 'Editar',
                                 ),
@@ -138,7 +134,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 error: (e, st) => Center(child: Text('Error: $e')),
               ),
             ),
@@ -180,7 +176,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(color: primaryForest, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+                decoration: const BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
                 child: Row(
                   children: [
                     const Icon(Icons.work_outline_rounded, color: Colors.white70, size: 24),
@@ -196,7 +192,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Nombre del Puesto', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+                      Text('Nombre del Puesto', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary.withValues(alpha: 0.7))),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: controller,
@@ -209,7 +205,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.secondary, width: 2)),
                         ),
                         validator: (val) => val == null || val.trim().isEmpty ? 'El nombre es obligatorio' : null,
                       ),
@@ -219,7 +215,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
               ),
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: backgroundLight, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28))),
+                decoration: BoxDecoration(color: AppColors.backgroundLight, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28))),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -242,7 +238,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                           }
                         }
                       },
-                      style: FilledButton.styleFrom(backgroundColor: primaryForest, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                       child: Text(isEditing ? 'GUARDAR' : 'CREAR PUESTO', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -260,7 +256,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Eliminar Puesto', style: TextStyle(fontWeight: FontWeight.bold, color: primaryForest)),
+        title: const Text('Eliminar Puesto', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
         content: Text('¿Está seguro de que desea eliminar "${position['name']}"? Esta acción no se puede deshacer y fallará si hay usuarios asignados.', style: const TextStyle(fontSize: 15)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR', style: TextStyle(color: Colors.black45, fontWeight: FontWeight.bold))),

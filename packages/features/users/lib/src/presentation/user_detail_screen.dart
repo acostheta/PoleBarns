@@ -9,29 +9,24 @@ class UserDetailScreen extends ConsumerWidget {
 
   const UserDetailScreen({super.key, required this.userId});
 
-  // Branded Colors
-  static const Color primaryForest = Color(0xFF173124);
-  static const Color secondaryEarth = Color(0xFF7C580F);
-  static const Color backgroundLight = Color(0xFFFDFBF7);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usersAsync = ref.watch(allUsersProvider);
     final jobPositionsAsync = ref.watch(jobPositionsProvider);
 
     return Scaffold(
-      backgroundColor: backgroundLight,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: const Text('Detalles del Trabajador', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
-        foregroundColor: primaryForest,
+        foregroundColor: AppColors.primary,
         elevation: 0,
         centerTitle: false,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: IconButton(
-              icon: const Icon(Icons.edit_outlined, color: secondaryEarth),
+              icon: const Icon(Icons.edit_outlined, color: AppColors.secondary),
               onPressed: () {
                 final user = usersAsync.value?.firstWhere((u) => u['id'] == userId, orElse: () => {});
                 if (user != null && user.isNotEmpty) {
@@ -91,16 +86,16 @@ class UserDetailScreen extends ConsumerWidget {
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
-                                color: secondaryEarth.withValues(alpha: 0.1),
+                                color: AppColors.secondary.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: secondaryEarth.withValues(alpha: 0.2), width: 2),
+                                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2), width: 2),
                                 image: user['picture'] != null ? DecorationImage(image: NetworkImage(user['picture']), fit: BoxFit.cover) : null,
                               ),
                               alignment: Alignment.center,
                               child: user['picture'] == null
                                   ? Text(
                                       (user['name'] ?? 'U')[0].toUpperCase(),
-                                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: secondaryEarth),
+                                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.secondary),
                                     )
                                   : null,
                             ),
@@ -112,7 +107,7 @@ class UserDetailScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   user['name'] ?? 'Desconocido',
-                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryForest, letterSpacing: -0.5),
+                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary, letterSpacing: -0.5),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildStatusBadge(isActive),
@@ -155,7 +150,7 @@ class UserDetailScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, s) => Center(child: Text('Error: $e')),
       ),
     );
@@ -164,11 +159,11 @@ class UserDetailScreen extends ConsumerWidget {
   Widget _buildSectionHeader(String title) {
     return Row(
       children: [
-        Container(width: 4, height: 16, decoration: BoxDecoration(color: secondaryEarth, borderRadius: BorderRadius.circular(2))),
+        Container(width: 4, height: 16, decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 12),
         Text(
           title.toUpperCase(),
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: primaryForest.withValues(alpha: 0.6), letterSpacing: 1),
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary.withValues(alpha: 0.6), letterSpacing: 1),
         ),
       ],
     );
@@ -180,8 +175,8 @@ class UserDetailScreen extends ConsumerWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: primaryForest.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 20, color: primaryForest),
+          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 20, color: AppColors.primary),
         ),
         const SizedBox(width: 20),
         Expanded(
@@ -190,7 +185,7 @@ class UserDetailScreen extends ConsumerWidget {
             children: [
               Text(label, style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.4), fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryForest)),
+              Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.primary)),
             ],
           ),
         ),
