@@ -11,45 +11,55 @@ class JobPositionsScreen extends ConsumerStatefulWidget {
 }
 
 class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
+  // Branded Colors
+  static const Color primaryForest = Color(0xFF173124);
+  static const Color secondaryEarth = Color(0xFF7C580F);
+  static const Color backgroundLight = Color(0xFFFDFBF7);
+
   @override
   Widget build(BuildContext context) {
     final positionsAsync = ref.watch(jobPositionsProvider);
 
     return Container(
-      color: AppColors.backgroundLight,
+      color: backgroundLight,
       child: Column(
         children: [
-          // Header Area
-          Padding(
-            padding: const EdgeInsets.all(24.0),
+          // Premium Branded Header
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: Color(0x0D000000))),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Puestos de Trabajo',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textLight,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(width: 4, height: 24, decoration: BoxDecoration(color: secondaryEarth, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Puestos de Trabajo',
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryForest, letterSpacing: -0.5),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Administra las categorías de cargos para el personal', style: TextStyle(color: primaryForest.withValues(alpha: 0.5), fontSize: 14)),
+                  ],
                 ),
-                ElevatedButton.icon(
+                FilledButton.icon(
                   onPressed: () => _showPositionDialog(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primaryForest,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text('Agregar Puesto'),
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('NUEVO PUESTO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 ),
               ],
             ),
@@ -58,7 +68,7 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
           // Main Content
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: const EdgeInsets.all(32),
               child: positionsAsync.when(
                 data: (positions) {
                   if (positions.isEmpty) {
@@ -66,165 +76,181 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.work_outline,
-                            size: 64,
-                            color: AppColors.stone300,
+                          Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(color: primaryForest.withValues(alpha: 0.03), shape: BoxShape.circle),
+                            child: Icon(Icons.work_outline_rounded, size: 64, color: primaryForest.withValues(alpha: 0.1)),
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No se encontraron puestos de trabajo',
-                            style: TextStyle(
-                              color: AppColors.stone500,
-                              fontSize: 16,
-                            ),
-                          ),
+                          const SizedBox(height: 24),
+                          Text('No hay puestos registrados', style: TextStyle(color: primaryForest.withValues(alpha: 0.4), fontSize: 18, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          Text('Comienza agregando un nuevo puesto de trabajo', style: TextStyle(color: primaryForest.withValues(alpha: 0.3), fontSize: 14)),
                         ],
                       ),
                     );
                   }
 
-                  return Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: const BorderSide(color: AppColors.stone200),
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10)),
+                      ],
                     ),
-                    color: AppColors.surfaceLight,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(0),
-                      itemCount: positions.length,
-                      separatorBuilder: (context, index) => const Divider(
-                        height: 1,
-                        color: AppColors.stone200,
-                      ),
-                      itemBuilder: (context, index) {
-                        final pos = positions[index];
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          title: Text(
-                            pos['name'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textLight,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: ListView.separated(
+                        itemCount: positions.length,
+                        separatorBuilder: (context, index) => Divider(height: 1, color: Colors.black.withValues(alpha: 0.03), indent: 24, endIndent: 24),
+                        itemBuilder: (context, index) {
+                          final pos = positions[index];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: secondaryEarth.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.business_center_outlined, color: secondaryEarth, size: 20),
                             ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit_outlined,
-                                  size: 20,
-                                  color: AppColors.stone500,
+                            title: Text(pos['name'], style: const TextStyle(fontWeight: FontWeight.bold, color: primaryForest, fontSize: 16)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildActionButton(
+                                  icon: Icons.edit_outlined,
+                                  color: primaryForest.withValues(alpha: 0.4),
+                                  onPressed: () => _showPositionDialog(context, position: pos),
+                                  tooltip: 'Editar',
                                 ),
-                                onPressed: () => _showPositionDialog(
-                                  context,
-                                  position: pos,
+                                const SizedBox(width: 8),
+                                _buildActionButton(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: Colors.redAccent.withValues(alpha: 0.6),
+                                  onPressed: () => _confirmDelete(context, pos),
+                                  tooltip: 'Eliminar',
                                 ),
-                                tooltip: 'Editar',
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: Colors.redAccent,
-                                ),
-                                onPressed: () => _confirmDelete(context, pos),
-                                tooltip: 'Eliminar',
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator(color: primaryForest)),
                 error: (e, st) => Center(child: Text('Error: $e')),
               ),
             ),
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  void _showPositionDialog(
-    BuildContext context, {
-    Map<String, dynamic>? position,
-  }) {
-    final isEditing = position != null;
-    final controller = TextEditingController(
-      text: isEditing ? position['name'] : '',
+  Widget _buildActionButton({required IconData icon, required Color color, required VoidCallback onPressed, required String tooltip}) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(border: Border.all(color: color.withValues(alpha: 0.1)), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 18, color: color),
+        ),
+      ),
     );
+  }
+
+  void _showPositionDialog(BuildContext context, {Map<String, dynamic>? position}) {
+    final isEditing = position != null;
+    final controller = TextEditingController(text: isEditing ? position['name'] : '');
     final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Editar Puesto' : 'Nuevo Puesto'),
-        content: Form(
-          key: formKey,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, 20))]),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre del Puesto',
-                  hintText: 'ej. Desarrollador, Gerente',
-                  border: OutlineInputBorder(),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(color: primaryForest, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+                child: Row(
+                  children: [
+                    const Icon(Icons.work_outline_rounded, color: Colors.white70, size: 24),
+                    const SizedBox(width: 16),
+                    Text(isEditing ? 'Editar Puesto' : 'Nuevo Puesto', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ],
                 ),
-                validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Requerido' : null,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nombre del Puesto', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryForest.withValues(alpha: 0.7))),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller,
+                        autofocus: true,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        decoration: InputDecoration(
+                          hintText: 'ej. Carpintero, Capataz',
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: secondaryEarth, width: 2)),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'El nombre es obligatorio' : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(color: backgroundLight, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28))),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black45))),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: () async {
+                        if (formKey.currentState!.validate()) {
+                          try {
+                            final name = controller.text.trim();
+                            if (isEditing) {
+                              await ref.read(usersRepositoryProvider).updateJobPosition(position['id'], name);
+                            } else {
+                              await ref.read(usersRepositoryProvider).createJobPosition(name);
+                            }
+                            ref.invalidate(jobPositionsProvider);
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
+                          }
+                        }
+                      },
+                      style: FilledButton.styleFrom(backgroundColor: primaryForest, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: Text(isEditing ? 'GUARDAR' : 'CREAR PUESTO', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.stone500),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                try {
-                  final name = controller.text.trim();
-                  if (isEditing) {
-                    await ref
-                        .read(usersRepositoryProvider)
-                        .updateJobPosition(position['id'], name);
-                  } else {
-                    await ref
-                        .read(usersRepositoryProvider)
-                        .createJobPosition(name);
-                  }
-                  ref.invalidate(jobPositionsProvider);
-                  if (context.mounted) Navigator.pop(context);
-                } catch (e) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(isEditing ? 'Guardar' : 'Crear'),
-          ),
-        ],
       ),
     );
   }
@@ -233,65 +259,42 @@ class _JobPositionsScreenState extends ConsumerState<JobPositionsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar Puesto'),
-        content: Text(
-          '¿Está seguro de que desea eliminar "${position['name']}"? Esta acción no se puede deshacer.',
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Eliminar Puesto', style: TextStyle(fontWeight: FontWeight.bold, color: primaryForest)),
+        content: Text('¿Está seguro de que desea eliminar "${position['name']}"? Esta acción no se puede deshacer y fallará si hay usuarios asignados.', style: const TextStyle(fontSize: 15)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.stone500),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR', style: TextStyle(color: Colors.black45, fontWeight: FontWeight.bold))),
           TextButton(
             onPressed: () async {
               try {
-                await ref
-                    .read(usersRepositoryProvider)
-                    .deleteJobPosition(position['id']);
+                await ref.read(usersRepositoryProvider).deleteJobPosition(position['id']);
                 ref.invalidate(jobPositionsProvider);
                 if (context.mounted) Navigator.pop(context);
               } catch (e) {
-                if (context.mounted)
-                  Navigator.pop(context); // Close the confirmation dialog
-
+                if (context.mounted) Navigator.pop(context);
                 final errString = e.toString().toLowerCase();
-                if (errString.contains('violates foreign key constraint') ||
-                    errString.contains('foreign key constraint') ||
-                    errString.contains('23503')) {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text(
-                        'No se puede eliminar el puesto',
-                      ),
-                      content: const Text(
-                        'Este puesto de trabajo está asignado actualmente a uno o más usuarios. Por favor, reasigne a esos usuarios antes de eliminar este puesto.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Entendido'),
-                        ),
-                      ],
-                    ),
-                  );
+                if (errString.contains('foreign key constraint')) {
+                  _showErrorDialog(context, 'No se puede eliminar', 'Este puesto está asignado a usuarios activos. Reasígnalos primero.');
                 } else {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
                 }
               }
             },
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('ELIMINAR', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+        content: Text(message),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ENTENDIDO', style: TextStyle(fontWeight: FontWeight.bold)))]),
     );
   }
 }
