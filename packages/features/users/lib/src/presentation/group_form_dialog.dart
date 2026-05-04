@@ -225,7 +225,7 @@ class _GroupFormDialogState extends ConsumerState<GroupFormDialog> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: backgroundLight,
+                color: AppColors.backgroundLight,
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
                 border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
               ),
