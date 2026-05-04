@@ -59,15 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: primaryForest,
                 child: Stack(
                   children: [
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.2,
-                        child: Image.asset(
-                          'assets/branding/login_bg.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(48.0),
