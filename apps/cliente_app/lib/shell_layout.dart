@@ -208,33 +208,10 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
         ),
         title: Row(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(4),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.asset(
-                  'assets/branding/logo.png',
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
+
             const Flexible(
               child: Text(
-                'J&P Pole Barns',
+                'JP Pole & Barns',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
