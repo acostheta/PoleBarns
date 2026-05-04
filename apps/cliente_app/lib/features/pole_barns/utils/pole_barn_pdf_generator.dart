@@ -122,7 +122,7 @@ class PoleBarnPdfGenerator {
                 _buildInfoItem('Alto', poleBarn.alto.toString()),
                 _buildInfoItem('Spacing', poleBarn.spacing.toString()),
                 _buildInfoItem('Sheet', poleBarn.sheet.toString()),
-                _buildInfoItem('Tamaño', poleBarn.tamano ?? '-'),
+                _buildInfoItem('Tamaño', poleBarn.tamano),
               ]
             ),
             

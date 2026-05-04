@@ -9,7 +9,6 @@ import '../../accounts_payable/providers/accounts_payable_provider.dart';
 import '../../project_tracking/models/project_models.dart';
 import '../../invoices/models/invoice_models.dart';
 import '../../accounts_payable/models/account_payable_model.dart';
-import '../../../config/ui_helpers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -24,7 +23,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   static const _surfaceContainer = Color(0xFFEDEEEB);
   static const _surfaceContainerLowest = Color(0xFFFFFFFF);
   static const _surfaceContainerHigh = Color(0xFFE7E8E6);
-  static const _onPrimary = Color(0xFFFFFFFF);
   static const _secondaryFixed = Color(0xFFFFDEAC);
   static const _errorColor = Color(0xFFBA1A1A);
 
@@ -641,59 +639,4 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  void _showQuickActions(BuildContext context) {
-    AppBottomSheet.show(
-      context: context,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Acciones Rápidas',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _primaryColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.person_add, color: _primaryColor),
-              title: const Text('Nuevo Cliente'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/clients/new');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_box, color: _primaryColor),
-              title: const Text('Nuevo Proyecto'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/projects/new');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long, color: _primaryColor),
-              title: const Text('Nueva Factura'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/invoices/create');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add_alt, color: _primaryColor),
-              title: const Text('Nuevo Usuario'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/users/new');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

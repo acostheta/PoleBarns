@@ -670,7 +670,7 @@ class _ProjectCreateDialogState extends ConsumerState<ProjectCreateDialog> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF173124).withOpacity(0.1),
+                            color: const Color(0xFF173124).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.architecture, color: Color(0xFF173124)),

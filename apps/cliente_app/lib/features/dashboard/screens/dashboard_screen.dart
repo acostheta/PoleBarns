@@ -114,14 +114,17 @@ class DashboardScreen extends ConsumerWidget {
                             onViewAll: () => context.go('/invoices'),
                           ),
                         ),
-                      ],
-                    ),
-            ],
+                        ],
+                      ),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildStatsGrid(
     AsyncValue<List<ProjectModel>> projectsAsync,

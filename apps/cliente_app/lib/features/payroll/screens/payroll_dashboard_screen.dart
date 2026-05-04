@@ -406,6 +406,7 @@ class PayrollDashboardScreen extends ConsumerWidget {
         child: DropdownButton<String>(
           value: currentFilter,
           items: const [
+            DropdownMenuItem(value: 'Todos', child: Text('Todos')),
             DropdownMenuItem(value: 'Este Mes', child: Text('Este Mes')),
             DropdownMenuItem(value: 'Esta Semana', child: Text('Esta Semana')),
             DropdownMenuItem(value: 'Hoy', child: Text('Hoy')),

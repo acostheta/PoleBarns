@@ -20,12 +20,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  // PoleBarn Theme Colors
+  static const Color primaryForest = Color(0xFF173124);
+  static const Color secondaryEarth = Color(0xFF7C580F);
+  static const Color backgroundLight = Color(0xFFFDFBF7);
+
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
+        const SnackBar(
+          content: Text('Las contraseñas no coinciden'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -41,19 +50,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('¡Registro exitoso! Espere aprobación.')),
+            content: Text('¡Registro exitoso! Espere aprobación.'),
+            backgroundColor: primaryForest,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
-        // Navigate back to login or wait for auth state change if auto-login is enabled,
-        // but typically registration might involve email verification or manual approval.
-        // If supabase auto-signs in, the router listener might kick in.
-        // However, if the user is inactive, they might be redirected to login or a "pending" screen.
-        // For now, let's assume they stay here or are redirected by the auth state listener
-        // (but they are inactive, so logic in main.dart might need to handle "inactive" users if they are logged in).
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -64,154 +74,256 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Crear Cuenta', // Match existing title logic
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Regístrese para gestionar sus proyectos.', // Subtitle inspired by example
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.6),
-                                ),
-                          ),
-                          const SizedBox(height: 32),
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nombre Completo',
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                            textInputAction: TextInputAction.next,
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Ingrese su nombre'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Correo',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                            textInputAction: TextInputAction.next,
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Ingrese su correo'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              labelText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
-                                onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                              ),
-                            ),
-                            obscureText: _obscurePassword,
-                            textInputAction: TextInputAction.next,
-                            validator: (value) =>
-                                value == null || value.length < 6
-                                    ? 'La contraseña debe tener 6 caracteres'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            decoration: InputDecoration(
-                              labelText: 'Confirmar Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureConfirmPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
-                                onPressed: () => setState(() =>
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword),
-                              ),
-                            ),
-                            obscureText: _obscureConfirmPassword,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _signUp(),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Confirme su contraseña'
-                                : null,
-                          ),
-                          const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _signUp,
-                              child: _isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
-                                  : const Text('Registrarse'),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Already have account? logic
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "¿Ya tienes una cuenta?",
-                                style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6)),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  context.go('/login');
-                                },
-                                child: const Text('Iniciar Sesión'),
-                              ),
-                            ],
-                          ),
-                        ],
+      backgroundColor: backgroundLight,
+      body: Row(
+        children: [
+          // Left side: Brand Visual (Hidden on mobile)
+          if (MediaQuery.of(context).size.width > 900)
+            Expanded(
+              flex: 1,
+              child: Container(
+                color: primaryForest,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.2,
+                        child: Image.asset(
+                          'assets/branding/login_bg.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(48.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildLogo(height: 120),
+                            const SizedBox(height: 32),
+                            const Text(
+                              'ÚNETE AL EQUIPO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Construyendo el futuro de J&P Pole Barns',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Right side: Registration Form
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32.0),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Mobile Logo
+                      if (MediaQuery.of(context).size.width <= 900) ...[
+                        Center(child: _buildLogo(height: 60, padding: 16)),
+                        const SizedBox(height: 48),
+                      ],
+
+                      const Text(
+                        'Crea tu cuenta',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: primaryForest,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Únete a nuestra plataforma de gestión de proyectos.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: _inputDecoration(
+                                label: 'Nombre Completo',
+                                icon: Icons.person_outline,
+                              ),
+                              validator: (value) => value == null || value.isEmpty ? 'Requerido' : null,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: _inputDecoration(
+                                label: 'Correo Electrónico',
+                                icon: Icons.email_outlined,
+                              ),
+                              validator: (value) => value == null || value.isEmpty ? 'Requerido' : null,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: _inputDecoration(
+                                label: 'Contraseña',
+                                icon: Icons.lock_outline,
+                                suffix: IconButton(
+                                  icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                  color: primaryForest.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              validator: (value) => value == null || value.length < 6 ? 'Mínimo 6 caracteres' : null,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              decoration: _inputDecoration(
+                                label: 'Confirmar Contraseña',
+                                icon: Icons.lock_outline,
+                                suffix: IconButton(
+                                  icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
+                                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                  color: primaryForest.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              onFieldSubmitted: (_) => _signUp(),
+                              validator: (value) => value == null || value.isEmpty ? 'Confirme su contraseña' : null,
+                            ),
+                            const SizedBox(height: 40),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: FilledButton(
+                                onPressed: _isLoading ? null : _signUp,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: primaryForest,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Text(
+                                        'CREAR CUENTA',
+                                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "¿Ya tienes cuenta?",
+                                  style: TextStyle(color: Colors.black.withValues(alpha: 0.6)),
+                                ),
+                                TextButton(
+                                  onPressed: () => context.go('/login'),
+                                  child: const Text(
+                                    'Inicia Sesión',
+                                    style: TextStyle(color: secondaryEarth, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogo({double height = 100, double padding = 24}) {
+    return Hero(
+      tag: 'logo',
+      child: Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.05),
+            width: 1,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.white.withValues(alpha: 0.95),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
+            ),
+          ],
         ),
+        child: Image.asset(
+          'assets/branding/logo.png',
+          height: height,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({required String label, required IconData icon, Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: primaryForest.withValues(alpha: 0.6)),
+      prefixIcon: Icon(icon, color: primaryForest, size: 20),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: secondaryEarth, width: 2),
       ),
     );
   }

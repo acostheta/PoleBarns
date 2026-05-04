@@ -8,8 +8,6 @@ import 'features/settings/repositories/rbac_repository.dart';
 
 const _primaryColor = Color(0xFF173124);
 const _secondaryColor = Color(0xFF7C580F);
-const _onPrimary = Color(0xFFFFFFFF);
-const _errorColor = Color(0xFFBA1A1A);
 
 class ShellLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -183,18 +181,6 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
                   ),
               ],
 
-              // --- Configuración (Público/Base) ---
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                child: Divider(color: Color(0xFFC2C8C2), height: 1),
-              ),
-              _buildMenuItem(
-                icon: Icons.settings_outlined,
-                title: 'Configuración',
-                path: '/settings',
-                location: location,
-                isMenuOpen: effectiveIsMenuOpen,
-              ),
             ],
           ),
         ),

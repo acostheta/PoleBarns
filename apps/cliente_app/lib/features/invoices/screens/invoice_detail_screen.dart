@@ -45,7 +45,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final apTotalAsync =
         ref.watch(invoiceAccountsPayableTotalProvider(widget.invoiceId));
 
-    final isMobileAppBar = MediaQuery.of(context).size.width < 800;
 
     // We rely on the clientName already joined in the InvoiceModel
 
@@ -77,7 +76,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           );
 
           final totalPurchaseCost = products.fold<double>(
-              0, (sum, p) => sum + (p.unitCost ?? 0.0));
+              0, (sum, p) => sum + p.unitCost);
           final calculatedProfit =
               calculatedTotalVenta - totalPurchaseCost - totalCosts;
 
@@ -1087,7 +1086,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     .read(invoiceServiceProvider)
                     .saveRelatedProduct(updated);
                 ref.invalidate(relatedProductsProvider(widget.invoiceId));
-                if (context.mounted) Navigator.pop(context);
+                if (mounted) Navigator.pop(context);
               },
             ),
             const SizedBox(height: 32),

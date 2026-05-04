@@ -57,7 +57,7 @@ final projectsProvider = StreamProvider(
 final paymentsPayrollProvider = StreamProvider(
     (ref) => ref.watch(payrollRepositoryProvider).getPaymentsStream());
 
-final payrollPeriodFilterProvider = StateProvider<String>((ref) => 'Este Mes');
+final payrollPeriodFilterProvider = StateProvider<String>((ref) => 'Todos');
 
 bool isDateInFilterRange(DateTime? date, String periodFilter) {
   if (date == null) return false;
@@ -75,10 +75,11 @@ bool isDateInFilterRange(DateTime? date, String periodFilter) {
     final endOfWeekDate = startOfWeekDate.add(const Duration(days: 7));
     return date.isAfter(startOfWeekDate.subtract(const Duration(milliseconds: 1))) &&
            date.isBefore(endOfWeekDate);
-  } else {
-    // Este Mes
+  } else if (periodFilter == 'Este Mes') {
     return date.year == now.year && date.month == now.month;
   }
+  
+  return true; // Todos
 }
 
 final combinedPayrollSummaryProvider =

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../config/app_styles.dart';
-import '../../../config/ui_helpers.dart';
 import '../models/payroll_models.dart';
 import 'pagos_soldadores_form.dart';
 
