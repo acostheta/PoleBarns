@@ -1,5 +1,5 @@
 name: polebarns_workspace
-repository: https://github.com/TU_USUARIO/polebarns
+repository: https://github.com/acostheta/PoleBarns
 
 packages:
   - apps/*

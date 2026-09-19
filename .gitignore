@@ -41,6 +41,11 @@ Thumbs.db
 
 # Environment variables (secrets)
 .env
+.env.*
+!.env.example
 
 # Supabase CLI temp data
 supabase/.temp/
+
+# Firebase cache
+.firebase/
