@@ -78,10 +78,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
       );
     } else {
-      title = 'J&P Pole Barns LLC';
+      title = 'PoleBarns';
       bodyContent = const Center(
           child:
-              Text('Bienvenido a J&P Pole Barns LLC', style: TextStyle(fontSize: 24)));
+              Text('Bienvenido a PoleBarns', style: TextStyle(fontSize: 24)));
     }
 
     final isMenuOpen = ref.watch(sidebarExpandedProvider);

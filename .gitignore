@@ -38,3 +38,9 @@ lib/generated_plugin_registrant.dart
 
 # Windows specific
 Thumbs.db
+
+# Environment variables (secrets)
+.env
+
+# Supabase CLI temp data
+supabase/.temp/

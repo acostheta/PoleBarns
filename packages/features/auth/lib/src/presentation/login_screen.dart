@@ -69,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             _buildLogo(height: 120),
                             const SizedBox(height: 32),
                             const Text(
-                              'J&P POLE BARNS',
+                              'POLEBARNS',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 32,

@@ -138,7 +138,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Administra trabajadores, roles y grupos de trabajo de J&P Pole Barns.',
+          'Administra trabajadores, roles y grupos de trabajo de PoleBarns.',
           style: TextStyle(
             color: Colors.black.withValues(alpha: 0.5),
             fontSize: 15,

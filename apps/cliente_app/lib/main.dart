@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,12 +9,13 @@ import 'config/router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
 
   await initializeDateFormatting('en', null);
 
   await Supabase.initialize(
-    url: 'https://sclcfqcjcjpthodutpyc.supabase.co',
-    anonKey: 'sb_publishable_5YopQ4kW5LbFX8wwMdmm8w_Sq-pGohW',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   // El cierre de sesión forzado aquí fue eliminado para mantener la sesión.
@@ -43,7 +45,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       routerConfig: router,
-      title: 'J&P Pole Barns LLC',
+      title: 'PoleBarns',
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,

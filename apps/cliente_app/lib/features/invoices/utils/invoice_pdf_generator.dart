@@ -6,9 +6,9 @@ import '../models/invoice_models.dart';
 import 'package:intl/intl.dart';
 
 class InvoicePdfGenerator {
-  static const String companyName = 'J&P Pole barns LLC';
-  static const String companyAddress = '331 kudzu rd\ncomer, GA 30629';
-  static const String companyPhone = '(678) 549-0269';
+  static const String companyName = 'PoleBarns';
+  static const String companyAddress = 'Tu dirección aquí';
+  static const String companyPhone = 'Tu teléfono aquí';
 
   static Future<void> generate({
     required InvoiceModel invoice,
@@ -201,7 +201,7 @@ class InvoicePdfGenerator {
               // NOTES SECTION - Using invoice notes_for_invoice
               if (invoice.notesForInvoice != null &&
                   invoice.notesForInvoice!.isNotEmpty) ...[
-                pw.Text('J&P Pole Barn Notes for Invoice',
+                pw.Text('PoleBarns Notes for Invoice',
                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 10),
                 ...invoice.notesForInvoice!
@@ -229,7 +229,7 @@ class InvoicePdfGenerator {
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
-                    'View Online: https://gilbert-crm-app-8392.web.app/invoices/${invoice.id}',
+                    'View Online: https://TU-FIREBASE.web.app/invoices/${invoice.id}',
                     style: const pw.TextStyle(
                         fontSize: 8, color: PdfColors.grey600)),
               ),

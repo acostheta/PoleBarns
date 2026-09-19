@@ -8,9 +8,9 @@ class HelpTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Markdown(
       data: '''
-# Manual de Usuario - J&P Pole Barns LLC
+# Manual de Usuario - PoleBarns
 
-Bienvenido a la documentación oficial de **J&P Pole Barns LLC**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
+Bienvenido a la documentación oficial de **PoleBarns**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
 
 ---
 
@@ -33,7 +33,7 @@ Bienvenido a la documentación oficial de **J&P Pole Barns LLC**, su sistema int
 
 ## Introducción
 
-J&P Pole Barns LLC es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
+PoleBarns es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
 
 ---
 

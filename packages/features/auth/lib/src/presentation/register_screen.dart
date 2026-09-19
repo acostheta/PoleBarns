@@ -105,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Construyendo el futuro de J&P Pole Barns',
+                              'Construyendo el futuro de PoleBarns',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 16,

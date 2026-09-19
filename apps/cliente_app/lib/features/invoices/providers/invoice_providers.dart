@@ -63,7 +63,7 @@ class InvoiceDraft {
     this.clientId,
     this.address = '',
     this.comment = '',
-    this.notes = '1. Prices are based on the approximate square footage detailed above. Any variations will be adjusted accordingly during the project\'s development or upon completion.\n2. 50% of the invoice total is due upon delivery of the materials.\n3. All materials used for this project are the property of J&P Pole Barns LLC. Any remaining or unused materials will remain with the company.\n4. Any additional work requested by the client during the project will be documented, and corresponding budget adjustments will be provided.',
+    this.notes = '1. Prices are based on the approximate square footage detailed above. Any variations will be adjusted accordingly during the project\'s development or upon completion.\n2. 50% of the invoice total is due upon delivery of the materials.\n3. All materials used for this project are the property of PoleBarns. Any remaining or unused materials will remain with the company.\n4. Any additional work requested by the client during the project will be documented, and corresponding budget adjustments will be provided.',
     this.status = 'Pendiente',
     DateTime? selectedDate,
     this.startDate,

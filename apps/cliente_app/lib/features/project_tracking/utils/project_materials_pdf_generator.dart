@@ -7,9 +7,9 @@ import '../models/project_models.dart';
 import '../../clients/models/client_model.dart';
 
 class ProjectMaterialsPdfGenerator {
-  static const String companyName = 'J&P Pole barns LLC';
-  static const String companyAddress = '331 kudzu rd\ncomer, GA 30629';
-  static const String companyPhone = '(678) 549-0269';
+  static const String companyName = 'PoleBarns';
+  static const String companyAddress = 'Tu dirección aquí';
+  static const String companyPhone = 'Tu teléfono aquí';
 
   static Future<void> generate({
     required ProjectModel project,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // J&P Pole n Barns - Brand Colors
+  // PoleBarns - Brand Colors
   static const Color primary = Color(0xFF173124); // Forest Green
   static const Color secondary = Color(0xFF7C580F); // Earthy Gold
   

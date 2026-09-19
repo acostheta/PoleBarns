@@ -1,5 +1,5 @@
-name: app_gilbert_workspace
-repository: https://github.com/progresecapital/app_gilbert
+name: polebarns_workspace
+repository: https://github.com/TU_USUARIO/polebarns
 
 packages:
   - apps/*

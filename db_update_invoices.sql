@@ -10,11 +10,11 @@ CREATE TABLE IF NOT EXISTS groups (
 
 -- 2. Insert default groups
 INSERT INTO groups (name, responsible)
-SELECT 'Grupo A', 'Juan Perez'
+SELECT 'Grupo A', 'Responsable A'
 WHERE NOT EXISTS (SELECT 1 FROM groups);
 
 INSERT INTO groups (name, responsible)
-SELECT 'Grupo B', 'Maria Garcia'
+SELECT 'Grupo B', 'Responsable B'
 WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'Grupo B');
 
 -- 3. Update Invoices table

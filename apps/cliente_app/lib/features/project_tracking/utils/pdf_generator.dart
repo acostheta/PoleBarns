@@ -36,7 +36,7 @@ class PdfGenerator {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('GILBERT CONSTRUCTION',
+                      pw.Text('POLEBARNS',
                           style: pw.TextStyle(
                               fontSize: 24,
                               fontWeight: pw.FontWeight.bold,
@@ -228,7 +228,7 @@ class PdfGenerator {
               pw.SizedBox(height: 8),
               pw.Center(
                 child: pw.Text(
-                    'Gracias por su confianza - J&P Pole Barns LLC',
+                    'Gracias por su confianza - PoleBarns',
                     style: pw.TextStyle(
                         fontSize: 10,
                         color: PdfColors.grey500,

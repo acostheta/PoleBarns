@@ -44,7 +44,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
     bool canView(String module) => can('view_${module.toLowerCase()}');
     
     final location = GoRouterState.of(context).uri.toString();
-    String title = 'J&P Pole Barns LLC';
+    String title = 'PoleBarns';
     if (location.startsWith('/profile')) {
       title = 'Mi Perfil';
     } else if (location.startsWith('/settings')) {
@@ -211,7 +211,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
 
             const Flexible(
               child: Text(
-                'JP Pole & Barns',
+                'PoleBarns',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -224,7 +224,7 @@ class _ShellLayoutState extends ConsumerState<ShellLayout> {
               ),
             ),
             if (customTitle != null ||
-                (title != 'Inicio' && title != 'J&P Pole Barns LLC')) ...[
+                (title != 'Inicio' && title != 'PoleBarns')) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Container(

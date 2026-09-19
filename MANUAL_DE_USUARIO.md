@@ -1,6 +1,6 @@
-# Manual de Usuario - App Gilbert
+# Manual de Usuario - PoleBarns
 
-Bienvenido a la documentación oficial de **App Gilbert**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
+Bienvenido a la documentación oficial de **PoleBarns**, su sistema integral para la gestión de clientes, proyectos, finanzas y personal.
 
 ---
 
@@ -23,7 +23,7 @@ Bienvenido a la documentación oficial de **App Gilbert**, su sistema integral p
 
 ## Introducción
 
-App Gilbert es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
+PoleBarns es una plataforma diseñada para centralizar la operación de su negocio. Permite llevar un control detallado desde la prospección de clientes hasta la facturación y el pago de nómina, pasando por la gestión operativa de los proyectos.
 
 ---
 
