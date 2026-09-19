@@ -201,93 +201,31 @@ PoleBarns/
 
 ---
 
-## ⚙️ Guía de Instalación y Configuración
+## 💼 ¿Buscas un Sistema Altamente Personalizado para tu Negocio?
 
-### 1. Prerrequisitos
-Asegúrese de contar con las siguientes herramientas instaladas en su entorno de desarrollo:
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (v3.19 o superior)
-- [Dart SDK](https://dart.dev/get-dart) (v3.0 o superior)
-- [Git](https://git-scm.com/)
-- [Melos](https://melos.invertase.dev/getting-started):
-  ```bash
-  dart pub global activate melos
-  ```
+> **Digitaliza tu operación, optimiza tus costos y maximiza tus márgenes con software diseñado exclusivamente para la forma en que tú trabajas.**
 
-### 2. Clonar el Repositorio
-```bash
-git clone https://github.com/acostheta/PoleBarns.git
-cd PoleBarns
-```
+**PoleBarns CRM** es un ejemplo real de cómo la tecnología moderna puede transformar por completo la administración operativa de empresas de construcción, contratistas y talleres. 
 
-### 3. Configurar Variables de Entorno
-Cree un archivo `.env` en `apps/cliente_app/`:
-```bash
-cp apps/cliente_app/.env.example apps/cliente_app/.env
-```
-Edite `apps/cliente_app/.env` y defina las credenciales de su proyecto Supabase:
-```env
-SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_ANON_KEY=tu-anon-key-de-supabase
-```
+Si tu empresa se dedica a la **construcción, instalación de estructuras, naves industriales, carpintería metálica o gestión de obras en campo** y necesitas una solución:
 
-### 4. Vincular el Monorepo (Bootstrap)
-Ejecute Melos para descargar dependencias y vincular automáticamente todos los paquetes locales:
-```bash
-melos bootstrap
-```
-
-### 5. Ejecutar la Aplicación en Desarrollo
-Inicie la aplicación en modo Web (o en su dispositivo de preferencia):
-```bash
-cd apps/cliente_app
-flutter run -d chrome
-```
+- 🎯 **100% Hecha a la Medida:** Adaptada a tus fórmulas de cálculo paramétrico, materiales específicos, cubicación y flujos operativos reales.
+- ⚡ **Multiplataforma de Alto Rendimiento:** Accesible desde la web, tabletas y móviles en terreno o computadoras de escritorio en oficina con una experiencia moderna y fluida.
+- 📊 **Control Total de Rentabilidad:** Enlace en tiempo real entre cotizaciones (Estimates), compras a proveedores (Cuentas por Pagar), nómina especializada de cuadrillas y facturación formal (Invoices).
+- 🔒 **Propiedad y Privacidad de tus Datos:** Infraestructura robusta, moderna y escalable, sin depender de software genérico rígido ni suscripciones mensuales limitantes.
+- 📑 **Documentación Profesional Automatizada:** Generación instantánea de presupuestos, órdenes de despacho y facturas en PDF con el branding de tu empresa.
 
 ---
 
-## 🗄️ Base de Datos y Migraciones
+### 📩 ¡Contáctame y Construyamos tu Solución!
 
-La base de datos se encuentra estructurada sobre **PostgreSQL en Supabase**. El repositorio incluye scripts SQL para la configuración de esquemas y mejoras aplicadas:
+¿Quieres llevar el control de tus proyectos con un sistema hecho a la medida de tus necesidades? **Hablemos:**
 
-- **`db_update_invoices.sql`**: Configuración de tablas y relaciones para el sistema de facturación.
-- **`db_decouple_projects.sql`**: Desacoplamiento modular de proyectos y cálculos de Pole Barns.
-- **`db_unify_groups.sql`**: Unificación y modelado de cuadrillas de trabajo y supervisores.
+<p align="center">
+  <a href="https://github.com/acostheta">
+    <img src="https://img.shields.io/badge/GitHub-acostheta-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+</p>
 
-> **Tip:** Puede aplicar estos scripts directamente desde el **SQL Editor** de su panel de administración de Supabase.
+> *"El software debe adaptarse a la forma en que construyes tu negocio, no al revés."*
 
----
-
-## 🚀 Despliegue en Producción (Firebase Hosting)
-
-Para compilar y publicar la versión web en Firebase Hosting:
-
-1. **Compilar los artefactos web:**
-   ```bash
-   cd apps/cliente_app
-   flutter build web --release
-   ```
-
-2. **Desplegar a Firebase:**
-   ```bash
-   cd ../..
-   firebase deploy --only hosting
-   ```
-
----
-
-## 🤖 GitHub Actions: Supabase Heartbeat
-
-Para evitar que el proyecto en Supabase (plan libre) sea pausado por inactividad tras varios días sin tráfico, el repositorio incluye el workflow `.github/workflows/heartbeat.yml`.
-
-Para activarlo en su repositorio:
-1. Vaya a **Settings** > **Secrets and variables** > **Actions** en su repositorio de GitHub.
-2. Cree los siguientes secretos:
-   - `SUPABASE_URL`: URL del proyecto Supabase.
-   - `SUPABASE_ANON_KEY`: Llave pública anónima de Supabase.
-3. El workflow realizará un ping programado cada 5 días de forma totalmente automática.
-
----
-
-## 📄 Licencia y Derechos
-
-Desarrollado para la administración y operación de construcciones de caballerizas y estructuras Post-Frame. Todos los derechos reservados.
